@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc -p tsconfig.json",
+    "build": "npm run build -w @banglabracket/shared && tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "seed": "tsx src/scripts/seed.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
