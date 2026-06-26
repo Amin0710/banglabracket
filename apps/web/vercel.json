@@ -1,0 +1,8 @@
+{
+  "redirects": [
+    { "source": "/", "destination": "/wc2026/app", "permanent": false }
+  ],
+  "rewrites": [
+    { "source": "/wc2026/app/:path*", "destination": "/wc2026/app/index.html" }
+  ]
+}
