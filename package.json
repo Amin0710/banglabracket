@@ -1,0 +1,12 @@
+{
+  "name": "banglabracket",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": ["packages/*", "apps/*"],
+  "scripts": {
+    "build:shared": "npm run build -w @banglabracket/shared",
+    "dev:api": "npm run dev -w @banglabracket/api",
+    "dev:web": "npm run dev -w @banglabracket/web",
+    "seed": "npm run seed -w @banglabracket/api"
+  }
+}
