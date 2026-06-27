@@ -2,25 +2,32 @@ import { useEffect, useRef, useState } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth, useTheme, type User } from './context/Providers';
 import { LogoMark, Wordmark } from './components/ui';
+import { api } from './lib/api';
 import LoginModal from './pages/SignIn';
 import OnboardModal from './pages/Onboard';
-import Overview from './pages/Overview';
 import Bracket from './pages/Bracket';
 import MyEntry from './pages/MyEntry';
 import Leaderboard from './pages/Leaderboard';
 import Verify from './pages/Verify';
 import HowToPlay from './pages/HowToPlay';
+import Scoring from './pages/Scoring';
+import Prizes from './pages/Prizes';
+import Winners from './pages/Winners';
 import Admin from './pages/Admin';
 
-interface NavItem { to: string; label: string; icon: string; admin?: boolean; }
+interface NavItem { to: string; label: string; icon: string; info?: boolean; admin?: boolean; }
 const NAV: NavItem[] = [
-  { to: '/overview', label: 'Overview', icon: 'M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z' },
   { to: '/bracket', label: 'Bracket', icon: 'M4 6h6M4 18h6M10 6v12M10 12h6M16 12h4' },
   { to: '/entry', label: 'My Entry', icon: 'M3 5h18v14H3zM3 10h18' },
   { to: '/leaderboard', label: 'Leaderboard', icon: 'M6 20V10M12 20V4M18 20v-7' },
   { to: '/verify', label: 'Verify', icon: 'M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z' },
+  { to: '/howtoplay', label: 'How to play', icon: 'M9 9a3 3 0 0 1 5.12-2.12A3 3 0 0 1 12 12v1M12 17h.01', info: true },
+  { to: '/scoring', label: 'Scoring', icon: 'M4 6h16M4 10h16M4 14h10', info: true },
+  { to: '/prizes', label: 'Prizes', icon: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z', info: true },
+  { to: '/winners', label: 'Winners', icon: 'M8 21h8M12 17v4M17 8a5 5 0 0 0-10 0c0 2 1 3 2 4l1 1h6l1-1c1-1 2-2 2-4z', info: true },
   { to: '/admin', label: 'Match console', icon: 'M4 7h16M4 12h16M4 17h10', admin: true },
 ];
+const PLAY_NAV = NAV.filter((n) => !n.info && !n.admin);
 
 function NavIcon({ d }: { d: string }) {
   return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>;
@@ -55,7 +62,8 @@ function Sidebar({ onSignIn }: { onSignIn: () => void }) {
   const { user, logout } = useAuth();
   const loc = useLocation();
   const nav = useNavigate();
-  const items = NAV.filter((n) => !n.admin || user?.role === 'admin');
+  const mainItems = NAV.filter((n) => !n.info && (!n.admin || user?.role === 'admin'));
+  const infoItems = NAV.filter((n) => n.info);
   const Item = (i: NavItem) => {
     const active = loc.pathname === i.to;
     return (
@@ -66,23 +74,27 @@ function Sidebar({ onSignIn }: { onSignIn: () => void }) {
   };
   return (
     <aside className="bb-sidebar" style={{ width: 252, flex: '0 0 auto', height: '100vh', position: 'sticky', top: 0, display: 'flex', flexDirection: 'column', background: 'var(--surface)', borderRight: '1px solid var(--line)' }}>
-      <div style={{ padding: '20px 18px 14px', display: 'flex', alignItems: 'center', gap: 11, cursor: 'pointer' }} onClick={() => nav('/overview')}>
+      <div style={{ padding: '20px 18px 14px', display: 'flex', alignItems: 'center', gap: 11, cursor: 'pointer' }} onClick={() => nav('/bracket')}>
         <LogoMark /><Wordmark />
       </div>
       <div style={{ padding: '6px 18px', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', color: 'var(--faint)' }}>PLAY</div>
       <nav style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '0 12px' }}>
-        {items.filter((i) => !i.admin).map(Item)}
+        {mainItems.filter((i) => !i.admin).map(Item)}
       </nav>
-      {items.some((i) => i.admin) && (<>
+      <div style={{ padding: '14px 18px 6px', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', color: 'var(--faint)' }}>INFO</div>
+      <nav style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '0 12px' }}>
+        {infoItems.map(Item)}
+      </nav>
+      {mainItems.some((i) => i.admin) && (<>
         <div style={{ padding: '14px 18px 6px', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', color: 'var(--faint)' }}>STAFF</div>
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '0 12px' }}>{items.filter((i) => i.admin).map(Item)}</nav>
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '0 12px' }}>{mainItems.filter((i) => i.admin).map(Item)}</nav>
       </>)}
       <div style={{ marginTop: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 12, borderTop: '1px solid var(--line)' }}>
         <ThemeToggle />
         {user ? (
           <>
             <UserChip />
-            <button className="btn" onClick={() => { logout(); onSignIn(); }} style={{ fontSize: 13, padding: '7px 12px' }}>Sign out</button>
+            <button className="btn" onClick={() => { logout(); }} style={{ fontSize: 13, padding: '7px 12px' }}>Sign out</button>
           </>
         ) : (
           <button className="btn btn-primary" onClick={onSignIn} style={{ fontSize: 13, padding: '7px 12px' }}>Sign in</button>
@@ -96,7 +108,7 @@ function BottomNav() {
   const { user } = useAuth();
   const loc = useLocation();
   const nav = useNavigate();
-  const items = NAV.filter((n) => !n.admin || user?.role === 'admin');
+  const items = PLAY_NAV.concat(NAV.filter((n) => n.admin && user?.role === 'admin'));
   return (
     <nav className="bb-bottomnav" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'var(--surface)', borderTop: '1px solid var(--line)', zIndex: 50, padding: '6px 4px', justifyContent: 'space-around' }}>
       {items.map((i) => {
@@ -133,11 +145,20 @@ function profileIncomplete(user: User | null): boolean {
 
 export default function App() {
   const { loading, user } = useAuth();
+  const loc = useLocation();
   const nav = useNavigate();
   const [loginOpen, setLoginOpen] = useState(false);
   const [onboardOpen, setOnboardOpen] = useState(false);
-  // undefined = not yet initialized; null = explicitly logged out / not logged in
   const prevUserRef = useRef<User | null | undefined>(undefined);
+
+  async function redirectAfterLogin() {
+    try {
+      const d = await api.get('/api/entry');
+      nav(d?.entry ? '/entry' : '/bracket');
+    } catch {
+      nav('/bracket');
+    }
+  }
 
   useEffect(() => {
     if (loading) return;
@@ -145,7 +166,6 @@ export default function App() {
     prevUserRef.current = user;
 
     if (!user) {
-      // Auto-open login on initial load or after logout
       if (prev === undefined || prev !== null) setLoginOpen(true);
     } else if (profileIncomplete(user)) {
       setLoginOpen(false);
@@ -153,45 +173,55 @@ export default function App() {
     } else {
       setLoginOpen(false);
       setOnboardOpen(false);
+      if (loc.pathname === '/') redirectAfterLogin();
     }
   }, [user, loading]);
 
   if (loading) return <div style={{ padding: 40 }} className="muted">Loading…</div>;
 
-  const openLogin = () => setLoginOpen(true);
+  const toLanding = () => { window.location.href = '/'; };
+  const blurred = !user;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <Sidebar onSignIn={openLogin} />
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-        <MobileHeader onSignIn={openLogin} />
-        <main style={{ flex: 1, padding: 'clamp(16px,3vw,32px)', paddingBottom: 90, maxWidth: 1080, width: '100%', margin: '0 auto' }}>
-          <Routes>
-            <Route path="/overview" element={<Overview />} />
-            <Route path="/bracket" element={<Bracket />} />
-            <Route path="/entry" element={<MyEntry />} />
-            <Route path="/leaderboard" element={<Leaderboard />} />
-            <Route path="/verify" element={<Verify />} />
-            <Route path="/howtoplay" element={<HowToPlay />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="*" element={<Navigate to="/overview" />} />
-          </Routes>
-        </main>
-        <BottomNav />
+    <>
+      <div style={{
+        display: 'flex', minHeight: '100vh',
+        ...(blurred ? { filter: 'blur(6px) brightness(0.7)', pointerEvents: 'none', userSelect: 'none' } : {}),
+      }}>
+        <Sidebar onSignIn={() => setLoginOpen(true)} />
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+          <MobileHeader onSignIn={() => setLoginOpen(true)} />
+          <main style={{ flex: 1, padding: 'clamp(16px,3vw,32px)', paddingBottom: 90, maxWidth: 1080, width: '100%', margin: '0 auto' }}>
+            <Routes>
+              <Route path="/" element={null} />
+              <Route path="/bracket" element={<Bracket />} />
+              <Route path="/entry" element={<MyEntry />} />
+              <Route path="/leaderboard" element={<Leaderboard />} />
+              <Route path="/verify" element={<Verify />} />
+              <Route path="/howtoplay" element={<HowToPlay />} />
+              <Route path="/scoring" element={<Scoring />} />
+              <Route path="/prizes" element={<Prizes />} />
+              <Route path="/winners" element={<Winners />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="*" element={<Navigate to="/bracket" />} />
+            </Routes>
+          </main>
+          <BottomNav />
+        </div>
       </div>
 
       {loginOpen && (
         <LoginModal
-          onClose={() => setLoginOpen(false)}
+          onClose={toLanding}
           onPhoneSignup={() => { setLoginOpen(false); setOnboardOpen(true); }}
         />
       )}
       {onboardOpen && (
         <OnboardModal
-          onClose={() => setOnboardOpen(false)}
-          onDone={() => nav('/bracket')}
+          onClose={toLanding}
+          onDone={() => { if (loc.pathname === '/') redirectAfterLogin(); }}
         />
       )}
-    </div>
+    </>
   );
 }

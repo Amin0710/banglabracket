@@ -60,14 +60,14 @@
 </head>
 <body>
 <!-- NAV -->
-<div style="position:sticky;top:0;z-index:50;backdrop-filter:saturate(1.4) blur(14px);background:var(--navBg);border-bottom:1px solid var(--line)">
+<div style="position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px solid var(--lineStrong);box-shadow:0 1px 8px rgba(20,35,27,.06)">
   <div class="wrap" style="height:72px;display:flex;align-items:center;justify-content:space-between;gap:24px">
     <a href="#top" style="display:flex;align-items:center;gap:11px;text-decoration:none">
       <span style="width:38px;height:38px;border-radius:11px;flex:0 0 auto;background:linear-gradient(150deg,#ffd45f,#e8ab1f);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(232,171,31,.32)"><svg width="27" height="27" viewBox="0 0 48 48" fill="none" stroke="#1a1405" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6H14M4 18H14M4 30H14M4 42H14M14 6V18M14 30V42M14 12H24M14 36H24M24 12V36M24 24H34"/><path d="M39 19 44 24 39 29 34 24Z" fill="#1a1405" stroke="none"/></svg></span>
       <span style="font-family:'Baloo Da 2';font-weight:800;font-size:22px;color:var(--ink)">Bangla<span style="color:var(--goldText)">Bracket</span></span>
     </a>
     <div class="nav-links" style="display:flex;align-items:center;gap:4px">
-      <a class="navlink" href="#how">How to play</a><a class="navlink" href="#scoring">Scoring</a><a class="navlink" href="#ranks">Leaderboard</a><a class="navlink" href="/wc2026/app/howtoplay">How to win</a>
+      <a class="navlink" href="/wc2026/app/howtoplay">How to play</a><a class="navlink" href="/wc2026/app/scoring">Scoring</a><a class="navlink" href="#winners">Winners</a><a class="navlink" href="#ranks">Leaderboard</a>
     </div>
     <div style="display:flex;align-items:center;gap:12px">
       <div style="display:flex;align-items:center;gap:2px;padding:3px;background:var(--surface2);border:1px solid var(--line);border-radius:999px">
@@ -155,6 +155,9 @@
     <div class="card" style="padding:22px"><div style="display:flex;align-items:center;justify-content:space-between"><span style="width:42px;height:42px;border-radius:12px;background:var(--primarySoft);border:1px solid var(--primaryLine);display:flex;align-items:center;justify-content:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h4v6H4M4 13h4v6H4M8 8h4v8h4M16 9.5v5"/></svg></span><span class="dsp" style="font-weight:700;font-size:38px;color:var(--surface3)">02</span></div><h3 style="font-size:21px;margin:16px 0 0;color:var(--ink)">Predict the bracket</h3><p style="font-size:15px;line-height:1.6;color:var(--muted);margin:8px 0 0;font-weight:500">Call the final group games, then send teams through every knockout — Round of 32 all the way to the Final scoreline.</p></div>
     <div class="card" style="padding:22px"><div style="display:flex;align-items:center;justify-content:space-between"><span style="width:42px;height:42px;border-radius:12px;background:var(--primarySoft);border:1px solid var(--primaryLine);display:flex;align-items:center;justify-content:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6a6 6 0 01-12 0z"/><path d="M6 5H3v1.5A3 3 0 006 9M18 5h3v1.5A3 3 0 0118 9M12 15v3M9 21h6M10 18h4"/></svg></span><span class="dsp" style="font-weight:700;font-size:38px;color:var(--surface3)">03</span></div><h3 style="font-size:21px;margin:16px 0 0;color:var(--ink)">Climb the leaderboard</h3><p style="font-size:15px;line-height:1.6;color:var(--muted);margin:8px 0 0;font-weight:500">Earn points as real matches finish. Top the live table by the Final to win your share of ৳1,00,000.</p></div>
   </div>
+  <div style="text-align:center;margin-top:32px">
+    <a class="btn-ghost" href="/wc2026/app/howtoplay" style="height:46px;padding:0 22px;font-size:15px">Full guide →</a>
+  </div>
 </div>
 
 <!-- SCORING -->
@@ -185,6 +188,9 @@
         <div style="display:grid;grid-template-columns:1fr auto;align-items:center;padding:13px 22px;border-top:1px solid var(--line)"><div><div style="font-size:15px;font-weight:600">Early Round-of-32 pick</div><div style="font-size:12.5px;color:var(--muted)">Tiebreaker credit for calling them early — per pick</div></div><span class="dsp" style="font-size:22px;font-weight:800">+5</span></div>
         <div style="display:grid;grid-template-columns:1fr auto;align-items:center;padding:13px 22px;border-top:1px solid var(--line)"><div><div style="font-size:15px;font-weight:600">Exact knockout score 💵</div><div style="font-size:12.5px;color:var(--muted)">Win real Taka — paid after you verify</div></div><span class="dsp" style="font-size:22px;font-weight:800;color:var(--goldText)">100৳</span></div>
       </div>
+      <div style="margin-top:20px">
+        <a class="btn-ghost" href="/wc2026/app/scoring" style="height:46px;padding:0 22px;font-size:15px">Full scoring rules →</a>
+      </div>
     </div>
   </div>
 </div>
@@ -196,7 +202,10 @@
       <div class="eyebrow">Live leaderboard</div>
       <h2 class="h2" style="font-size:clamp(30px,4vw,46px);margin-top:14px">Every match moves the table</h2>
       <p style="font-size:16px;line-height:1.6;color:var(--muted);margin:14px 0 0;font-weight:500">Rankings update the moment a result is confirmed. Filter to prize-eligible players, track your live position, and chase the top spot to the Final.</p>
-      <a class="btn-primary" href="/wc2026/app/" style="height:48px;padding:0 20px;margin-top:22px;font-size:15px">Join the board free<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a>
+      <div style="display:flex;gap:10px;margin-top:22px;flex-wrap:wrap">
+        <a class="btn-primary" href="/wc2026/app/" style="height:48px;padding:0 20px;font-size:15px">Join the board free<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a>
+        <a class="btn-ghost" href="/wc2026/app/leaderboard" style="height:48px;padding:0 20px;font-size:15px">See full list</a>
+      </div>
     </div>
     <div style="padding:28px 32px;background:var(--surface)">
       <div id="bigRanks">
@@ -205,6 +214,53 @@
         <div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line)"><span style="display:inline-grid;place-items:center;width:28px;height:28px;border-radius:8px;background:var(--goldSoft);color:var(--goldText);font-weight:800">3</span><span style="flex:1;font-weight:700">Imran Hossain</span><span style="color:var(--muted);font-size:13px">Dubai, UAE</span><span class="dsp" style="font-weight:800;margin-left:14px">2,445</span></div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- WINNERS -->
+<div id="winners" class="wrap" style="padding:104px 32px 0;scroll-margin-top:88px">
+  <div style="text-align:center;max-width:36em;margin:0 auto 40px">
+    <div class="eyebrow">Winners</div>
+    <h2 class="h2" style="margin-top:14px">Who took it all</h2>
+    <p style="font-size:17px;line-height:1.6;color:var(--muted);margin:14px 0 0;font-weight:500">When the Final whistle blows, the top players are crowned here. Could be you.</p>
+  </div>
+  <div class="steps-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+    <div class="card" style="padding:24px;text-align:center;position:relative">
+      <div style="position:absolute;top:16px;right:16px;background:var(--gold);color:#1a1405;font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px">Grand prize</div>
+      <div style="width:60px;height:60px;border-radius:50%;background:linear-gradient(150deg,var(--surface2),var(--surface3));border:2px dashed var(--line);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:26px">?</div>
+      <div style="font-weight:800;font-size:18px;margin-bottom:4px">You</div>
+      <div class="dsp" style="font-weight:800;font-size:26px;color:var(--goldText)">৳1,00,000</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:8px">Could be you at the final whistle</div>
+    </div>
+    <div class="card" style="padding:24px;text-align:center;opacity:.55">
+      <div style="width:60px;height:60px;border-radius:50%;background:var(--surface2);border:2px dashed var(--line);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:26px">?</div>
+      <div style="font-weight:800;font-size:18px;margin-bottom:4px">Runner-up</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:4px">Announced after the Final</div>
+    </div>
+    <div class="card" style="padding:24px;text-align:center;opacity:.4">
+      <div style="width:60px;height:60px;border-radius:50%;background:var(--surface2);border:2px dashed var(--line);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:26px">?</div>
+      <div style="font-weight:800;font-size:18px;margin-bottom:4px">Third place</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:4px">Announced after the Final</div>
+    </div>
+  </div>
+  <div style="text-align:center;margin-top:32px">
+    <a class="btn-ghost" href="/wc2026/app/winners" style="height:46px;padding:0 22px;font-size:15px">View winners →</a>
+  </div>
+</div>
+
+<!-- FAQ -->
+<div class="wrap" style="padding:104px 32px 0">
+  <div style="text-align:center;max-width:36em;margin:0 auto 40px">
+    <div class="eyebrow">FAQ</div>
+    <h2 class="h2" style="margin-top:14px">Quick answers</h2>
+  </div>
+  <div class="faq-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px">
+    <div class="card" style="padding:22px"><h3 style="font-size:17px;margin:0 0 8px">Is it really free?</h3><p style="font-size:14.5px;line-height:1.65;color:var(--muted);margin:0">Yes — no entry fee, no card, no catch. Just sign in, fill your bracket, and play. Cash prizes are won and paid out; you never pay a cent in.</p></div>
+    <div class="card" style="padding:22px"><h3 style="font-size:17px;margin:0 0 8px">Who can win the prize?</h3><p style="font-size:14.5px;line-height:1.65;color:var(--muted);margin:0">Bangladeshi nationals only (by nationality, not where you live). You can play and win from anywhere in the world. You must be 18+ and verify your identity if you finish in a prize position.</p></div>
+    <div class="card" style="padding:22px"><h3 style="font-size:17px;margin:0 0 8px">When does my bracket lock?</h3><p style="font-size:14.5px;line-height:1.65;color:var(--muted);margin:0">The bracket locks at the first Round-of-32 kick-off. After that, your picks are final. You get one free re-pick before then if you change your mind.</p></div>
+    <div class="card" style="padding:22px"><h3 style="font-size:17px;margin:0 0 8px">How do I claim a prize?</h3><p style="font-size:14.5px;line-height:1.65;color:var(--muted);margin:0">If you finish in a winning position, email your verification code and a photo of your NID/passport to admin@banglabracket.com before the 3rd-place match. Prize is paid via bKash.</p></div>
+    <div class="card" style="padding:22px"><h3 style="font-size:17px;margin:0 0 8px">Can I change my picks?</h3><p style="font-size:14.5px;line-height:1.65;color:var(--muted);margin:0">Yes, until the bracket locks you can edit picks freely. You also get one free re-pick to start fresh — but this clears your tiebreaker bonus points, so use it carefully.</p></div>
+    <div class="card" style="padding:22px"><h3 style="font-size:17px;margin:0 0 8px">Do I need to verify to play?</h3><p style="font-size:14.5px;line-height:1.65;color:var(--muted);margin:0">No — you only need to verify if you end up in a prize-winning position. Play first, verify later. You have until the 3rd-place match deadline once results are final.</p></div>
   </div>
 </div>
 
@@ -223,15 +279,15 @@
 </div>
 
 <!-- FOOTER -->
-<footer style="border-top:1px solid var(--line);margin-top:80px;padding:48px 0 36px;background:var(--surface2)">
+<footer style="border-top:1px solid var(--lineStrong);margin-top:80px;padding:48px 0 36px;background:var(--surface2)">
   <div class="wrap" style="display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:30px">
     <div>
       <div style="display:flex;align-items:center;gap:10px"><span style="width:34px;height:34px;border-radius:10px;background:linear-gradient(150deg,#ffd45f,#e8ab1f);display:flex;align-items:center;justify-content:center"><svg width="21" height="21" viewBox="0 0 48 48" fill="none" stroke="#1a1405" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6H14M4 18H14M4 30H14M4 42H14M14 6V18M14 30V42M14 12H24M14 36H24M24 12V36M24 24H34"/><path d="M39 19 44 24 39 29 34 24Z" fill="#1a1405" stroke="none"/></svg></span><span style="font-family:'Baloo Da 2';font-weight:800;font-size:19px">Bangla<span style="color:var(--goldText)">Bracket</span></span></div>
       <p style="color:var(--muted);font-size:14px;margin:12px 0 0;max-width:26em;line-height:1.6">Brings World Cup 2026 to your hands. Predict the bracket, top the table, win &#2547;1,00,000. Free to play, made in Bangladesh.</p>
     </div>
-    <div><div style="font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin-bottom:12px">Play</div><div style="display:flex;flex-direction:column;gap:9px"><a href="/wc2026/app/" style="color:var(--muted);text-decoration:none;font-size:14px">Play now</a><a href="#how" style="color:var(--muted);text-decoration:none;font-size:14px">How to play</a><a href="#scoring" style="color:var(--muted);text-decoration:none;font-size:14px">Scoring</a><a href="/wc2026/app/" style="color:var(--muted);text-decoration:none;font-size:14px">Leaderboard</a></div></div>
-    <div><div style="font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin-bottom:12px">Prizes</div><div style="display:flex;flex-direction:column;gap:9px"><a href="/wc2026/app/howtoplay" style="color:var(--muted);text-decoration:none;font-size:14px">Full prize list</a><a href="/wc2026/app/howtoplay" style="color:var(--muted);text-decoration:none;font-size:14px">How to win</a><a href="/wc2026/app/verify" style="color:var(--muted);text-decoration:none;font-size:14px">Verify ID</a></div></div>
-    <div><div style="font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin-bottom:12px">Support</div><div style="display:flex;flex-direction:column;gap:9px"><a href="mailto:admin@banglabracket.com" style="color:var(--muted);text-decoration:none;font-size:14px">Contact admin</a><a href="#" onclick="openLegal('terms');return false" style="color:var(--muted);text-decoration:none;font-size:14px">Terms</a><a href="#" onclick="openLegal('privacy');return false" style="color:var(--muted);text-decoration:none;font-size:14px">Privacy</a></div></div>
+    <div><div style="font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin-bottom:12px">Play</div><div style="display:flex;flex-direction:column;gap:9px"><a href="/wc2026/app/scoring" style="color:var(--muted);text-decoration:none;font-size:14px">Scoring</a><a href="/wc2026/app/howtoplay" style="color:var(--muted);text-decoration:none;font-size:14px">How to play</a><a href="/wc2026/app/leaderboard" style="color:var(--muted);text-decoration:none;font-size:14px">Leaderboard</a><a href="/wc2026/app/" style="color:var(--muted);text-decoration:none;font-size:14px">Play now</a></div></div>
+    <div><div style="font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin-bottom:12px">Prizes</div><div style="display:flex;flex-direction:column;gap:9px"><a href="/wc2026/app/prizes" style="color:var(--muted);text-decoration:none;font-size:14px">Full prize list</a><a href="/wc2026/app/winners" style="color:var(--muted);text-decoration:none;font-size:14px">All winners</a><a href="/wc2026/app/prizes" style="color:var(--muted);text-decoration:none;font-size:14px">How to win</a><a href="/wc2026/app/verify" style="color:var(--muted);text-decoration:none;font-size:14px">Verify ID</a></div></div>
+    <div><div style="font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin-bottom:12px">Support</div><div style="display:flex;flex-direction:column;gap:9px"><a href="mailto:admin@banglabracket.com" style="color:var(--muted);text-decoration:none;font-size:14px">Contact</a><a href="#" onclick="openLegal('terms');return false" style="color:var(--muted);text-decoration:none;font-size:14px">Terms</a><a href="#" onclick="openLegal('privacy');return false" style="color:var(--muted);text-decoration:none;font-size:14px">Privacy</a><a href="#" onclick="openLegal('deletion');return false" style="color:var(--muted);text-decoration:none;font-size:14px">Data deletion</a></div></div>
   </div>
   <div class="wrap" style="margin-top:34px;padding-top:20px;border-top:1px solid var(--line);color:var(--faint);font-size:13px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
     <span>&#169; 2026 BanglaBracket &#183; Play responsibly &#183; 18+</span><span>Not affiliated with FIFA or any official body.</span>
@@ -309,6 +365,7 @@
       <p><b>Free to play.</b> BanglaBracket is a free prediction game for the 2026 World Cup. No entry fee, no purchase, no card required.</p>
       <p><b>Eligibility.</b> Prizes are for Bangladeshi nationals (by nationality, not residence) aged 18+. You can play and win from anywhere in the world. Winners must verify their identity before prizes are paid.</p>
       <p><b>Winners on the Wall &amp; social media.</b> If you appear on the leaderboard, finish near the top, or win a prize, your <b>display name and profile photo may be shown publicly</b> on the in-app Winners Wall and leaderboard, and may be <b>used and shared by BanglaBracket on social media</b> to announce results and winners. By playing, you consent to this use of your name and image for these purposes.</p>
+      <p><b>Admin decisions.</b> All admin decisions are final. BanglaBracket may withhold or reallocate any prize — including paying the next eligible player — at its sole discretion and without explanation, including where cheating or multiple/fake accounts are suspected. We are not obligated to disclose our reasoning.</p>
       <p><b>Fair play.</b> One account per person. Multiple, fake, or automated accounts may be disqualified. The bracket locks at the first Round-of-32 kick-off; picks are final after lock.</p>
       <p><b>Prizes.</b> The grand prize is &#2547;1,00,000 for the top of the points leaderboard. Additional cash rewards are paid for exact knockout scorelines. Prize details may be updated before lock; the current rules in-app govern.</p>
       <p><b>Not affiliated</b> with FIFA or any official body. Play responsibly. 18+.</p>`},
@@ -317,7 +374,11 @@
       <p><b>How we use it.</b> Only to run the game: sign you in, score your bracket, rank the leaderboard, and contact winners. We do not sell your data.</p>
       <p><b>Public display.</b> Your display name and profile photo may appear publicly on the leaderboard and Winners Wall, and may be shared by BanglaBracket on social media if you rank highly or win (see Terms).</p>
       <p><b>Security.</b> Sensitive data is encrypted. Sessions use secure cookies.</p>
-      <p><b>Your choices.</b> You can request deletion of your account and data any time via <a href="mailto:admin@banglabracket.com" style="color:var(--primary)">admin@banglabracket.com</a>.</p>`}
+      <p><b>Your choices.</b> You can request deletion of your account and data any time via <a href="mailto:admin@banglabracket.com" style="color:var(--primary)">admin@banglabracket.com</a>.</p>`},
+    deletion:{title:'Data Deletion',html:`
+      <p><b>How to delete your data.</b> To request deletion of your BanglaBracket account and all associated data, email <a href="mailto:admin@banglabracket.com" style="color:var(--primary)">admin@banglabracket.com</a> with the subject line <b>"Delete my account"</b>. Please include the name or email address linked to your account.</p>
+      <p><b>What we delete.</b> We will permanently delete your profile (name, phone, email), your bracket picks, your score history, and any verification data we hold. We will process your request within 30 days.</p>
+      <p><b>Note.</b> If you have won a prize, we retain minimal records required by law or for prize payment purposes until those obligations are fulfilled.</p>`}
   };
   function openLegal(k){var L=LEGAL[k];if(!L)return;document.getElementById('legalTitle').textContent=L.title;document.getElementById('legalBody').innerHTML=L.html;var o=document.getElementById('legalOverlay');o.style.display='flex';document.body.style.overflow='hidden';}
   function closeLegal(){document.getElementById('legalOverlay').style.display='none';document.body.style.overflow='';}

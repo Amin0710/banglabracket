@@ -1,18 +1,16 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../context/Providers';
 import { PageHeader } from '../components/ui';
 
 export default function Verify() {
   const { user } = useAuth();
-  const nav = useNavigate();
   const [idType, setIdType] = useState<'nid' | 'passport' | 'birth_certificate'>('nid');
   const [idNumber, setIdNumber] = useState('');
   const [dob, setDob] = useState('');
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
-  if (!user) { nav('/'); return null; }
+  if (!user) return null;
 
   async function submit() {
     setBusy(true); setMsg('');

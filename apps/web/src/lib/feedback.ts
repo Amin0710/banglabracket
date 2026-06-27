@@ -49,6 +49,7 @@ const LEGAL_CONTENT = {
       <p><b>Free to play.</b> BanglaBracket is a free prediction game for the 2026 World Cup. No entry fee, no purchase, no card required.</p>
       <p><b>Eligibility.</b> Prizes are for Bangladeshi nationals (by nationality, not residence) aged 18+. You can play and win from anywhere in the world. Winners must verify their identity before prizes are paid.</p>
       <p><b>Winners on the Wall &amp; social media.</b> If you appear on the leaderboard or win, your <b>display name and profile photo may be shown publicly</b> on the Winners Wall and shared by BanglaBracket on social media to announce results and winners. By playing, you consent to this use of your name and image for these purposes.</p>
+      <p><b>Admin decisions.</b> All admin decisions are final. BanglaBracket may withhold or reallocate any prize — including paying the next eligible player — at its sole discretion and without explanation, including where cheating or multiple/fake accounts are suspected. We are not obligated to disclose our reasoning.</p>
       <p><b>Fair play.</b> One account per person. Multiple, fake, or automated accounts may be disqualified. The bracket locks at the first Round-of-32 kick-off; picks are final after lock.</p>
       <p><b>Prizes.</b> The grand prize is ৳1,00,000 for the top of the points leaderboard. Additional cash rewards are paid for exact knockout scorelines. Prize details may be updated before lock; the current rules in-app govern.</p>
       <p><b>Not affiliated</b> with FIFA or any official body. Play responsibly. 18+.</p>`,
@@ -61,6 +62,13 @@ const LEGAL_CONTENT = {
       <p><b>Public display.</b> Your display name and profile photo may appear publicly on the leaderboard and Winners Wall, and may be shared by BanglaBracket on social media if you rank highly or win (see Terms).</p>
       <p><b>Security.</b> Sensitive data is encrypted. Sessions use secure cookies.</p>
       <p><b>Your choices.</b> You can request deletion of your account and data any time via <a href="mailto:admin@banglabracket.com" style="color:var(--green)">admin@banglabracket.com</a>.</p>`,
+  },
+  deletion: {
+    title: 'Data Deletion',
+    html: `
+      <p><b>How to delete your data.</b> To request deletion of your BanglaBracket account and all associated data, email <a href="mailto:admin@banglabracket.com" style="color:var(--green)">admin@banglabracket.com</a> with the subject line <b>"Delete my account"</b>. Please include the name or email address linked to your account.</p>
+      <p><b>What we delete.</b> We will permanently delete your profile (name, phone, email), your bracket picks, your score history, and any verification data we hold. We will process your request within 30 days.</p>
+      <p><b>Note.</b> If you have won a prize, we retain minimal records required by law or for prize payment purposes until those obligations are fulfilled.</p>`,
   },
 } as const;
 
