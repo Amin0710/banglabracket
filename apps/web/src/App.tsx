@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth, useTheme } from './context/Providers';
-import { LogoMark, Wordmark, BrandLogo } from './components/ui';
+import { LogoMark, Wordmark } from './components/ui';
 import SignIn from './pages/SignIn';
 import Onboard from './pages/Onboard';
 import Overview from './pages/Overview';
@@ -65,7 +65,7 @@ function Sidebar() {
   return (
     <aside className="bb-sidebar" style={{ width: 252, flex: '0 0 auto', height: '100vh', position: 'sticky', top: 0, display: 'flex', flexDirection: 'column', background: 'var(--surface)', borderRight: '1px solid var(--line)' }}>
       <div style={{ padding: '20px 18px 14px', display: 'flex', alignItems: 'center', gap: 11, cursor: 'pointer' }} onClick={() => nav('/overview')}>
-        <BrandLogo height={30} />
+        <LogoMark /><Wordmark />
       </div>
       <div style={{ padding: '6px 18px', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', color: 'var(--faint)' }}>PLAY</div>
       <nav style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '0 12px' }}>
@@ -105,7 +105,7 @@ function BottomNav() {
 function MobileHeader() {
   return (
     <header className="bb-mobileheader" style={{ alignItems: 'center', gap: 10, padding: '12px 16px', borderBottom: '1px solid var(--line)', background: 'var(--surface)', position: 'sticky', top: 0, zIndex: 40 }}>
-      <BrandLogo height={28} />
+      <LogoMark size={30} /><Wordmark />
       <div style={{ marginLeft: 'auto' }}><ThemeToggle /></div>
     </header>
   );

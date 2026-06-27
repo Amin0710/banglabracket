@@ -4,6 +4,7 @@ import { ROUND_OF } from '@banglabracket/shared';
 import { api } from '../lib/api';
 import { useAuth } from '../context/Providers';
 import { PageHeader } from '../components/ui';
+import { toast, confirmDialog } from '../lib/feedback';
 
 const RL: Record<string, string> = { R16: 'Round of 16', QF: 'Quarter-finals', SF: 'Semi-finals', THIRD: 'Third place', FINAL: 'Final' };
 const MULT: Record<string, number> = { R16: 100, QF: 200, SF: 300, THIRD: 400, FINAL: 500 };
@@ -28,8 +29,9 @@ export default function MyEntry() {
   correct.forEach((r: any) => { byRound[r.round] = (byRound[r.round] || 0) + 1; });
 
   async function repick() {
-    if (!confirm('Start fresh? Clears your picks AND bonus points. One time only.')) return;
-    setBusy(true); try { await api.post('/api/entry/repick'); await load(); } finally { setBusy(false); }
+    const ok = await confirmDialog({ title: 'Start fresh?', message: 'This clears your picks and all bonus points. You can only do this once.', confirmText: 'Yes, reset', danger: true });
+    if (!ok) return;
+    setBusy(true); try { await api.post('/api/entry/repick'); await load(); toast('Bracket reset — pick again'); } finally { setBusy(false); }
   }
 
   return (

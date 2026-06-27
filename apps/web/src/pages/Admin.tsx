@@ -4,6 +4,7 @@ import { KO_MATCHES, ROUND_OF } from '@banglabracket/shared';
 import { api, flagUrl } from '../lib/api';
 import { useAuth } from '../context/Providers';
 import { PageHeader } from '../components/ui';
+import { toast } from '../lib/feedback';
 
 const RL: Record<string, string> = { R16: 'Round of 16', QF: 'Quarter-final', SF: 'Semi-final', THIRD: 'Third place', FINAL: 'Final' };
 
@@ -24,9 +25,9 @@ export default function Admin() {
 
   async function confirm(m: number, A: string | null, B: string | null) {
     const d = drafts[m] || {};
-    if (!d.winner) { alert('Pick a winner'); return; }
-    try { await api.post('/api/admin/result', { match: m, winner: d.winner, manner: d.manner || 'FT', scoreA: +d.scoreA || 0, scoreB: +d.scoreB || 0 }); loadKpis(); api.get('/api/tournament').then(setT); }
-    catch (e: any) { alert('Error: ' + e.message); }
+    if (!d.winner) { toast('Pick a winner first', 'error'); return; }
+    try { await api.post('/api/admin/result', { match: m, winner: d.winner, manner: d.manner || 'FT', scoreA: +d.scoreA || 0, scoreB: +d.scoreB || 0 }); toast('Result confirmed — leaderboard updating'); loadKpis(); api.get('/api/tournament').then(setT); }
+    catch (e: any) { toast('Error: ' + e.message, 'error'); }
   }
   async function lookup() { setFound(null); setMsg(''); try { setFound((await api.get('/api/admin/user-by-code/' + code.trim())).user); } catch { setMsg('No user with that code.'); } }
   async function setVerified(v: boolean, e: boolean) { if (!found) return; await api.post('/api/admin/verify-user', { userId: found.id, verified: v, prizeEligible: e }); setMsg('Updated'); lookup(); loadKpis(); }
