@@ -38,7 +38,7 @@ export async function getLeaderboard(opts: { eligibleOnly?: boolean } = {}) {
   const ctx = buildContext(t);
   const entries = await Entry.find({ tournamentKey: env.tournamentKey }).lean();
   const userIds = entries.map((e) => e.userId);
-  const users = await User.find({ _id: { $in: userIds } }, { name: 1, prizeEligible: 1, verified: 1 }).lean();
+  const users = await User.find({ _id: { $in: userIds } }, { name: 1, prizeEligible: 1, verified: 1, avatar: 1 }).lean();
   const uMap = new Map(users.map((u) => [String(u._id), u]));
 
   const scored = entries.map((e) => {
@@ -46,7 +46,7 @@ export async function getLeaderboard(opts: { eligibleOnly?: boolean } = {}) {
     const u = uMap.get(String(e.userId));
     return {
       userId: String(e.userId),
-      name: u?.name || 'Player',
+      name: u?.name || 'Player', avatar: (u as any)?.avatar || null,
       prizeEligible: !!u?.prizeEligible,
       verified: !!u?.verified,
       main: s.main, tieExactFinal: s.tieExactFinal, tieManner: s.tieManner, tieEarlyBird: s.tieEarlyBird,
@@ -86,4 +86,20 @@ export async function getCashAwards(): Promise<CashResult> {
 export async function getUserCash(userId: string) {
   const all = await getCashAwards();
   return cashForUser(all, userId);
+}
+
+// Public cash leaderboard + winners wall data: ranked by total Taka then win count.
+export async function getCashLeaderboard() {
+  const cash = await getCashAwards();
+  const ids = Object.keys(cash.perUser);
+  if (!ids.length) return [];
+  const users = await User.find({ _id: { $in: ids } }, { name: 1, avatar: 1, prizeEligible: 1, verified: 1 }).lean();
+  const uMap = new Map(users.map((u) => [String(u._id), u]));
+  const counts: Record<string, number> = {};
+  cash.awards.forEach((a) => { counts[a.userId] = (counts[a.userId] || 0) + 1; });
+  return ids.map((id) => ({
+    userId: id, total: cash.perUser[id], wins: counts[id] || 0,
+    name: uMap.get(id)?.name || 'Player', avatar: uMap.get(id)?.avatar || null,
+    prizeEligible: !!uMap.get(id)?.prizeEligible, verified: !!uMap.get(id)?.verified,
+  })).sort((a, b) => b.total - a.total || b.wins - a.wins);
 }

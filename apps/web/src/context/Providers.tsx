@@ -31,10 +31,10 @@ const ThemeContext = createContext<ThemeCtx>({ dark: true, toggle: () => {} });
 export const useTheme = () => useContext(ThemeContext);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [dark, setDark] = useState(true);
+  const [dark, setDark] = useState(false);
   useEffect(() => {
     const saved = localStorage.getItem('bb-theme');
-    const isDark = saved ? saved === 'dark' : true;
+    const isDark = saved ? saved === 'dark' : false;
     setDark(isDark);
   }, []);
   useEffect(() => {

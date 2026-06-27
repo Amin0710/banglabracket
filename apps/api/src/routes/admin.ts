@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { env } from '../config/env.js';
 import { User, Tournament, AuditLog, Entry } from '../models/index.js';
-import { getLeaderboard, invalidateLeaderboard, getCashAwards } from '../services/tournament.js';
+import { getLeaderboard, invalidateLeaderboard, getCashAwards, getCashLeaderboard } from '../services/tournament.js';
 import { CASH } from '@banglabracket/shared';
 import { requireAuth, requireAdmin, validate, type AuthedRequest } from '../middleware/index.js';
 import { encryptField, hmac } from '../lib/crypto.js';
@@ -14,6 +14,12 @@ export const apiRouter = Router();
 apiRouter.get('/leaderboard', async (req, res) => {
   const eligibleOnly = req.query.eligible === '1';
   const rows = await getLeaderboard({ eligibleOnly });
+  res.json({ rows, count: rows.length });
+});
+
+// Public cash side-game leaderboard + winners wall
+apiRouter.get('/cash-leaderboard', async (_req, res) => {
+  const rows = await getCashLeaderboard();
   res.json({ rows, count: rows.length });
 });
 

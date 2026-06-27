@@ -1,13 +1,9 @@
 {
-	"redirects": [
-		{ "source": "/", "destination": "/wc2026/app/", "permanent": false },
-		{
-			"source": "/wc2026/app",
-			"destination": "/wc2026/app/",
-			"permanent": false
-		}
-	],
-	"rewrites": [
-		{ "source": "/wc2026/app/:path*", "destination": "/wc2026/app/index.html" }
-	]
+  "redirects": [
+    { "source": "/", "destination": "/wc2026/app/", "permanent": false },
+    { "source": "/wc2026/app", "destination": "/wc2026/app/", "permanent": false }
+  ],
+  "rewrites": [
+    { "source": "/wc2026/app/:path*", "destination": "/wc2026/app/index.html" }
+  ]
 }

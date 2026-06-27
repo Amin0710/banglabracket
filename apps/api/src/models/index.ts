@@ -7,6 +7,7 @@ const userSchema = new Schema({
   facebookId: { type: String, unique: true, sparse: true },
   email: { type: String, unique: true, sparse: true, lowercase: true, trim: true },
   name: { type: String, trim: true },
+  avatar: { type: String },
 
   // contact (collected at signup; phone required & unique)
   phone: { type: String, unique: true, sparse: true, trim: true },
