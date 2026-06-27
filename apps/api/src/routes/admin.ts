@@ -42,6 +42,7 @@ apiRouter.put('/me/profile', requireAuth, validate(z.object({
   bkash: z.string().max(20).optional(),
   overseas: z.boolean().optional(),
   location: z.object({ lat: z.number(), lng: z.number() }).optional(),
+  district: z.string().max(40).optional(),
 })), async (req: AuthedRequest, res) => {
   const u = await User.findById(req.userId);
   if (!u) return res.status(404).json({ error: 'not_found' });
@@ -62,6 +63,7 @@ apiRouter.put('/me/profile', requireAuth, validate(z.object({
   if (req.body.name !== undefined) u.name = req.body.name;
   if (req.body.overseas !== undefined) u.overseas = req.body.overseas;
   if (req.body.location) u.location = { ...req.body.location, capturedAt: new Date() } as any;
+  if (req.body.district !== undefined) (u as any).district = req.body.district;
   await u.save();
   res.json({ ok: true, user: publicUser(u) });
 });

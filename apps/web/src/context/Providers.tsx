@@ -3,6 +3,7 @@ import { api } from '../lib/api';
 
 export interface User {
   id: string; name: string | null; email: string | null; phone: string | null; bkash: string | null;
+  district?: string | null;
   overseas: boolean; verified: boolean; prizeEligible: boolean; verificationCode: string | null; role: 'user' | 'admin';
 }
 

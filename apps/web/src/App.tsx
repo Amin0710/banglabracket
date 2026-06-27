@@ -8,6 +8,7 @@ import Bracket from './pages/Bracket';
 import MyEntry from './pages/MyEntry';
 import Leaderboard from './pages/Leaderboard';
 import Verify from './pages/Verify';
+import HowToPlay from './pages/HowToPlay';
 import Admin from './pages/Admin';
 
 interface NavItem { to: string; label: string; icon: string; admin?: boolean; }
@@ -137,6 +138,7 @@ export default function App() {
             <Route path="/entry" element={<MyEntry />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/verify" element={<Verify />} />
+            <Route path="/howtoplay" element={<HowToPlay />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="*" element={<Navigate to={user ? '/overview' : '/'} />} />
           </Routes>

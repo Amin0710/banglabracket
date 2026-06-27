@@ -12,6 +12,7 @@ const userSchema = new Schema({
   // contact (collected at signup; phone required & unique)
   phone: { type: String, unique: true, sparse: true, trim: true },
   bkash: { type: String, trim: true }, // optional
+  district: { type: String, trim: true }, // Bangladesh district (or blank if overseas)
 
   // overseas soft-signal (geolocation is advisory only, never proof)
   overseas: { type: Boolean, default: false },

@@ -102,7 +102,7 @@ export function publicUser(u: any) {
   const isAdmin = u.role === 'admin' || (!!u.email && env.adminEmails.includes(String(u.email).toLowerCase()));
   return {
     id: String(u._id), name: u.name || null, email: u.email || null, phone: u.phone || null,
-    bkash: u.bkash || null, overseas: !!u.overseas, verified: !!u.verified, prizeEligible: !!u.prizeEligible,
+    bkash: u.bkash || null, district: u.district || null, overseas: !!u.overseas, verified: !!u.verified, prizeEligible: !!u.prizeEligible,
     verificationCode: u.verificationCode || null, role: isAdmin ? 'admin' : 'user',
   };
 }
