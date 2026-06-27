@@ -1,8 +1,9 @@
+import { useEffect, useRef, useState } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth, useTheme } from './context/Providers';
+import { useAuth, useTheme, type User } from './context/Providers';
 import { LogoMark, Wordmark } from './components/ui';
-import SignIn from './pages/SignIn';
-import Onboard from './pages/Onboard';
+import LoginModal from './pages/SignIn';
+import OnboardModal from './pages/Onboard';
 import Overview from './pages/Overview';
 import Bracket from './pages/Bracket';
 import MyEntry from './pages/MyEntry';
@@ -44,13 +45,13 @@ function UserChip() {
       <span style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--green)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, flex: '0 0 auto' }}>{initial}</span>
       <div style={{ minWidth: 0 }}>
         <div style={{ fontWeight: 700, fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.name || 'You'}</div>
-        <div className="faint" style={{ fontSize: 12 }}>Bangladesh · {user.verified ? 'Verified' : 'Unverified'}</div>
+        <div className="faint" style={{ fontSize: 12 }}>{user.overseas ? 'Overseas' : 'Bangladesh'} · {user.verified ? 'Verified' : 'Unverified'}</div>
       </div>
     </div>
   );
 }
 
-function Sidebar() {
+function Sidebar({ onSignIn }: { onSignIn: () => void }) {
   const { user, logout } = useAuth();
   const loc = useLocation();
   const nav = useNavigate();
@@ -77,8 +78,15 @@ function Sidebar() {
         <nav style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '0 12px' }}>{items.filter((i) => i.admin).map(Item)}</nav>
       </>)}
       <div style={{ marginTop: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 12, borderTop: '1px solid var(--line)' }}>
-        <ThemeToggle /><UserChip />
-        {user && <button className="btn" onClick={() => { logout(); nav('/'); }} style={{ fontSize: 13, padding: '7px 12px' }}>Sign out</button>}
+        <ThemeToggle />
+        {user ? (
+          <>
+            <UserChip />
+            <button className="btn" onClick={() => { logout(); onSignIn(); }} style={{ fontSize: 13, padding: '7px 12px' }}>Sign out</button>
+          </>
+        ) : (
+          <button className="btn btn-primary" onClick={onSignIn} style={{ fontSize: 13, padding: '7px 12px' }}>Sign in</button>
+        )}
       </div>
     </aside>
   );
@@ -103,34 +111,60 @@ function BottomNav() {
   );
 }
 
-function MobileHeader() {
+function MobileHeader({ onSignIn }: { onSignIn: () => void }) {
+  const { user } = useAuth();
   return (
     <header className="bb-mobileheader" style={{ alignItems: 'center', gap: 10, padding: '12px 16px', borderBottom: '1px solid var(--line)', background: 'var(--surface)', position: 'sticky', top: 0, zIndex: 40 }}>
       <LogoMark size={30} /><Wordmark />
-      <div style={{ marginLeft: 'auto' }}><ThemeToggle /></div>
+      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+        {!user && (
+          <button className="btn btn-primary" onClick={onSignIn} style={{ fontSize: 13, padding: '6px 12px' }}>Sign in</button>
+        )}
+        <ThemeToggle />
+      </div>
     </header>
   );
 }
 
+function profileIncomplete(user: User | null): boolean {
+  if (!user) return false;
+  return !user.phone || (!user.overseas && !user.district);
+}
+
 export default function App() {
   const { loading, user } = useAuth();
-  const loc = useLocation();
+  const nav = useNavigate();
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [onboardOpen, setOnboardOpen] = useState(false);
+  // undefined = not yet initialized; null = explicitly logged out / not logged in
+  const prevUserRef = useRef<User | null | undefined>(undefined);
+
+  useEffect(() => {
+    if (loading) return;
+    const prev = prevUserRef.current;
+    prevUserRef.current = user;
+
+    if (!user) {
+      // Auto-open login on initial load or after logout
+      if (prev === undefined || prev !== null) setLoginOpen(true);
+    } else if (profileIncomplete(user)) {
+      setLoginOpen(false);
+      setOnboardOpen(true);
+    } else {
+      setLoginOpen(false);
+      setOnboardOpen(false);
+    }
+  }, [user, loading]);
+
   if (loading) return <div style={{ padding: 40 }} className="muted">Loading…</div>;
-  const bare = loc.pathname === '/' || loc.pathname === '/onboard';
-  if (bare) {
-    return (
-      <Routes>
-        <Route path="/" element={<SignIn />} />
-        <Route path="/onboard" element={<Onboard />} />
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    );
-  }
+
+  const openLogin = () => setLoginOpen(true);
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <Sidebar />
+      <Sidebar onSignIn={openLogin} />
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-        <MobileHeader />
+        <MobileHeader onSignIn={openLogin} />
         <main style={{ flex: 1, padding: 'clamp(16px,3vw,32px)', paddingBottom: 90, maxWidth: 1080, width: '100%', margin: '0 auto' }}>
           <Routes>
             <Route path="/overview" element={<Overview />} />
@@ -140,11 +174,24 @@ export default function App() {
             <Route path="/verify" element={<Verify />} />
             <Route path="/howtoplay" element={<HowToPlay />} />
             <Route path="/admin" element={<Admin />} />
-            <Route path="*" element={<Navigate to={user ? '/overview' : '/'} />} />
+            <Route path="*" element={<Navigate to="/overview" />} />
           </Routes>
         </main>
         <BottomNav />
       </div>
+
+      {loginOpen && (
+        <LoginModal
+          onClose={() => setLoginOpen(false)}
+          onPhoneSignup={() => { setLoginOpen(false); setOnboardOpen(true); }}
+        />
+      )}
+      {onboardOpen && (
+        <OnboardModal
+          onClose={() => setOnboardOpen(false)}
+          onDone={() => nav('/bracket')}
+        />
+      )}
     </div>
   );
 }

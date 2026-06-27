@@ -41,6 +41,63 @@ export function toast(message: string, kind: ToastKind = 'success', ms = 3500) {
   setTimeout(close, ms);
 }
 
+// ---- Legal modal (Terms / Privacy) ----
+const LEGAL_CONTENT = {
+  terms: {
+    title: 'Terms of Play',
+    html: `
+      <p><b>Free to play.</b> BanglaBracket is a free prediction game for the 2026 World Cup. No entry fee, no purchase, no card required.</p>
+      <p><b>Eligibility.</b> Prizes are for Bangladeshi nationals (by nationality, not residence) aged 18+. You can play and win from anywhere in the world. Winners must verify their identity before prizes are paid.</p>
+      <p><b>Winners on the Wall &amp; social media.</b> If you appear on the leaderboard or win, your <b>display name and profile photo may be shown publicly</b> on the Winners Wall and shared by BanglaBracket on social media to announce results and winners. By playing, you consent to this use of your name and image for these purposes.</p>
+      <p><b>Fair play.</b> One account per person. Multiple, fake, or automated accounts may be disqualified. The bracket locks at the first Round-of-32 kick-off; picks are final after lock.</p>
+      <p><b>Prizes.</b> The grand prize is ৳1,00,000 for the top of the points leaderboard. Additional cash rewards are paid for exact knockout scorelines. Prize details may be updated before lock; the current rules in-app govern.</p>
+      <p><b>Not affiliated</b> with FIFA or any official body. Play responsibly. 18+.</p>`,
+  },
+  privacy: {
+    title: 'Privacy Policy',
+    html: `
+      <p><b>What we collect.</b> Your name, email and/or phone, the bracket picks you make, and — only if you choose to verify — your nationality status. We never store images of your ID.</p>
+      <p><b>How we use it.</b> Only to run the game: sign you in, score your bracket, rank the leaderboard, and contact winners. We do not sell your data.</p>
+      <p><b>Public display.</b> Your display name and profile photo may appear publicly on the leaderboard and Winners Wall, and may be shared by BanglaBracket on social media if you rank highly or win (see Terms).</p>
+      <p><b>Security.</b> Sensitive data is encrypted. Sessions use secure cookies.</p>
+      <p><b>Your choices.</b> You can request deletion of your account and data any time via <a href="mailto:admin@banglabracket.com" style="color:var(--green)">admin@banglabracket.com</a>.</p>`,
+  },
+} as const;
+
+export type LegalKey = keyof typeof LEGAL_CONTENT;
+
+export function showLegal(key: LegalKey) {
+  const content = LEGAL_CONTENT[key];
+  const overlay = document.createElement('div');
+  overlay.style.cssText =
+    'position:fixed;inset:0;z-index:10001;background:rgba(8,16,11,.55);backdrop-filter:blur(4px);' +
+    'display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity .2s';
+  const box = document.createElement('div');
+  box.style.cssText =
+    'width:100%;max-width:640px;max-height:84vh;overflow:auto;background:var(--surface);color:var(--ink);' +
+    'border:1px solid var(--line);border-radius:20px;box-shadow:0 40px 90px -30px rgba(0,0,0,.6);' +
+    "font-family:'Hanken Grotesk',system-ui,sans-serif;transform:scale(.97);transition:transform .2s";
+  box.innerHTML =
+    `<div style="position:sticky;top:0;background:var(--surface);display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--line)">` +
+    `<div style="font-family:'Baloo Da 2';font-weight:800;font-size:22px;color:var(--ink)">${content.title}</div>` +
+    `<button id="bb-legal-x" aria-label="Close" style="width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--surface2);color:var(--ink);cursor:pointer;font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center">×</button>` +
+    `</div>` +
+    `<div style="padding:24px;color:var(--muted);font-size:14.5px;line-height:1.7">${content.html}</div>`;
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => { overlay.style.opacity = '1'; box.style.transform = 'scale(1)'; });
+  const close = () => {
+    overlay.style.opacity = '0';
+    box.style.transform = 'scale(.97)';
+    setTimeout(() => overlay.remove(), 200);
+  };
+  box.querySelector('#bb-legal-x')!.addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  document.addEventListener('keydown', function onKey(e) {
+    if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onKey); }
+  });
+}
+
 // Promise-based confirm modal (replaces window.confirm).
 export function confirmDialog(opts: { title?: string; message: string; confirmText?: string; cancelText?: string; danger?: boolean }): Promise<boolean> {
   return new Promise((resolve) => {
