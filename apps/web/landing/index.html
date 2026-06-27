@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>BanglaBracket — Predict the World Cup, Win ৳1,00,000</title>
+<meta name="description" content="Predict the 2026 World Cup bracket. Call the group games, send teams through every knockout, and climb the live leaderboard. Free to play. Win ৳1,00,000." />
+<meta property="og:title" content="BanglaBracket — Predict the World Cup. Win ৳1,00,000." />
+<meta property="og:description" content="Free to play. Predict the 2026 World Cup and top the table." />
+<meta property="og:type" content="website" />
+<link rel="icon" type="image/png" href="/favicon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Baloo+Da+2:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root{--bg:#f3f6ee;--surface:#fff;--surface2:#f7faf2;--ink:#15231b;--muted:#56664f;--faint:#8a9a84;--line:#e0e8d6;--gold:#ffcb45;--goldText:#9a7400;--green:#0b7a4b;--greenSoft:#e8f3ec}
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:'Hanken Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5}
+  h1,h2,h3,.display{font-family:'Baloo Da 2',system-ui,sans-serif;margin:0}
+  a{color:inherit}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+  .btn{display:inline-flex;align-items:center;gap:8px;border-radius:12px;padding:12px 20px;font-weight:700;text-decoration:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;font-size:15px}
+  .btn-primary{background:var(--green);color:#fff;border-color:var(--green)}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:5px 12px;border-radius:999px;background:var(--gold);color:#1a1405}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:16px}
+  .muted{color:var(--muted)} .gold{color:var(--gold)}
+  /* header */
+  header{position:sticky;top:0;z-index:20;background:rgba(243,246,238,.85);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  header .wrap{display:flex;align-items:center;gap:16px;height:64px}
+  .logo{display:flex;align-items:center;gap:10px;font-family:'Baloo Da 2';font-weight:800;font-size:19px}
+  .logo span.mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(150deg,#ffd45f,#e8ab1f);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 15px rgba(232,171,31,.3)}
+  nav.top{margin-left:auto;display:flex;gap:22px;align-items:center}
+  nav.top a{font-weight:600;color:var(--muted);text-decoration:none;font-size:15px}
+  nav.top a:hover{color:var(--ink)}
+  /* hero */
+  .hero{padding:56px 0 40px}
+  .hero-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center}
+  .hero h1{font-size:clamp(34px,5vw,52px);line-height:1.05;letter-spacing:-.02em}
+  .hero p.sub{font-size:18px;color:var(--muted);margin:18px 0 26px;max-width:30em}
+  .cta-row{display:flex;gap:12px;flex-wrap:wrap}
+  .trust{margin-top:18px;font-size:13px;color:var(--faint)}
+  /* countdown card */
+  .count{background:#0a140e;border-radius:20px;padding:24px;color:#f3f1e6;box-shadow:0 20px 50px rgba(10,20,14,.25)}
+  .count .lbl{font-size:11px;letter-spacing:.1em;color:#7d9384;font-weight:700;text-transform:uppercase}
+  .count .grid{display:flex;gap:10px;margin-top:14px}
+  .count .u{flex:1;text-align:center;background:#122017;border-radius:12px;padding:14px 6px}
+  .count .u b{display:block;font-family:'Baloo Da 2';font-size:30px;font-variant-numeric:tabular-nums}
+  .count .u.gold b{color:var(--gold)}
+  .count .u small{font-size:10px;color:#7d9384;text-transform:uppercase;letter-spacing:.08em}
+  .mini{margin-top:16px;background:#122017;border-radius:12px;padding:12px 14px;font-size:13px;color:#a3b6a6}
+  /* stats */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:8px 0 0}
+  .stat{padding:20px;text-align:center}
+  .stat b{display:block;font-family:'Baloo Da 2';font-size:28px}
+  .stat small{color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:.04em}
+  /* steps */
+  section{padding:52px 0}
+  .eyebrow{text-align:center;color:var(--green);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:13px}
+  .h2{text-align:center;font-size:clamp(26px,4vw,36px);margin:8px 0 6px}
+  .lead{text-align:center;color:var(--muted);max-width:36em;margin:0 auto 32px}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .step{padding:22px}
+  .step .ic{width:42px;height:42px;border-radius:12px;background:var(--greenSoft);color:var(--green);display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+  .step h3{font-size:18px;margin-bottom:6px}
+  .step p{color:var(--muted);font-size:14px;margin:0}
+  /* scoring */
+  .score-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .score-card{padding:20px}
+  .score-card h3{display:flex;align-items:center;gap:8px;font-size:15px;margin-bottom:12px}
+  .dot{width:9px;height:9px;border-radius:50%}
+  .row{display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid var(--line);font-size:14px}
+  .row b{font-variant-numeric:tabular-nums}
+  /* footer */
+  footer{border-top:1px solid var(--line);padding:30px 0;margin-top:20px}
+  footer .wrap{display:flex;flex-wrap:wrap;gap:14px;align-items:center;color:var(--faint);font-size:14px}
+  footer a{color:var(--muted);text-decoration:none;margin-right:16px}
+  /* responsive */
+  @media(max-width:860px){
+    nav.top{display:none}
+    .hero-grid{grid-template-columns:1fr;gap:28px}
+    .hero{padding:36px 0 20px}
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .steps{grid-template-columns:1fr}
+    .score-grid{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <a class="logo" href="/"><span class="mark"><svg width="22" height="22" viewBox="0 0 48 48" fill="none" stroke="#1a1405" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6H14M4 18H14M4 30H14M4 42H14M14 6V18M14 30V42M14 12H24M14 36H24M24 12V36M24 24H34"/><path d="M39 19 44 24 39 29 34 24Z" fill="#1a1405" stroke="none"/></svg></span>Bangla<span style="color:var(--gold)">Bracket</span></a>
+  <nav class="top">
+    <a href="#how">How to play</a><a href="#scoring">Scoring</a><a href="/wc2026/app/leaderboard">Leaderboard</a><a href="#faq">FAQ</a>
+    <a class="btn btn-primary" href="/wc2026/app/" style="padding:9px 16px">Play now</a>
+  </nav>
+</div></header>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="hero-grid">
+      <div>
+        <span class="pill">World Cup 2026 · Free to play</span>
+        <h1 style="margin-top:16px">Predict the World Cup.<br/>Top the table.<br/><span class="gold">Win ৳1,00,000.</span></h1>
+        <p class="sub">BanglaBracket brings all 104 matches to your hands — call the final group games, send teams through every knockout, and climb a live leaderboard. No fees, no catch.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="/wc2026/app/">Play now →</a>
+          <a class="btn" href="#scoring">How scoring works</a>
+        </div>
+        <div class="trust">🔒 We verify by nationality — Bangladeshis can win from anywhere.</div>
+      </div>
+      <div class="count">
+        <div class="lbl">Bracket locks in</div>
+        <div class="grid" id="cd">
+          <div class="u"><b data-d>–</b><small>Days</small></div>
+          <div class="u"><b data-h>–</b><small>Hrs</small></div>
+          <div class="u"><b data-m>–</b><small>Min</small></div>
+          <div class="u gold"><b data-s>–</b><small>Sec</small></div>
+        </div>
+        <div class="mini">⚡ Lock is at the first Round-of-32 kickoff. Early Round-of-32 picks earn tiebreaker points.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="card stat"><b>104</b><small>Matches</small></div>
+    <div class="card stat"><b>48</b><small>Teams</small></div>
+    <div class="card stat"><b class="gold">৳1,00,000</b><small>Prize pool</small></div>
+    <div class="card stat"><b id="players">—</b><small>Players</small></div>
+  </div>
+</div>
+
+<section id="how">
+  <div class="wrap">
+    <div class="eyebrow">How it works</div>
+    <h2 class="h2">Three steps to the top of the table</h2>
+    <p class="lead">Sign in, predict the bracket, and watch your points climb as the real tournament plays out.</p>
+    <div class="steps">
+      <div class="card step"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zM4 22a8 8 0 0 1 16 0"/></svg></div><h3>1 · Sign in free</h3><p>Continue with Google, Facebook, or an email code. No fees, no card — ever.</p></div>
+      <div class="card step"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h6M4 18h6M10 6v12M10 12h6M16 12h4"/></svg></div><h3>2 · Predict the bracket</h3><p>Call the final group games, then send teams through every knockout — Round of 32 all the way to the final.</p></div>
+      <div class="card step"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 20V10M12 20V4M18 20v-7"/></svg></div><h3>3 · Climb the leaderboard</h3><p>Earn points as real matches finish. Top the live table by the final to win your share of ৳1,00,000.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="scoring" style="background:var(--surface)">
+  <div class="wrap">
+    <div class="eyebrow">Scoring</div>
+    <h2 class="h2">Points go up as the rounds get bigger</h2>
+    <p class="lead">Main points come from picking correct knockout winners. Tiebreakers settle close races.</p>
+    <div class="score-grid">
+      <div class="card score-card">
+        <h3><span class="dot" style="background:var(--green)"></span> Main points · correct knockout winner</h3>
+        <div class="row"><span>Round of 16</span><b>100</b></div>
+        <div class="row"><span>Quarter-finals</span><b>200</b></div>
+        <div class="row"><span>Semi-finals</span><b>300</b></div>
+        <div class="row"><span>Third place</span><b>400</b></div>
+        <div class="row"><span>Final</span><b>500</b></div>
+      </div>
+      <div class="card score-card">
+        <h3><span class="dot" style="background:var(--gold)"></span> Tiebreakers &amp; bonus</h3>
+        <div class="row"><span>Manner of advance (FT / ET / PEN)</span><b>bonus</b></div>
+        <div class="row"><span>Exact final score</span><b>bonus</b></div>
+        <div class="row"><span>Early Round-of-32 picks</span><b>+ per slot</b></div>
+        <div class="row"><span>Exact knockout score</span><b>💵 100৳ cash</b></div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:28px"><a class="btn btn-primary" href="/wc2026/app/">Start predicting →</a></div>
+  </div>
+</section>
+
+<footer><div class="wrap">
+  <span>© 2026 BanglaBracket</span>
+  <span style="margin-left:auto">
+    <a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a><a href="/data-deletion.html">Data deletion</a><a href="/wc2026/app/">Play</a>
+  </span>
+</div></footer>
+
+<script>
+  // Live countdown to the bracket lock (fetches real lock time, falls back to known kickoff).
+  var LOCK = new Date('2026-06-28T19:00:00Z');
+  fetch('https://api.banglabracket.com/api/tournament').then(function(r){return r.json()}).then(function(t){if(t&&t.lockAt)LOCK=new Date(t.lockAt)}).catch(function(){});
+  fetch('https://api.banglabracket.com/api/stats').then(function(r){return r.json()}).then(function(s){if(s&&s.totalUsers!=null){document.getElementById('players').textContent=Number(s.totalUsers).toLocaleString()}}).catch(function(){});
+  function tick(){
+    var d=Math.max(0,LOCK-new Date()),D=Math.floor(d/864e5),H=Math.floor(d/36e5)%24,M=Math.floor(d/6e4)%60,S=Math.floor(d/1e3)%60,p=function(n){return String(n).padStart(2,'0')};
+    var q=function(s){return document.querySelector(s)};
+    if(q('[data-d]')){q('[data-d]').textContent=D;q('[data-h]').textContent=p(H);q('[data-m]').textContent=p(M);q('[data-s]').textContent=p(S);}
+  }
+  tick();setInterval(tick,1000);
+</script>
+</body>
+</html>

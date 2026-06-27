@@ -1,6 +1,7 @@
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import { flagUrl } from '../lib/api';
+import { useTheme } from '../context/Providers';
 
 export function LogoMark({ size = 36 }: { size?: number }) {
   return (
@@ -21,6 +22,16 @@ export function Wordmark() {
       Bangla<span style={{ color: 'var(--gold)' }}>Bracket</span>
     </span>
   );
+}
+
+// Real PNG wordmark (theme-aware). Falls back to the SVG mark + text if the
+// image is missing, so the app never shows a broken logo.
+export function BrandLogo({ height = 30 }: { height?: number }) {
+  const { dark } = useTheme();
+  const [failed, setFailed] = useState(false);
+  const src = (import.meta.env.BASE_URL || '/') + (dark ? 'wordmark-dark.png' : 'wordmark-light.png');
+  if (failed) return <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}><LogoMark size={height + 4} /><Wordmark /></span>;
+  return <img src={src} alt="BanglaBracket" height={height} style={{ height, width: 'auto', display: 'block' }} onError={() => setFailed(true)} />;
 }
 
 export function Countdown({ to, compact }: { to: string; compact?: boolean }) {

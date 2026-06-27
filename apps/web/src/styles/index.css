@@ -52,3 +52,18 @@ h1, h2, h3, .display { font-family: 'Baloo Da 2', system-ui, sans-serif; }
   .bb-bottomnav { display: flex !important; }
   .bb-mobileheader { display: flex !important; }
 }
+
+/* ===== mobile-first polish (≤900px) ===== */
+@media (max-width: 900px) {
+  .bb-bottomnav { padding-bottom: calc(6px + env(safe-area-inset-bottom)); box-shadow: 0 -2px 16px rgba(0,0,0,.06); }
+  .bb-bottomnav button { min-height: 48px; }            /* touch targets */
+  main { padding: 14px !important; padding-bottom: 92px !important; }
+  .card { border-radius: 14px; }
+  /* stack any inline two-column rows */
+  h1 { font-size: 24px !important; }
+}
+@media (max-width: 560px) {
+  /* full-bleed feel: tighter gutters, larger tap rows */
+  main { padding: 12px !important; }
+  .pill { font-size: 10px; padding: 3px 8px; }
+}

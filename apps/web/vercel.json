@@ -1,6 +1,5 @@
 {
   "redirects": [
-    { "source": "/", "destination": "/wc2026/app/", "permanent": false },
     { "source": "/wc2026/app", "destination": "/wc2026/app/", "permanent": false }
   ],
   "rewrites": [

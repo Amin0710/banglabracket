@@ -36,6 +36,25 @@ scoring engine. Both the API and the web app import it, so predictions and scori
   officially confirmed).
 - One free full **re-pick** is allowed; using it zeroes your bonus points.
 
+## Exact-score cash side-game (parallel to points, in `packages/shared/src/cash.ts`)
+
+A second, optional competition that pays **real Taka**, independent of the points leaderboard —
+so a player out of the points race can still win money and stay engaged.
+
+- On each knockout match (R16 → Final), a player may optionally predict the **exact scoreline**.
+- A correct exact score pays **100৳**. Each match has its own **1000৳ pool → 10 winner slots**.
+- Slots go to the **earliest submitters** of that match's score (first-come-first-served). The
+  submission timestamp is set **server-side** when the pick is first made or changed, so it can't
+  be forged by the client.
+- Each player is **capped at 500৳** total across the tournament. Maximum total exposure is
+  therefore fixed at 1000৳ × 16 knockout matches.
+- Awards are computed deterministically across all entries and are safe to recompute whenever a
+  result is confirmed. Payouts happen after verification; the admin panel shows per-player totals
+  with phone/Bkash for paying out. All values are config-driven (`CASH` in the shared package).
+
+The app is served under **`/wc2026/app`** (configurable via `WEB_APP_PATH` on the API and the Vite
+`base`), leaving the domain root free for marketing and future tournaments (e.g. `/euro2028/app`).
+
 ## Local development
 
 Prereqs: Node 20+, a MongoDB connection string (Atlas free tier is fine).

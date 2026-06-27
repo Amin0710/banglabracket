@@ -13,7 +13,25 @@ import { apiRouter } from './routes/admin.js';
 const app = express();
 app.set('trust proxy', 1);
 app.use(helmet());
-app.use(cors({ origin: env.webUrl, credentials: true }));
+// CORS: allow the apex + any banglabracket.com subdomain (www, app, etc.) and
+// localhost for dev. Robust to www/apex/trailing-slash differences.
+function isAllowedOrigin(origin?: string): boolean {
+  if (!origin) return true; // non-browser / same-origin
+  try {
+    const host = new URL(origin).hostname;
+    if (host === 'localhost' || host === '127.0.0.1') return true;
+    if (host === 'banglabracket.com' || host.endsWith('.banglabracket.com')) return true;
+    // also honor an explicitly configured WEB_URL host
+    if (env.webUrl) { const wh = new URL(env.webUrl).hostname; if (host === wh) return true; }
+  } catch { /* ignore */ }
+  return false;
+}
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, cb) => cb(null, isAllowedOrigin(origin)),
+  credentials: true,
+};
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // answer all preflight requests
 app.use(express.json({ limit: '256kb' }));
 app.use(cookieParser());
 app.use(sessionMiddleware);

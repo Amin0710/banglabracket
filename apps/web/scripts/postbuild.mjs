@@ -15,3 +15,15 @@ for (const f of files) {
     console.log('copied', f, '-> dist/' + f);
   }
 }
+
+// Landing page at the bare root (banglabracket.com).
+if (existsSync('landing/index.html')) {
+  copyFileSync('landing/index.html', 'dist/index.html');
+  console.log('copied landing -> dist/index.html');
+}
+
+// Make favicon reachable at the root too (the landing references /favicon.png).
+if (existsSync('dist/wc2026/app/favicon.png')) {
+  copyFileSync('dist/wc2026/app/favicon.png', 'dist/favicon.png');
+  console.log('copied favicon -> dist/favicon.png');
+}
