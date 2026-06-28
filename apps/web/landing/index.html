@@ -1,564 +1,3863 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>BanglaBracket — Predict the World Cup, Win ৳1,00,000</title>
-<meta name="description" content="Predict the 2026 World Cup bracket. Call the group games, send teams through every knockout, climb a live leaderboard. Free to play. Win ৳1,00,000." />
-<meta property="og:title" content="BanglaBracket — Predict the World Cup. Win ৳1,00,000." />
-<meta property="og:description" content="Free to play. Predict the 2026 World Cup and top the table." />
-<link rel="icon" type="image/png" href="/favicon.png" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Baloo+Da+2:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-<style>
-  :root{
-    --bg:#f3f6ee;--bg2:#e9efe1;--surface:#fff;--surface2:#f4f8ee;--surface3:#e8efdf;
-    --line:#e0e8d6;--lineStrong:#ccd9bf;--ink:#15231b;--muted:#56664f;--faint:#86977e;
-    --gold:#ffcb45;--goldText:#9a7400;--goldSoft:rgba(255,203,69,.24);--goldLine:rgba(201,150,30,.5);--teal:#0e8fb8;
-    --green:#0b7a4b;--greenSoft:rgba(11,122,75,.12);--greenLine:rgba(11,122,75,.34);--tealSoft:rgba(14,143,184,.12);--tealLine:rgba(14,143,184,.32);
-    --primary:#0b7a4b;--onPrimary:#fff;--primarySoft:rgba(11,122,75,.10);--primaryLine:rgba(11,122,75,.22);--primaryGlow:rgba(11,122,75,.28);
-    --navBg:rgba(244,247,238,.82);--cardGrad:linear-gradient(180deg,#fff,#f7faf2);
-    --glowGold:rgba(255,203,69,.16);--glowGreen:rgba(11,122,75,.10);
-  }
-  [data-theme="dark"]{
-    --bg:#0a140e;--bg2:#0c1711;--surface:#122017;--surface2:#16271b;--surface3:#1d3324;
-    --line:#264231;--lineStrong:#37633f;--ink:#f3f1e6;--muted:#a3b6a6;--faint:#86977e;
-    --gold:#ffcb45;--goldText:#ffd76a;--goldSoft:rgba(255,203,69,.18);--goldLine:rgba(255,203,69,.45);--teal:#3ad0ff;
-    --green:#3fc77f;--greenSoft:rgba(63,199,127,.14);--greenLine:rgba(63,199,127,.4);--tealSoft:rgba(58,208,255,.12);--tealLine:rgba(58,208,255,.4);
-    --primary:#ffcb45;--onPrimary:#231a05;--primarySoft:rgba(255,203,69,.12);--primaryLine:rgba(255,203,69,.3);--primaryGlow:rgba(255,203,69,.22);
-    --navBg:rgba(8,16,11,.82);--cardGrad:linear-gradient(180deg,#122017,#0e1b13);
-    --glowGold:rgba(255,203,69,.14);--glowGreen:rgba(63,199,127,.10);
-  }
-  *{box-sizing:border-box}
-  html{scroll-behavior:smooth}html,body{margin:0}
-  body{background:var(--bg);color:var(--ink);font-family:'Hanken Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased;transition:background .2s,color .2s}
-  h1,h2,h3,.dsp{font-family:'Baloo Da 2',sans-serif;margin:0}
-  a{color:inherit}
-  .wrap{max-width:1200px;margin:0 auto;padding:0 32px}
-  .navlink{padding:9px 13px;border-radius:9px;text-decoration:none;font-size:15px;font-weight:600;color:var(--muted)}
-  .navlink:hover{color:var(--ink);background:var(--surface2)}
-  .btn-primary{display:inline-flex;align-items:center;gap:9px;border:none;border-radius:14px;background:var(--primary);color:var(--onPrimary);font-family:inherit;font-weight:800;cursor:pointer;text-decoration:none;box-shadow:0 10px 26px var(--primaryGlow)}
-  .btn-ghost{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--lineStrong);border-radius:14px;background:var(--surface);color:var(--ink);font-weight:700;text-decoration:none}
-  .btn-secondary{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);border-radius:14px;background:var(--surface3);color:var(--ink);font-family:inherit;font-weight:700;text-decoration:none;cursor:pointer;transition:background .15s,border-color .15s}
-  .btn-secondary:hover{background:var(--surface2);border-color:var(--lineStrong)}
-  .seg{border:none;background:transparent;cursor:pointer;width:30px;height:26px;border-radius:999px;display:grid;place-items:center;color:var(--muted)}
-  .seg.on{background:var(--primary);color:var(--onPrimary)}
-  @keyframes bbBlink{0%,100%{opacity:1}50%{opacity:.25}}
-  @keyframes bbGlow{0%,100%{opacity:.5}50%{opacity:1}}
-  @keyframes bbFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
-  .eyebrow{font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--primary)}
-  .h2{font-family:'Baloo Da 2';font-weight:800;font-size:clamp(32px,5vw,50px);line-height:.98;letter-spacing:-.01em;color:var(--ink)}
-  .card{border:1px solid var(--line);border-radius:20px;background:var(--cardGrad);box-shadow:0 1px 2px rgba(20,35,27,.04),0 18px 40px -26px rgba(20,35,27,.16)}
-  /* FAQ accordion */
-  .faq-list{display:flex;flex-direction:column;gap:12px;max-width:820px;margin:0 auto}
-  .faq-item{border:1px solid var(--line);border-radius:16px;background:var(--surface);overflow:hidden;box-shadow:0 1px 2px rgba(20,35,27,.03);transition:border-color .15s,box-shadow .15s}
-  .faq-item.open{border-color:var(--primaryLine);box-shadow:0 14px 34px -22px rgba(20,35,27,.22)}
-  .faq-q{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;padding:19px 22px;border:none;background:transparent;cursor:pointer;text-align:left;font-family:inherit}
-  .faq-q .q{font-size:16.5px;font-weight:700;color:var(--ink)}
-  .faq-ic{width:30px;height:30px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;border-radius:9px;background:var(--surface2);color:var(--muted);transition:transform .2s,background .15s,color .15s}
-  .faq-item.open .faq-ic{background:var(--primarySoft);color:var(--primary);transform:rotate(180deg)}
-  .faq-a{display:none;padding:0 22px 20px;font-size:15px;line-height:1.65;color:var(--muted);font-weight:500;max-width:62ch}
-  .faq-item.open .faq-a{display:block}
-  /* Winners carousel */
-  .win-track{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;-ms-overflow-style:none;scrollbar-width:none;padding:4px 2px}
-  .win-track::-webkit-scrollbar{display:none}
-  .win-card{scroll-snap-align:start;flex:0 0 auto;width:calc((100% - 32px)/3)}
-  .win-controls{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:24px}
-  .win-nav{width:44px;height:44px;flex:0 0 auto;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--surface);border:1px solid var(--line);color:var(--ink);cursor:pointer;box-shadow:0 4px 14px rgba(20,35,27,.09);transition:background .15s,border-color .15s}
-  .win-nav:hover{background:var(--surface2);border-color:var(--lineStrong)}
-  .win-live{display:inline-flex;align-items:center;gap:8px;padding:8px 15px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-size:12px;font-weight:700;color:var(--muted)}
-  .win-live .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px var(--greenSoft);animation:bbGlow 1.8s infinite}
-  /* Mobile header menu */
-  .menu-btn{display:none;width:42px;height:42px;border-radius:11px;border:1px solid var(--line);background:var(--surface2);color:var(--ink);cursor:pointer;align-items:center;justify-content:center}
-  .mobile-menu{display:none;border-top:1px solid var(--line);background:var(--surface)}
-  .mobile-menu .inner{padding:12px 18px 16px;display:flex;flex-direction:column;gap:2px}
-  .mobile-menu a.navlink{display:block;padding:13px 12px;font-size:16px;border-radius:10px}
-  .mobile-menu .btn-primary{display:flex;justify-content:center;width:100%;height:50px;margin-top:8px;font-size:16px}
-  /* Sticky bottom CTA (mobile) */
-  .sticky-bar{display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:0;z-index:60;width:100%;max-width:460px;align-items:center;gap:12px;padding:11px 16px calc(11px + env(safe-area-inset-bottom));background:var(--navBg);backdrop-filter:saturate(1.4) blur(14px);border-top:1px solid var(--line)}
-  .sticky-bar .sb-title{font-family:'Baloo Da 2';font-weight:800;font-size:17px;line-height:1;color:var(--ink)}
-  .sticky-bar .sb-sub{font-size:11.5px;color:var(--muted);margin-top:3px;font-weight:600}
-  .sticky-bar .btn-primary{height:48px;padding:0 20px;font-size:15px;flex:0 0 auto}
-  @media(max-width:920px){
-    .wrap{padding:0 18px}
-    .nav-links{display:none}
-    .nav-cta{display:none !important}
-    .menu-btn{display:inline-flex}
-    .mobile-menu.open{display:block}
-    .sec{padding:60px 18px 0 !important}
-    .hero-grid{grid-template-columns:1fr !important;gap:36px !important;padding:40px 18px 48px !important}
-    .h1{font-size:clamp(40px,11vw,60px) !important}
-    .hero-cta{flex-direction:column !important;align-items:stretch !important}
-    .hero-cta>a{width:100%;justify-content:center}
-    .stats-grid{grid-template-columns:repeat(2,1fr) !important}
-    .stat-cell{padding:15px 16px !important}
-    .stat-num{font-size:30px !important}
-    .steps-grid,.score-grid,.ranks-grid,.faq-grid,.cta-grid{grid-template-columns:1fr !important}
-    .steps-grid{margin-top:22px !important;gap:12px !important}
-    .how-head{text-align:left !important;margin:0 !important}
-    .score-pill{padding:12px 13px !important}
-    .score-pill .dsp{font-size:25px !important}
-    .cta-grid{gap:26px !important;padding:30px 22px !important}
-    .cta-btn{width:100%;justify-content:center}
-    .lb-btn-desktop{display:none !important}
-    .lb-btn-mobile{display:flex !important}
-    .win-card{width:88% !important}
-    .float-chip{position:static !important;width:auto !important;margin-top:16px;left:auto !important;bottom:auto !important}
-    .score-sticky{position:static !important}
-    .foot-grid{grid-template-columns:1fr 1fr !important;gap:24px 22px !important}
-    .foot-brand{grid-column:1 / -1}
-    .sticky-bar{display:flex}
-    body{padding-bottom:calc(78px + env(safe-area-inset-bottom))}
-  }
-</style>
-</head>
-<body>
-<!-- NAV -->
-<div style="position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px solid var(--lineStrong);box-shadow:0 1px 8px rgba(20,35,27,.06)">
-  <div class="wrap" style="height:72px;display:flex;align-items:center;justify-content:space-between;gap:24px">
-    <a href="#top" style="display:flex;align-items:center;gap:11px;text-decoration:none">
-      <span style="width:38px;height:38px;border-radius:11px;flex:0 0 auto;background:linear-gradient(150deg,#ffd45f,#e8ab1f);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(232,171,31,.32)"><svg width="27" height="27" viewBox="0 0 48 48" fill="none" stroke="#1a1405" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6H14M4 18H14M4 30H14M4 42H14M14 6V18M14 30V42M14 12H24M14 36H24M24 12V36M24 24H34"/><path d="M39 19 44 24 39 29 34 24Z" fill="#1a1405" stroke="none"/></svg></span>
-      <span style="font-family:'Baloo Da 2';font-weight:800;font-size:22px;color:var(--ink)">Bangla<span style="color:var(--goldText)">Bracket</span></span>
-    </a>
-    <div class="nav-links" style="display:flex;align-items:center;gap:4px">
-      <a class="navlink" href="#how">How to play</a><a class="navlink" href="#scoring">Scoring</a><a class="navlink" href="#winners">Winners</a><a class="navlink" href="#ranks">Leaderboard</a>
-    </div>
-    <div style="display:flex;align-items:center;gap:12px">
-      <div style="display:flex;align-items:center;gap:2px;padding:3px;background:var(--surface2);border:1px solid var(--line);border-radius:999px">
-        <button class="seg on" id="segLight" onclick="setTheme('light')" aria-label="Light"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4" fill="currentColor" stroke="none"/><path d="M12 2.6v2M12 19.4v2M2.6 12h2M19.4 12h2M5.2 5.2l1.5 1.5M17.3 17.3l1.5 1.5M18.8 5.2l-1.5 1.5M6.7 17.3l-1.5 1.5"/></svg></button>
-        <button class="seg" id="segDark" onclick="setTheme('dark')" aria-label="Dark"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.9A9 9 0 1111.1 3 7 7 0 0021 12.9z"/></svg></button>
-      </div>
-      <a class="btn-primary nav-cta" href="/wc2026/app/" style="height:42px;padding:0 19px;font-size:14.5px">Play free<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a>
-      <button class="menu-btn" id="menuBtn" onclick="toggleMenu()" aria-label="Menu" aria-expanded="false" aria-controls="mobileMenu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
-    </div>
-  </div>
-  <div class="mobile-menu" id="mobileMenu">
-    <div class="inner">
-      <a class="navlink" href="#how" onclick="closeMenu()">How to play</a>
-      <a class="navlink" href="#scoring" onclick="closeMenu()">Scoring</a>
-      <a class="navlink" href="#ranks" onclick="closeMenu()">Leaderboard</a>
-      <a class="navlink" href="#winners" onclick="closeMenu()">Winners</a>
-      <a class="btn-primary" href="/wc2026/app/" onclick="closeMenu()">Play free<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a>
-    </div>
-  </div>
-</div>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>BanglaBracket — Predict the World Cup, Win ৳1,00,000</title>
+		<meta
+			name="description"
+			content="Predict the 2026 World Cup bracket. Call the group games, send teams through every knockout, climb a live leaderboard. Free to play. Win ৳1,00,000."
+		/>
+		<meta
+			property="og:title"
+			content="BanglaBracket — Predict the World Cup. Win ৳1,00,000."
+		/>
+		<meta
+			property="og:description"
+			content="Free to play. Predict the 2026 World Cup and top the table."
+		/>
+		<link rel="icon" type="image/png" href="/favicon.png" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Baloo+Da+2:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap"
+			rel="stylesheet"
+		/>
+		<style>
+			:root {
+				--bg: #f3f6ee;
+				--bg2: #e9efe1;
+				--surface: #fff;
+				--surface2: #f4f8ee;
+				--surface3: #e8efdf;
+				--line: #e0e8d6;
+				--lineStrong: #ccd9bf;
+				--ink: #15231b;
+				--muted: #56664f;
+				--faint: #86977e;
+				--gold: #ffcb45;
+				--goldText: #9a7400;
+				--goldSoft: rgba(255, 203, 69, 0.24);
+				--goldLine: rgba(201, 150, 30, 0.5);
+				--teal: #0e8fb8;
+				--green: #0b7a4b;
+				--greenSoft: rgba(11, 122, 75, 0.12);
+				--greenLine: rgba(11, 122, 75, 0.34);
+				--tealSoft: rgba(14, 143, 184, 0.12);
+				--tealLine: rgba(14, 143, 184, 0.32);
+				--primary: #0b7a4b;
+				--onPrimary: #fff;
+				--primarySoft: rgba(11, 122, 75, 0.1);
+				--primaryLine: rgba(11, 122, 75, 0.22);
+				--primaryGlow: rgba(11, 122, 75, 0.28);
+				--navBg: rgba(244, 247, 238, 0.82);
+				--cardGrad: linear-gradient(180deg, #fff, #f7faf2);
+				--btnSec: #0e8fb8;
+				--glowGold: rgba(255, 203, 69, 0.16);
+				--glowGreen: rgba(11, 122, 75, 0.1);
+			}
+			[data-theme="dark"] {
+				--bg: #0a140e;
+				--bg2: #0c1711;
+				--surface: #122017;
+				--surface2: #16271b;
+				--surface3: #1d3324;
+				--line: #264231;
+				--lineStrong: #37633f;
+				--ink: #f3f1e6;
+				--muted: #a3b6a6;
+				--faint: #86977e;
+				--gold: #ffcb45;
+				--goldText: #ffd76a;
+				--goldSoft: rgba(255, 203, 69, 0.18);
+				--goldLine: rgba(255, 203, 69, 0.45);
+				--teal: #3ad0ff;
+				--green: #3fc77f;
+				--greenSoft: rgba(63, 199, 127, 0.14);
+				--greenLine: rgba(63, 199, 127, 0.4);
+				--tealSoft: rgba(58, 208, 255, 0.12);
+				--tealLine: rgba(58, 208, 255, 0.4);
+				--primary: #ffcb45;
+				--onPrimary: #231a05;
+				--primarySoft: rgba(255, 203, 69, 0.12);
+				--primaryLine: rgba(255, 203, 69, 0.3);
+				--primaryGlow: rgba(255, 203, 69, 0.22);
+				--navBg: rgba(8, 16, 11, 0.82);
+				--cardGrad: linear-gradient(180deg, #122017, #0e1b13);
+				--btnSec: #26402f;
+				--glowGold: rgba(255, 203, 69, 0.14);
+				--glowGreen: rgba(63, 199, 127, 0.1);
+			}
+			* {
+				box-sizing: border-box;
+			}
+			html {
+				scroll-behavior: smooth;
+			}
+			html,
+			body {
+				margin: 0;
+			}
+			body {
+				background: var(--bg);
+				color: var(--ink);
+				font-family: "Hanken Grotesk", system-ui, sans-serif;
+				-webkit-font-smoothing: antialiased;
+				transition:
+					background 0.2s,
+					color 0.2s;
+			}
+			h1,
+			h2,
+			h3,
+			.dsp {
+				font-family: "Baloo Da 2", sans-serif;
+				margin: 0;
+			}
+			a {
+				color: inherit;
+			}
+			.wrap {
+				max-width: 1200px;
+				margin: 0 auto;
+				padding: 0 32px;
+			}
+			.navlink {
+				padding: 9px 13px;
+				border-radius: 9px;
+				text-decoration: none;
+				font-size: 15px;
+				font-weight: 600;
+				color: var(--muted);
+			}
+			.navlink:hover {
+				color: var(--ink);
+				background: var(--surface2);
+			}
+			.btn-primary {
+				display: inline-flex;
+				align-items: center;
+				gap: 9px;
+				border: none;
+				border-radius: 14px;
+				background: var(--primary);
+				color: var(--onPrimary);
+				font-family: inherit;
+				font-weight: 800;
+				cursor: pointer;
+				text-decoration: none;
+				box-shadow: 0 10px 26px var(--primaryGlow);
+			}
+			.btn-ghost {
+				display: inline-flex;
+				align-items: center;
+				gap: 8px;
+				border: 1px solid var(--lineStrong);
+				border-radius: 14px;
+				background: var(--surface);
+				color: var(--ink);
+				font-weight: 700;
+				text-decoration: none;
+			}
+			.btn-secondary {
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				gap: 8px;
+				border: 1px solid var(--line);
+				border-radius: 14px;
+				background: var(--btnSec);
+				color: var(--ink);
+				font-family: inherit;
+				font-weight: 700;
+				text-decoration: none;
+				cursor: pointer;
+				transition:
+					background 0.15s,
+					border-color 0.15s;
+			}
+			.btn-secondary:hover {
+				filter: brightness(0.97);
+				border-color: var(--lineStrong);
+			}
+			.seg {
+				border: none;
+				background: transparent;
+				cursor: pointer;
+				width: 30px;
+				height: 26px;
+				border-radius: 999px;
+				display: grid;
+				place-items: center;
+				color: var(--muted);
+			}
+			.seg.on {
+				background: var(--primary);
+				color: var(--onPrimary);
+			}
+			@keyframes bbBlink {
+				0%,
+				100% {
+					opacity: 1;
+				}
+				50% {
+					opacity: 0.25;
+				}
+			}
+			@keyframes bbGlow {
+				0%,
+				100% {
+					opacity: 0.5;
+				}
+				50% {
+					opacity: 1;
+				}
+			}
+			@keyframes bbFloat {
+				0%,
+				100% {
+					transform: translateY(0);
+				}
+				50% {
+					transform: translateY(-7px);
+				}
+			}
+			.eyebrow {
+				font-size: 12px;
+				font-weight: 800;
+				letter-spacing: 0.14em;
+				text-transform: uppercase;
+				color: var(--primary);
+			}
+			.h2 {
+				font-family: "Baloo Da 2";
+				font-weight: 800;
+				font-size: clamp(32px, 5vw, 50px);
+				line-height: 0.98;
+				letter-spacing: -0.01em;
+				color: var(--ink);
+			}
+			.card {
+				border: 1px solid var(--line);
+				border-radius: 20px;
+				background: var(--cardGrad);
+				box-shadow:
+					0 1px 2px rgba(20, 35, 27, 0.04),
+					0 18px 40px -26px rgba(20, 35, 27, 0.16);
+			}
+			/* FAQ accordion */
+			.faq-list {
+				display: flex;
+				flex-direction: column;
+				gap: 12px;
+				max-width: 820px;
+				margin: 0 auto;
+			}
+			.faq-item {
+				border: 1px solid var(--line);
+				border-radius: 16px;
+				background: var(--surface);
+				overflow: hidden;
+				box-shadow: 0 1px 2px rgba(20, 35, 27, 0.03);
+				transition:
+					border-color 0.15s,
+					box-shadow 0.15s;
+			}
+			.faq-item.open {
+				border-color: var(--primaryLine);
+				box-shadow: 0 14px 34px -22px rgba(20, 35, 27, 0.22);
+			}
+			.faq-q {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				gap: 16px;
+				width: 100%;
+				padding: 19px 22px;
+				border: none;
+				background: transparent;
+				cursor: pointer;
+				text-align: left;
+				font-family: inherit;
+			}
+			.faq-q .q {
+				font-size: 16.5px;
+				font-weight: 700;
+				color: var(--ink);
+			}
+			.faq-ic {
+				width: 30px;
+				height: 30px;
+				flex: 0 0 auto;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				border-radius: 9px;
+				background: var(--surface2);
+				color: var(--muted);
+				transition:
+					transform 0.2s,
+					background 0.15s,
+					color 0.15s;
+			}
+			.faq-item.open .faq-ic {
+				background: var(--primarySoft);
+				color: var(--primary);
+				transform: rotate(180deg);
+			}
+			.faq-a {
+				display: none;
+				padding: 0 22px 20px;
+				font-size: 15px;
+				line-height: 1.65;
+				color: var(--muted);
+				font-weight: 500;
+				max-width: 62ch;
+			}
+			.faq-item.open .faq-a {
+				display: block;
+			}
+			/* Winners carousel */
+			.win-track {
+				display: flex;
+				gap: 16px;
+				overflow-x: auto;
+				scroll-snap-type: x mandatory;
+				scroll-behavior: smooth;
+				-ms-overflow-style: none;
+				scrollbar-width: none;
+				padding: 4px 2px;
+			}
+			.win-track::-webkit-scrollbar {
+				display: none;
+			}
+			.win-card {
+				scroll-snap-align: start;
+				flex: 0 0 auto;
+				width: calc((100% - 32px) / 3);
+			}
+			.win-controls {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				gap: 12px;
+				margin-top: 24px;
+			}
+			.win-nav {
+				width: 44px;
+				height: 44px;
+				flex: 0 0 auto;
+				border-radius: 50%;
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				background: var(--surface);
+				border: 1px solid var(--line);
+				color: var(--ink);
+				cursor: pointer;
+				box-shadow: 0 4px 14px rgba(20, 35, 27, 0.09);
+				transition:
+					background 0.15s,
+					border-color 0.15s;
+			}
+			.win-nav:hover {
+				background: var(--surface2);
+				border-color: var(--lineStrong);
+			}
+			.win-live {
+				display: inline-flex;
+				align-items: center;
+				gap: 8px;
+				padding: 8px 15px;
+				border-radius: 999px;
+				background: var(--surface);
+				border: 1px solid var(--line);
+				font-size: 12px;
+				font-weight: 700;
+				color: var(--muted);
+			}
+			.win-live .dot {
+				width: 7px;
+				height: 7px;
+				border-radius: 50%;
+				background: var(--green);
+				box-shadow: 0 0 0 3px var(--greenSoft);
+				animation: bbGlow 1.8s infinite;
+			}
+			/* Mobile header menu */
+			.menu-btn {
+				display: none;
+				width: 42px;
+				height: 42px;
+				border-radius: 11px;
+				border: 1px solid var(--line);
+				background: var(--surface2);
+				color: var(--ink);
+				cursor: pointer;
+				align-items: center;
+				justify-content: center;
+			}
+			.mobile-menu {
+				overflow: hidden;
+				max-height: 0;
+				opacity: 0;
+				transform: translateY(-10px);
+				border-top: 1px solid transparent;
+				background: var(--navBg);
+				backdrop-filter: saturate(1.4) blur(14px);
+				transition:
+					max-height 0.22s ease,
+					opacity 0.2s ease,
+					transform 0.2s ease,
+					border-color 0.2s ease;
+			}
+			.mobile-menu.open {
+				max-height: 420px;
+				opacity: 1;
+				transform: translateY(0);
+				border-top-color: var(--line);
+			}
+			.mobile-menu .inner {
+				padding: 12px 18px 16px;
+				display: flex;
+				flex-direction: column;
+				gap: 2px;
+			}
+			.mobile-menu a.navlink {
+				display: block;
+				padding: 13px 12px;
+				font-size: 16px;
+				border-radius: 10px;
+			}
+			.mobile-menu .btn-primary {
+				display: flex;
+				justify-content: center;
+				width: 100%;
+				height: 50px;
+				margin-top: 8px;
+				font-size: 16px;
+			}
+			/* Sticky bottom CTA (mobile) */
+			.sticky-bar {
+				display: none;
+				position: fixed;
+				left: 50%;
+				transform: translateX(-50%);
+				bottom: 0;
+				z-index: 60;
+				width: 100%;
+				max-width: 460px;
+				align-items: center;
+				gap: 12px;
+				padding: 11px 16px calc(11px + env(safe-area-inset-bottom));
+				background: var(--navBg);
+				backdrop-filter: saturate(1.4) blur(14px);
+				border-top: 1px solid var(--line);
+			}
+			.sticky-bar .sb-title {
+				font-family: "Baloo Da 2";
+				font-weight: 800;
+				font-size: 17px;
+				line-height: 1;
+				color: var(--ink);
+			}
+			.sticky-bar .sb-sub {
+				font-size: 11.5px;
+				color: var(--muted);
+				margin-top: 3px;
+				font-weight: 600;
+			}
+			.sticky-bar .btn-primary {
+				height: 48px;
+				padding: 0 18px;
+				border-radius: 13px;
+				font-size: 15px;
+				flex: 0 0 auto;
+				background: var(--primary);
+				color: var(--onPrimary);
+			}
+			@media (max-width: 920px) {
+				.wrap {
+					padding: 0 18px;
+				}
+				.nav-links {
+					display: none !important;
+				}
+				.nav-cta {
+					display: none !important;
+				}
+				.menu-btn {
+					display: inline-flex;
+				}
+				.sec {
+					padding: 60px 18px 0 !important;
+				}
+				.hero-grid {
+					grid-template-columns: 1fr !important;
+					gap: 36px !important;
+					padding: 40px 18px 48px !important;
+				}
+				.h1 {
+					font-size: clamp(40px, 11vw, 60px) !important;
+				}
+				.hero-cta {
+					flex-direction: column !important;
+					align-items: stretch !important;
+				}
+				.hero-cta > a {
+					width: 100%;
+					justify-content: center;
+				}
+				.stats-grid {
+					grid-template-columns: repeat(2, 1fr) !important;
+				}
+				.stat-cell {
+					padding: 16px 18px !important;
+				}
+				.stat-num {
+					font-size: 30px !important;
+					line-height: 1 !important;
+				}
+				.stat-lbl {
+					font-size: 11px !important;
+					margin-top: 5px !important;
+				}
+				.steps-grid,
+				.score-grid,
+				.ranks-grid,
+				.faq-grid,
+				.cta-grid {
+					grid-template-columns: 1fr !important;
+				}
+				.steps-grid {
+					margin-top: 22px !important;
+					gap: 12px !important;
+				}
+				.step-card {
+					padding: 16px !important;
+				}
+				.step-card h3 {
+					margin-top: 11px !important;
+					font-size: 19px !important;
+				}
+				.step-card p {
+					margin-top: 5px !important;
+				}
+				.how-head {
+					text-align: left !important;
+					margin: 0 !important;
+				}
+				.score-pill {
+					padding: 12px 13px !important;
+				}
+				.score-pill .dsp {
+					font-size: 25px !important;
+				}
+				.cta-grid {
+					gap: 26px !important;
+					padding: 30px 22px !important;
+				}
+				.cta-btn {
+					width: 100%;
+					justify-content: center;
+				}
+				.lb-btn-desktop {
+					display: none !important;
+				}
+				.lb-btn-mobile {
+					display: flex !important;
+				}
+				.win-card {
+					width: 88% !important;
+				}
+				.float-chip {
+					position: static !important;
+					width: auto !important;
+					margin-top: 16px;
+					left: auto !important;
+					bottom: auto !important;
+				}
+				.score-sticky {
+					position: static !important;
+				}
+				.foot-grid {
+					grid-template-columns: repeat(3, 1fr) !important;
+					gap: 22px 14px !important;
+				}
+				.foot-brand {
+					grid-column: 1 / -1;
+				}
+				.foot-grid a {
+					font-size: 13.5px !important;
+				}
+				.sticky-bar {
+					display: flex;
+				}
+				body {
+					padding-bottom: calc(78px + env(safe-area-inset-bottom));
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<!-- NAV -->
+		<div
+			style="
+				position: sticky;
+				top: 0;
+				z-index: 50;
+				background: var(--navBg);
+				backdrop-filter: saturate(1.4) blur(14px);
+				-webkit-backdrop-filter: saturate(1.4) blur(14px);
+				border-bottom: 1px solid var(--line);
+				box-shadow: 0 1px 8px rgba(20, 35, 27, 0.06);
+			"
+		>
+			<div
+				class="wrap"
+				style="
+					height: 72px;
+					display: flex;
+					align-items: center;
+					justify-content: space-between;
+					gap: 24px;
+				"
+			>
+				<a
+					href="#top"
+					style="
+						display: flex;
+						align-items: center;
+						gap: 11px;
+						text-decoration: none;
+					"
+				>
+					<span
+						style="
+							width: 38px;
+							height: 38px;
+							border-radius: 11px;
+							flex: 0 0 auto;
+							background: linear-gradient(150deg, #ffd45f, #e8ab1f);
+							display: flex;
+							align-items: center;
+							justify-content: center;
+							box-shadow: 0 6px 16px rgba(232, 171, 31, 0.32);
+						"
+						><svg
+							width="27"
+							height="27"
+							viewBox="0 0 48 48"
+							fill="none"
+							stroke="#1a1405"
+							stroke-width="3.2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path
+								d="M4 6H14M4 18H14M4 30H14M4 42H14M14 6V18M14 30V42M14 12H24M14 36H24M24 12V36M24 24H34"
+							/>
+							<path
+								d="M39 19 44 24 39 29 34 24Z"
+								fill="#1a1405"
+								stroke="none"
+							/></svg
+					></span>
+					<span
+						style="
+							font-family: &quot;Baloo Da 2&quot;;
+							font-weight: 800;
+							font-size: 22px;
+							color: var(--ink);
+						"
+						>Bangla<span style="color: var(--goldText)">Bracket</span></span
+					>
+				</a>
+				<div
+					class="nav-links"
+					style="display: flex; align-items: center; gap: 4px"
+				>
+					<a class="navlink" href="#how">How to play</a
+					><a class="navlink" href="#scoring">Scoring</a
+					><a class="navlink" href="#winners">Winners</a
+					><a class="navlink" href="#ranks">Leaderboard</a>
+				</div>
+				<div style="display: flex; align-items: center; gap: 12px">
+					<div
+						style="
+							display: flex;
+							align-items: center;
+							gap: 2px;
+							padding: 3px;
+							background: var(--surface2);
+							border: 1px solid var(--line);
+							border-radius: 999px;
+						"
+					>
+						<button
+							class="seg on"
+							id="segLight"
+							onclick="setTheme('light')"
+							aria-label="Light"
+						>
+							<svg
+								width="15"
+								height="15"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+							>
+								<circle
+									cx="12"
+									cy="12"
+									r="4"
+									fill="currentColor"
+									stroke="none"
+								/>
+								<path
+									d="M12 2.6v2M12 19.4v2M2.6 12h2M19.4 12h2M5.2 5.2l1.5 1.5M17.3 17.3l1.5 1.5M18.8 5.2l-1.5 1.5M6.7 17.3l-1.5 1.5"
+								/>
+							</svg>
+						</button>
+						<button
+							class="seg"
+							id="segDark"
+							onclick="setTheme('dark')"
+							aria-label="Dark"
+						>
+							<svg
+								width="15"
+								height="15"
+								viewBox="0 0 24 24"
+								fill="currentColor"
+							>
+								<path d="M21 12.9A9 9 0 1111.1 3 7 7 0 0021 12.9z" />
+							</svg>
+						</button>
+					</div>
+					<a
+						class="btn-primary nav-cta"
+						href="/wc2026/app/"
+						style="height: 42px; padding: 0 19px; font-size: 14.5px"
+						>Play free<svg
+							width="15"
+							height="15"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2.6"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="M5 12h13M13 6l6 6-6 6" /></svg
+					></a>
+					<button
+						class="menu-btn"
+						id="menuBtn"
+						onclick="toggleMenu()"
+						aria-label="Menu"
+						aria-expanded="false"
+						aria-controls="mobileMenu"
+					>
+						<svg
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2.4"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="M4 7h16M4 12h16M4 17h16" />
+						</svg>
+					</button>
+				</div>
+			</div>
+			<div class="mobile-menu" id="mobileMenu">
+				<div class="inner">
+					<a class="navlink" href="#how" onclick="closeMenu()">How to play</a>
+					<a class="navlink" href="#scoring" onclick="closeMenu()">Scoring</a>
+					<a class="navlink" href="#ranks" onclick="closeMenu()">Leaderboard</a>
+					<a class="navlink" href="#winners" onclick="closeMenu()">Winners</a>
+					<a class="btn-primary" href="/wc2026/app/" onclick="closeMenu()"
+						>Play free<svg
+							width="15"
+							height="15"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2.6"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="M5 12h13M13 6l6 6-6 6" /></svg
+					></a>
+				</div>
+			</div>
+		</div>
 
-<!-- HERO -->
-<div id="top" style="position:relative;overflow:hidden">
-  <div style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(70% 50% at 78% -8%,var(--glowGold),transparent 60%),radial-gradient(60% 50% at 12% 8%,var(--glowGreen),transparent 60%)"></div>
-  <div class="wrap hero-grid" style="position:relative;padding:74px 32px 60px;display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center">
-    <div>
-      <div style="display:inline-flex;align-items:center;gap:9px;padding:7px 14px;border-radius:999px;background:var(--surface);border:1px solid var(--line)">
-        <span style="width:7px;height:7px;border-radius:50%;background:var(--primary);box-shadow:0 0 0 3px var(--primarySoft);animation:bbGlow 1.8s infinite"></span>
-        <span style="font-size:11.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)">World Cup 2026 · Free to play</span>
-      </div>
-      <h1 class="h1" style="font-family:'Baloo Da 2';font-weight:800;font-size:78px;line-height:.93;letter-spacing:-.01em;margin:22px 0 0;color:var(--ink)">Predict the World Cup.<br>Top the table.<br><span style="color:var(--goldText)">Win ৳1,00,000.</span></h1>
-      <p style="font-size:18px;line-height:1.6;color:var(--muted);margin:22px 0 0;max-width:33em;font-weight:500">BanglaBracket brings all 104 matches to your hands — call the final group games, send teams through every knockout, and climb a live leaderboard. No fees, no catch.</p>
-      <div class="hero-cta" style="display:flex;align-items:center;gap:13px;margin-top:30px;flex-wrap:wrap">
-        <a class="btn-primary" href="/wc2026/app/" style="height:56px;padding:0 26px;font-size:16.5px">Play free<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a>
-        <a class="btn-ghost" href="#scoring" style="height:56px;padding:0 22px;font-size:16px">How scoring works</a>
-      </div>
-      <div style="display:flex;align-items:center;gap:9px;margin-top:22px;font-size:13.5px;color:var(--muted);font-weight:500">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>
-        No entry fee · Your data is protected · Verify only if you win
-      </div>
-    </div>
-    <div style="position:relative">
-      <div style="position:relative;border-radius:24px;overflow:hidden;background:linear-gradient(165deg,#0c2419,#07150e);border:1px solid rgba(255,203,69,.18);box-shadow:0 40px 80px -28px rgba(7,21,14,.6)">
-        <div style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(80% 60% at 50% -10%,rgba(255,203,69,.16),transparent 62%)"></div>
-        <div style="position:relative;padding:24px 26px 26px">
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <span style="font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#8aa79a">Kick-off countdown</span>
-            <span style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:800;color:#ff9b9b"><span style="width:7px;height:7px;border-radius:50%;background:#ff5a5a;animation:bbBlink 1.2s infinite"></span>LIVE</span>
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:18px">
-            <div style="text-align:center;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:13px;padding:13px 4px"><div class="dsp" data-d style="font-weight:700;font-size:40px;line-height:1;color:#fff;font-variant-numeric:tabular-nums">–</div><div style="font-size:9.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#7d978b;margin-top:7px">Days</div></div>
-            <div style="text-align:center;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:13px;padding:13px 4px"><div class="dsp" data-h style="font-weight:700;font-size:40px;line-height:1;color:#fff;font-variant-numeric:tabular-nums">–</div><div style="font-size:9.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#7d978b;margin-top:7px">Hrs</div></div>
-            <div style="text-align:center;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:13px;padding:13px 4px"><div class="dsp" data-m style="font-weight:700;font-size:40px;line-height:1;color:#fff;font-variant-numeric:tabular-nums">–</div><div style="font-size:9.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#7d978b;margin-top:7px">Min</div></div>
-            <div style="text-align:center;background:rgba(255,203,69,.1);border:1px solid rgba(255,203,69,.32);border-radius:13px;padding:13px 4px"><div class="dsp" data-s style="font-weight:700;font-size:40px;line-height:1;color:#ffcb45;font-variant-numeric:tabular-nums">–</div><div style="font-size:9.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#caa23f;margin-top:7px">Sec</div></div>
-          </div>
-          <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);margin:22px 0"></div>
-          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:14px">
-            <div><div style="font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#caa23f">Grand prize</div><div class="dsp" style="font-weight:800;font-size:52px;line-height:.95;color:#fff;margin-top:4px">৳1,00,000</div></div>
-            <div style="width:54px;height:54px;border-radius:15px;flex:0 0 auto;background:linear-gradient(150deg,#ffd45f,#e0a921);display:flex;align-items:center;justify-content:center;box-shadow:0 10px 24px rgba(224,169,33,.35)"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#1a1405" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h12v3a6 6 0 01-12 0V4z"/><path d="M6 5H3.5v1.5A3 3 0 006 9M18 5h2.5v1.5A3 3 0 0118 9M12 13v4M9 20h6M10 17h4"/></svg></div>
-          </div>
-          <div style="display:flex;align-items:center;gap:7px;margin-top:18px;flex-wrap:wrap">
-            <img src="https://flagcdn.com/w40/br.png" style="width:25px;height:17px;border-radius:3px;object-fit:cover"/><img src="https://flagcdn.com/w40/ar.png" style="width:25px;height:17px;border-radius:3px;object-fit:cover"/><img src="https://flagcdn.com/w40/fr.png" style="width:25px;height:17px;border-radius:3px;object-fit:cover"/><img src="https://flagcdn.com/w40/es.png" style="width:25px;height:17px;border-radius:3px;object-fit:cover"/><img src="https://flagcdn.com/w40/de.png" style="width:25px;height:17px;border-radius:3px;object-fit:cover"/><img src="https://flagcdn.com/w40/pt.png" style="width:25px;height:17px;border-radius:3px;object-fit:cover"/><span style="font-size:11.5px;font-weight:700;color:#7d978b">+42 nations</span>
-          </div>
-        </div>
-      </div>
-      <div class="float-chip card" style="position:absolute;left:-26px;bottom:-30px;width:230px;padding:13px 14px;animation:bbFloat 5s ease-in-out infinite">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px"><span style="font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)">Live ranks</span><span style="font-size:10px;font-weight:800;color:var(--primary)">Top 3</span></div>
-        <div id="liveRanks">
-          <div style="display:flex;align-items:center;gap:9px;padding:5px 0"><span style="flex:1;font-size:12.5px;font-weight:700;color:var(--ink)">Tanvir A.</span><span class="dsp" style="font-size:16px;font-weight:800;color:var(--ink)">2,400</span><span style="display:inline-grid;place-items:center;width:22px;height:22px;border-radius:7px;background:var(--gold);color:#1a1405;font-size:11px;font-weight:800">1</span></div>
-          <div style="display:flex;align-items:center;gap:9px;padding:5px 0;border-top:1px solid var(--line)"><span style="flex:1;font-size:12.5px;font-weight:700;color:var(--ink)">Nusrat J.</span><span class="dsp" style="font-size:16px;font-weight:800;color:var(--ink)">2,300</span><span style="display:inline-grid;place-items:center;width:22px;height:22px;border-radius:7px;background:var(--goldSoft);color:var(--goldText);font-size:11px;font-weight:800">2</span></div>
-          <div style="display:flex;align-items:center;gap:9px;padding:5px 0;border-top:1px solid var(--line)"><span style="flex:1;font-size:12.5px;font-weight:700;color:var(--ink)">Imran H.</span><span class="dsp" style="font-size:16px;font-weight:800;color:var(--ink)">2,200</span><span style="display:inline-grid;place-items:center;width:22px;height:22px;border-radius:7px;background:var(--goldSoft);color:var(--goldText);font-size:11px;font-weight:800">3</span></div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="wrap" style="position:relative">
-    <div class="stats-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;border:1px solid var(--line);border-radius:18px;background:var(--line);overflow:hidden">
-      <div class="stat-cell" style="padding:22px 24px;background:var(--surface)"><div class="dsp stat-num" style="font-weight:800;font-size:34px;color:var(--ink)">48</div><div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-top:6px">Nations</div></div>
-      <div class="stat-cell" style="padding:22px 24px;background:var(--surface)"><div class="dsp stat-num" style="font-weight:800;font-size:34px;color:var(--ink)">104</div><div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-top:6px">Matches</div></div>
-      <div class="stat-cell" style="padding:22px 24px;background:var(--surface)"><div class="dsp stat-num" style="font-weight:800;font-size:34px;color:var(--goldText)">৳1,00,000</div><div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-top:6px">Prize pool</div></div>
-      <div class="stat-cell" style="padding:22px 24px;background:var(--surface)"><div class="dsp stat-num" id="players" style="font-weight:800;font-size:34px;color:var(--ink)">—</div><div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-top:6px">Players</div></div>
-    </div>
-  </div>
-</div>
+		<!-- HERO -->
+		<div id="top" style="position: relative; overflow: hidden">
+			<div
+				style="
+					position: absolute;
+					inset: 0;
+					pointer-events: none;
+					background:
+						radial-gradient(
+							70% 50% at 78% -8%,
+							var(--glowGold),
+							transparent 60%
+						),
+						radial-gradient(
+							60% 50% at 12% 8%,
+							var(--glowGreen),
+							transparent 60%
+						);
+				"
+			></div>
+			<div
+				class="wrap hero-grid"
+				style="
+					position: relative;
+					padding: 74px 32px 60px;
+					display: grid;
+					grid-template-columns: 1.05fr 0.95fr;
+					gap: 56px;
+					align-items: center;
+				"
+			>
+				<div>
+					<div
+						style="
+							display: inline-flex;
+							align-items: center;
+							gap: 9px;
+							padding: 7px 14px;
+							border-radius: 999px;
+							background: var(--surface);
+							border: 1px solid var(--line);
+						"
+					>
+						<span
+							style="
+								width: 7px;
+								height: 7px;
+								border-radius: 50%;
+								background: var(--primary);
+								box-shadow: 0 0 0 3px var(--primarySoft);
+								animation: bbGlow 1.8s infinite;
+							"
+						></span>
+						<span
+							style="
+								font-size: 11.5px;
+								font-weight: 800;
+								letter-spacing: 0.13em;
+								text-transform: uppercase;
+								color: var(--muted);
+							"
+							>World Cup 2026 · Free to play</span
+						>
+					</div>
+					<h1
+						class="h1"
+						style="
+							font-family: &quot;Baloo Da 2&quot;;
+							font-weight: 800;
+							font-size: 78px;
+							line-height: 0.93;
+							letter-spacing: -0.01em;
+							margin: 22px 0 0;
+							color: var(--ink);
+						"
+					>
+						Predict the World Cup.<br />Top the table.<br /><span
+							style="color: var(--goldText)"
+							>Win ৳1,00,000.</span
+						>
+					</h1>
+					<p
+						style="
+							font-size: 18px;
+							line-height: 1.6;
+							color: var(--muted);
+							margin: 22px 0 0;
+							max-width: 33em;
+							font-weight: 500;
+						"
+					>
+						BanglaBracket brings all 104 matches to your hands — call the final
+						group games, send teams through every knockout, and climb a live
+						leaderboard. No fees, no catch.
+					</p>
+					<div
+						class="hero-cta"
+						style="
+							display: flex;
+							align-items: center;
+							gap: 13px;
+							margin-top: 30px;
+							flex-wrap: wrap;
+						"
+					>
+						<a
+							class="btn-primary"
+							href="/wc2026/app/"
+							style="height: 56px; padding: 0 26px; font-size: 16.5px"
+							>Play free<svg
+								width="17"
+								height="17"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2.6"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<path d="M5 12h13M13 6l6 6-6 6" /></svg
+						></a>
+						<a
+							class="btn-ghost"
+							href="#scoring"
+							style="height: 56px; padding: 0 22px; font-size: 16px"
+							>How scoring works</a
+						>
+					</div>
+					<div
+						style="
+							display: flex;
+							align-items: center;
+							gap: 9px;
+							margin-top: 22px;
+							font-size: 13.5px;
+							color: var(--muted);
+							font-weight: 500;
+						"
+					>
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="var(--primary)"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<rect x="4" y="10" width="16" height="11" rx="2.5" />
+							<path d="M8 10V7a4 4 0 018 0v3" />
+						</svg>
+						No entry fee · Your data is protected · Verify only if you win
+					</div>
+				</div>
+				<div style="position: relative">
+					<div
+						style="
+							position: relative;
+							border-radius: 24px;
+							overflow: hidden;
+							background: linear-gradient(165deg, #0c2419, #07150e);
+							border: 1px solid rgba(255, 203, 69, 0.18);
+							box-shadow: 0 40px 80px -28px rgba(7, 21, 14, 0.6);
+						"
+					>
+						<div
+							style="
+								position: absolute;
+								inset: 0;
+								pointer-events: none;
+								background: radial-gradient(
+									80% 60% at 50% -10%,
+									rgba(255, 203, 69, 0.16),
+									transparent 62%
+								);
+							"
+						></div>
+						<div style="position: relative; padding: 24px 26px 26px">
+							<div
+								style="
+									display: flex;
+									align-items: center;
+									justify-content: space-between;
+								"
+							>
+								<span
+									style="
+										font-size: 11px;
+										font-weight: 800;
+										letter-spacing: 0.16em;
+										text-transform: uppercase;
+										color: #8aa79a;
+									"
+									>Kick-off countdown</span
+								>
+								<span
+									style="
+										display: flex;
+										align-items: center;
+										gap: 6px;
+										font-size: 11px;
+										font-weight: 800;
+										color: #ff9b9b;
+									"
+									><span
+										style="
+											width: 7px;
+											height: 7px;
+											border-radius: 50%;
+											background: #ff5a5a;
+											animation: bbBlink 1.2s infinite;
+										"
+									></span
+									>LIVE</span
+								>
+							</div>
+							<div
+								style="
+									display: grid;
+									grid-template-columns: repeat(4, 1fr);
+									gap: 9px;
+									margin-top: 18px;
+								"
+							>
+								<div
+									style="
+										text-align: center;
+										background: rgba(255, 255, 255, 0.04);
+										border: 1px solid rgba(255, 255, 255, 0.07);
+										border-radius: 13px;
+										padding: 13px 4px;
+									"
+								>
+									<div
+										class="dsp"
+										data-d
+										style="
+											font-weight: 700;
+											font-size: 40px;
+											line-height: 1;
+											color: #fff;
+											font-variant-numeric: tabular-nums;
+										"
+									>
+										–
+									</div>
+									<div
+										style="
+											font-size: 9.5px;
+											font-weight: 800;
+											letter-spacing: 0.12em;
+											text-transform: uppercase;
+											color: #7d978b;
+											margin-top: 7px;
+										"
+									>
+										Days
+									</div>
+								</div>
+								<div
+									style="
+										text-align: center;
+										background: rgba(255, 255, 255, 0.04);
+										border: 1px solid rgba(255, 255, 255, 0.07);
+										border-radius: 13px;
+										padding: 13px 4px;
+									"
+								>
+									<div
+										class="dsp"
+										data-h
+										style="
+											font-weight: 700;
+											font-size: 40px;
+											line-height: 1;
+											color: #fff;
+											font-variant-numeric: tabular-nums;
+										"
+									>
+										–
+									</div>
+									<div
+										style="
+											font-size: 9.5px;
+											font-weight: 800;
+											letter-spacing: 0.12em;
+											text-transform: uppercase;
+											color: #7d978b;
+											margin-top: 7px;
+										"
+									>
+										Hrs
+									</div>
+								</div>
+								<div
+									style="
+										text-align: center;
+										background: rgba(255, 255, 255, 0.04);
+										border: 1px solid rgba(255, 255, 255, 0.07);
+										border-radius: 13px;
+										padding: 13px 4px;
+									"
+								>
+									<div
+										class="dsp"
+										data-m
+										style="
+											font-weight: 700;
+											font-size: 40px;
+											line-height: 1;
+											color: #fff;
+											font-variant-numeric: tabular-nums;
+										"
+									>
+										–
+									</div>
+									<div
+										style="
+											font-size: 9.5px;
+											font-weight: 800;
+											letter-spacing: 0.12em;
+											text-transform: uppercase;
+											color: #7d978b;
+											margin-top: 7px;
+										"
+									>
+										Min
+									</div>
+								</div>
+								<div
+									style="
+										text-align: center;
+										background: rgba(255, 203, 69, 0.1);
+										border: 1px solid rgba(255, 203, 69, 0.32);
+										border-radius: 13px;
+										padding: 13px 4px;
+									"
+								>
+									<div
+										class="dsp"
+										data-s
+										style="
+											font-weight: 700;
+											font-size: 40px;
+											line-height: 1;
+											color: #ffcb45;
+											font-variant-numeric: tabular-nums;
+										"
+									>
+										–
+									</div>
+									<div
+										style="
+											font-size: 9.5px;
+											font-weight: 800;
+											letter-spacing: 0.12em;
+											text-transform: uppercase;
+											color: #caa23f;
+											margin-top: 7px;
+										"
+									>
+										Sec
+									</div>
+								</div>
+							</div>
+							<div
+								style="
+									height: 1px;
+									background: linear-gradient(
+										90deg,
+										transparent,
+										rgba(255, 255, 255, 0.12),
+										transparent
+									);
+									margin: 22px 0;
+								"
+							></div>
+							<div
+								style="
+									display: flex;
+									align-items: flex-end;
+									justify-content: space-between;
+									gap: 14px;
+								"
+							>
+								<div>
+									<div
+										style="
+											font-size: 11px;
+											font-weight: 800;
+											letter-spacing: 0.16em;
+											text-transform: uppercase;
+											color: #caa23f;
+										"
+									>
+										Grand prize
+									</div>
+									<div
+										class="dsp"
+										style="
+											font-weight: 800;
+											font-size: 52px;
+											line-height: 0.95;
+											color: #fff;
+											margin-top: 4px;
+										"
+									>
+										৳1,00,000
+									</div>
+								</div>
+								<div
+									style="
+										width: 54px;
+										height: 54px;
+										border-radius: 15px;
+										flex: 0 0 auto;
+										background: linear-gradient(150deg, #ffd45f, #e0a921);
+										display: flex;
+										align-items: center;
+										justify-content: center;
+										box-shadow: 0 10px 24px rgba(224, 169, 33, 0.35);
+									"
+								>
+									<svg
+										width="30"
+										height="30"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="#1a1405"
+										stroke-width="1.8"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+									>
+										<path d="M6 4h12v3a6 6 0 01-12 0V4z" />
+										<path
+											d="M6 5H3.5v1.5A3 3 0 006 9M18 5h2.5v1.5A3 3 0 0118 9M12 13v4M9 20h6M10 17h4"
+										/>
+									</svg>
+								</div>
+							</div>
+							<div
+								style="
+									display: flex;
+									align-items: center;
+									gap: 7px;
+									margin-top: 18px;
+									flex-wrap: wrap;
+								"
+							>
+								<img
+									src="https://flagcdn.com/w40/br.png"
+									style="
+										width: 25px;
+										height: 17px;
+										border-radius: 3px;
+										object-fit: cover;
+									"
+								/><img
+									src="https://flagcdn.com/w40/ar.png"
+									style="
+										width: 25px;
+										height: 17px;
+										border-radius: 3px;
+										object-fit: cover;
+									"
+								/><img
+									src="https://flagcdn.com/w40/fr.png"
+									style="
+										width: 25px;
+										height: 17px;
+										border-radius: 3px;
+										object-fit: cover;
+									"
+								/><img
+									src="https://flagcdn.com/w40/es.png"
+									style="
+										width: 25px;
+										height: 17px;
+										border-radius: 3px;
+										object-fit: cover;
+									"
+								/><img
+									src="https://flagcdn.com/w40/de.png"
+									style="
+										width: 25px;
+										height: 17px;
+										border-radius: 3px;
+										object-fit: cover;
+									"
+								/><img
+									src="https://flagcdn.com/w40/pt.png"
+									style="
+										width: 25px;
+										height: 17px;
+										border-radius: 3px;
+										object-fit: cover;
+									"
+								/><span
+									style="font-size: 11.5px; font-weight: 700; color: #7d978b"
+									>+42 nations</span
+								>
+							</div>
+						</div>
+					</div>
+					<div
+						class="float-chip card"
+						style="
+							position: absolute;
+							left: -26px;
+							bottom: -30px;
+							width: 230px;
+							padding: 13px 14px;
+							animation: bbFloat 5s ease-in-out infinite;
+						"
+					>
+						<div
+							style="
+								display: flex;
+								align-items: center;
+								justify-content: space-between;
+								margin-bottom: 9px;
+							"
+						>
+							<span
+								style="
+									font-size: 10px;
+									font-weight: 800;
+									letter-spacing: 0.1em;
+									text-transform: uppercase;
+									color: var(--faint);
+								"
+								>Live ranks</span
+							><span
+								style="font-size: 10px; font-weight: 800; color: var(--primary)"
+								>Top 3</span
+							>
+						</div>
+						<div id="liveRanks">
+							<div
+								style="
+									display: flex;
+									align-items: center;
+									gap: 9px;
+									padding: 5px 0;
+								"
+							>
+								<span
+									style="
+										flex: 1;
+										font-size: 12.5px;
+										font-weight: 700;
+										color: var(--ink);
+									"
+									>Tanvir A.</span
+								><span
+									class="dsp"
+									style="font-size: 16px; font-weight: 800; color: var(--ink)"
+									>2,400</span
+								><span
+									style="
+										display: inline-grid;
+										place-items: center;
+										width: 22px;
+										height: 22px;
+										border-radius: 7px;
+										background: var(--gold);
+										color: #1a1405;
+										font-size: 11px;
+										font-weight: 800;
+									"
+									>1</span
+								>
+							</div>
+							<div
+								style="
+									display: flex;
+									align-items: center;
+									gap: 9px;
+									padding: 5px 0;
+									border-top: 1px solid var(--line);
+								"
+							>
+								<span
+									style="
+										flex: 1;
+										font-size: 12.5px;
+										font-weight: 700;
+										color: var(--ink);
+									"
+									>Nusrat J.</span
+								><span
+									class="dsp"
+									style="font-size: 16px; font-weight: 800; color: var(--ink)"
+									>2,300</span
+								><span
+									style="
+										display: inline-grid;
+										place-items: center;
+										width: 22px;
+										height: 22px;
+										border-radius: 7px;
+										background: var(--goldSoft);
+										color: var(--goldText);
+										font-size: 11px;
+										font-weight: 800;
+									"
+									>2</span
+								>
+							</div>
+							<div
+								style="
+									display: flex;
+									align-items: center;
+									gap: 9px;
+									padding: 5px 0;
+									border-top: 1px solid var(--line);
+								"
+							>
+								<span
+									style="
+										flex: 1;
+										font-size: 12.5px;
+										font-weight: 700;
+										color: var(--ink);
+									"
+									>Imran H.</span
+								><span
+									class="dsp"
+									style="font-size: 16px; font-weight: 800; color: var(--ink)"
+									>2,200</span
+								><span
+									style="
+										display: inline-grid;
+										place-items: center;
+										width: 22px;
+										height: 22px;
+										border-radius: 7px;
+										background: var(--goldSoft);
+										color: var(--goldText);
+										font-size: 11px;
+										font-weight: 800;
+									"
+									>3</span
+								>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="wrap" style="position: relative">
+				<div
+					class="stats-grid"
+					style="
+						display: grid;
+						grid-template-columns: repeat(4, 1fr);
+						gap: 1px;
+						border: 1px solid var(--line);
+						border-radius: 18px;
+						background: var(--line);
+						overflow: hidden;
+					"
+				>
+					<div
+						class="stat-cell"
+						style="padding: 22px 24px; background: var(--surface)"
+					>
+						<div
+							class="dsp stat-num"
+							style="font-weight: 800; font-size: 34px; color: var(--ink)"
+						>
+							48
+						</div>
+						<div
+							class="stat-lbl"
+							style="
+								font-size: 12px;
+								font-weight: 700;
+								text-transform: uppercase;
+								color: var(--muted);
+								margin-top: 6px;
+							"
+						>
+							Nations
+						</div>
+					</div>
+					<div
+						class="stat-cell"
+						style="padding: 22px 24px; background: var(--surface)"
+					>
+						<div
+							class="dsp stat-num"
+							style="font-weight: 800; font-size: 34px; color: var(--ink)"
+						>
+							104
+						</div>
+						<div
+							class="stat-lbl"
+							style="
+								font-size: 12px;
+								font-weight: 700;
+								text-transform: uppercase;
+								color: var(--muted);
+								margin-top: 6px;
+							"
+						>
+							Matches
+						</div>
+					</div>
+					<div
+						class="stat-cell"
+						style="padding: 22px 24px; background: var(--surface)"
+					>
+						<div
+							class="dsp stat-num"
+							style="font-weight: 800; font-size: 34px; color: var(--goldText)"
+						>
+							৳1,00,000
+						</div>
+						<div
+							class="stat-lbl"
+							style="
+								font-size: 12px;
+								font-weight: 700;
+								text-transform: uppercase;
+								color: var(--muted);
+								margin-top: 6px;
+							"
+						>
+							Prize pool
+						</div>
+					</div>
+					<div
+						class="stat-cell"
+						style="padding: 22px 24px; background: var(--surface)"
+					>
+						<div
+							class="dsp stat-num"
+							id="players"
+							style="font-weight: 800; font-size: 34px; color: var(--ink)"
+						>
+							—
+						</div>
+						<div
+							class="stat-lbl"
+							style="
+								font-size: 12px;
+								font-weight: 700;
+								text-transform: uppercase;
+								color: var(--muted);
+								margin-top: 6px;
+							"
+						>
+							Players
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
 
-<!-- HOW -->
-<div id="how" class="wrap sec" style="padding:104px 32px 0;scroll-margin-top:88px">
-  <div class="how-head" style="text-align:center;max-width:36em;margin:0 auto">
-    <div class="eyebrow">How it works</div>
-    <h2 class="h2" style="margin-top:14px">Three steps to the top of the table</h2>
-    <p style="font-size:17px;line-height:1.6;color:var(--muted);margin:14px 0 0;font-weight:500">Sign in, predict the bracket, and watch your points climb as the real tournament plays out.</p>
-  </div>
-  <div class="steps-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px">
-    <div class="card" style="padding:22px"><div style="display:flex;align-items:center;justify-content:space-between"><span style="width:42px;height:42px;border-radius:12px;background:var(--primarySoft);border:1px solid var(--primaryLine);display:flex;align-items:center;justify-content:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.9"/></svg></span><span class="dsp" style="font-weight:700;font-size:38px;color:var(--surface3)">01</span></div><h3 style="font-size:21px;margin:16px 0 0;color:var(--ink)">Sign in free</h3><p style="font-size:15px;line-height:1.6;color:var(--muted);margin:8px 0 0;font-weight:500">Continue with Google, Facebook, or a phone code. No fees, no card — ever. You're playing in under a minute.</p></div>
-    <div class="card" style="padding:22px"><div style="display:flex;align-items:center;justify-content:space-between"><span style="width:42px;height:42px;border-radius:12px;background:var(--primarySoft);border:1px solid var(--primaryLine);display:flex;align-items:center;justify-content:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h4v6H4M4 13h4v6H4M8 8h4v8h4M16 9.5v5"/></svg></span><span class="dsp" style="font-weight:700;font-size:38px;color:var(--surface3)">02</span></div><h3 style="font-size:21px;margin:16px 0 0;color:var(--ink)">Predict the bracket</h3><p style="font-size:15px;line-height:1.6;color:var(--muted);margin:8px 0 0;font-weight:500">Call the final group games, then send teams through every knockout — Round of 32 all the way to the Final scoreline.</p></div>
-    <div class="card" style="padding:22px"><div style="display:flex;align-items:center;justify-content:space-between"><span style="width:42px;height:42px;border-radius:12px;background:var(--primarySoft);border:1px solid var(--primaryLine);display:flex;align-items:center;justify-content:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6a6 6 0 01-12 0z"/><path d="M6 5H3v1.5A3 3 0 006 9M18 5h3v1.5A3 3 0 0118 9M12 15v3M9 21h6M10 18h4"/></svg></span><span class="dsp" style="font-weight:700;font-size:38px;color:var(--surface3)">03</span></div><h3 style="font-size:21px;margin:16px 0 0;color:var(--ink)">Climb the leaderboard</h3><p style="font-size:15px;line-height:1.6;color:var(--muted);margin:8px 0 0;font-weight:500">Earn points as real matches finish. Top the live table by the Final to win your share of ৳1,00,000.</p></div>
-  </div>
-  <div style="text-align:center;margin-top:32px">
-    <a class="btn-secondary" href="/wc2026/app/howtoplay" style="height:46px;padding:0 22px;font-size:15px">Full guide →</a>
-  </div>
-</div>
+		<!-- HOW -->
+		<div
+			id="how"
+			class="wrap sec"
+			style="padding: 104px 32px 0; scroll-margin-top: 88px"
+		>
+			<div
+				class="how-head"
+				style="text-align: center; max-width: 36em; margin: 0 auto"
+			>
+				<div class="eyebrow">How it works</div>
+				<h2 class="h2" style="margin-top: 14px">
+					Three steps to the top of the table
+				</h2>
+				<p
+					style="
+						font-size: 17px;
+						line-height: 1.6;
+						color: var(--muted);
+						margin: 14px 0 0;
+						font-weight: 500;
+					"
+				>
+					Sign in, predict the bracket, and watch your points climb as the real
+					tournament plays out.
+				</p>
+			</div>
+			<div
+				class="steps-grid"
+				style="
+					display: grid;
+					grid-template-columns: repeat(3, 1fr);
+					gap: 16px;
+					margin-top: 40px;
+				"
+			>
+				<div class="card step-card" style="padding: 22px">
+					<div
+						style="
+							display: flex;
+							align-items: center;
+							justify-content: space-between;
+						"
+					>
+						<span
+							style="
+								width: 42px;
+								height: 42px;
+								border-radius: 12px;
+								background: var(--primarySoft);
+								border: 1px solid var(--primaryLine);
+								display: flex;
+								align-items: center;
+								justify-content: center;
+							"
+							><svg
+								width="24"
+								height="24"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="var(--primary)"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" />
+								<circle cx="9" cy="7" r="4" />
+								<path d="M22 21v-2a4 4 0 00-3-3.9" /></svg></span
+						><span
+							class="dsp"
+							style="font-weight: 700; font-size: 38px; color: var(--surface3)"
+							>01</span
+						>
+					</div>
+					<h3 style="font-size: 21px; margin: 16px 0 0; color: var(--ink)">
+						Sign in free
+					</h3>
+					<p
+						style="
+							font-size: 15px;
+							line-height: 1.6;
+							color: var(--muted);
+							margin: 8px 0 0;
+							font-weight: 500;
+						"
+					>
+						Continue with Google, Facebook, or a phone code. No fees, no card —
+						ever. You're playing in under a minute.
+					</p>
+				</div>
+				<div class="card step-card" style="padding: 22px">
+					<div
+						style="
+							display: flex;
+							align-items: center;
+							justify-content: space-between;
+						"
+					>
+						<span
+							style="
+								width: 42px;
+								height: 42px;
+								border-radius: 12px;
+								background: var(--primarySoft);
+								border: 1px solid var(--primaryLine);
+								display: flex;
+								align-items: center;
+								justify-content: center;
+							"
+							><svg
+								width="24"
+								height="24"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="var(--primary)"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<path
+									d="M4 5h4v6H4M4 13h4v6H4M8 8h4v8h4M16 9.5v5"
+								/></svg></span
+						><span
+							class="dsp"
+							style="font-weight: 700; font-size: 38px; color: var(--surface3)"
+							>02</span
+						>
+					</div>
+					<h3 style="font-size: 21px; margin: 16px 0 0; color: var(--ink)">
+						Predict the bracket
+					</h3>
+					<p
+						style="
+							font-size: 15px;
+							line-height: 1.6;
+							color: var(--muted);
+							margin: 8px 0 0;
+							font-weight: 500;
+						"
+					>
+						Call the final group games, then send teams through every knockout —
+						Round of 32 all the way to the Final scoreline.
+					</p>
+				</div>
+				<div class="card step-card" style="padding: 22px">
+					<div
+						style="
+							display: flex;
+							align-items: center;
+							justify-content: space-between;
+						"
+					>
+						<span
+							style="
+								width: 42px;
+								height: 42px;
+								border-radius: 12px;
+								background: var(--primarySoft);
+								border: 1px solid var(--primaryLine);
+								display: flex;
+								align-items: center;
+								justify-content: center;
+							"
+							><svg
+								width="24"
+								height="24"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="var(--primary)"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<path d="M6 9V3h12v6a6 6 0 01-12 0z" />
+								<path
+									d="M6 5H3v1.5A3 3 0 006 9M18 5h3v1.5A3 3 0 0118 9M12 15v3M9 21h6M10 18h4"
+								/></svg></span
+						><span
+							class="dsp"
+							style="font-weight: 700; font-size: 38px; color: var(--surface3)"
+							>03</span
+						>
+					</div>
+					<h3 style="font-size: 21px; margin: 16px 0 0; color: var(--ink)">
+						Climb the leaderboard
+					</h3>
+					<p
+						style="
+							font-size: 15px;
+							line-height: 1.6;
+							color: var(--muted);
+							margin: 8px 0 0;
+							font-weight: 500;
+						"
+					>
+						Earn points as real matches finish. Top the live table by the Final
+						to win your share of ৳1,00,000.
+					</p>
+				</div>
+			</div>
+			<div style="text-align: center; margin-top: 32px">
+				<a
+					class="btn-secondary"
+					href="/wc2026/app/howtoplay"
+					style="height: 46px; padding: 0 22px; font-size: 15px"
+					>Full guide →</a
+				>
+			</div>
+		</div>
 
-<!-- SCORING -->
-<div id="scoring" class="wrap sec" style="padding:104px 32px 0;scroll-margin-top:88px">
-  <div class="score-grid" style="display:grid;grid-template-columns:.85fr 1.15fr;gap:48px;align-items:start">
-    <div class="score-sticky" style="position:sticky;top:104px">
-      <div class="eyebrow">Scoring</div>
-      <h2 class="h2" style="margin-top:14px">Deep runs win. Detail breaks ties.</h2>
-      <p style="font-size:17px;line-height:1.6;color:var(--muted);margin:16px 0 0;font-weight:500">Your <b style="color:var(--ink)">main points</b> come from picking the right knockout winners — and they get bigger every round. <b style="color:var(--ink)">Bonus points</b> reward the fine details and settle the leaderboard when scores are level.</p>
-      <div style="display:flex;gap:11px;margin-top:24px">
-        <div class="score-pill" style="flex:1;border:1px solid var(--primaryLine);background:var(--primarySoft);border-radius:14px;padding:15px"><div style="font-size:11px;font-weight:800;text-transform:uppercase;color:var(--primary)">Final pick</div><div class="dsp" style="font-weight:800;font-size:30px;color:var(--ink);margin-top:3px">500 pts</div></div>
-        <div class="score-pill" style="flex:1;border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:15px"><div style="font-size:11px;font-weight:800;text-transform:uppercase;color:var(--goldText)">Exact score</div><div class="dsp" style="font-weight:800;font-size:30px;color:var(--ink);margin-top:3px">+50 pts</div></div>
-      </div>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:20px">
-      <div style="border:1px solid var(--line);border-radius:20px;background:var(--surface);overflow:hidden">
-        <div style="display:flex;align-items:center;gap:9px;padding:16px 22px;border-bottom:1px solid var(--line);background:var(--surface2)"><span style="width:10px;height:10px;border-radius:3px;background:var(--primary)"></span><span style="font-size:13px;font-weight:800;text-transform:uppercase;color:var(--ink)">Main points · correct knockout winner</span></div>
-        <div style="display:grid;grid-template-columns:1fr auto;padding:13px 22px"><span style="font-size:15px;font-weight:600">Round of 16</span><span class="dsp" style="font-size:22px;font-weight:800">100</span></div>
-        <div style="display:grid;grid-template-columns:1fr auto;padding:13px 22px;border-top:1px solid var(--line)"><span style="font-size:15px;font-weight:600">Quarter-final</span><span class="dsp" style="font-size:22px;font-weight:800">200</span></div>
-        <div style="display:grid;grid-template-columns:1fr auto;padding:13px 22px;border-top:1px solid var(--line)"><span style="font-size:15px;font-weight:600">Semi-final</span><span class="dsp" style="font-size:22px;font-weight:800">300</span></div>
-        <div style="display:grid;grid-template-columns:1fr auto;padding:13px 22px;border-top:1px solid var(--line)"><span style="font-size:15px;font-weight:600">Third place</span><span class="dsp" style="font-size:22px;font-weight:800">400</span></div>
-        <div style="display:grid;grid-template-columns:1fr auto;padding:14px 22px;border-top:1.5px solid var(--lineStrong);background:var(--primarySoft)"><span style="font-size:15px;font-weight:800;color:var(--primary)">Final</span><span class="dsp" style="font-size:26px;font-weight:800">500</span></div>
-      </div>
-      <div style="border:1px solid var(--line);border-radius:20px;background:var(--surface);overflow:hidden">
-        <div style="display:flex;align-items:center;gap:9px;padding:16px 22px;border-bottom:1px solid var(--line);background:var(--surface2)"><span style="width:10px;height:10px;border-radius:3px;background:var(--teal)"></span><span style="font-size:13px;font-weight:800;text-transform:uppercase;color:var(--ink)">Bonus points · tiebreakers</span></div>
-        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;padding:13px 22px"><div><div style="font-size:15px;font-weight:600">Manner of advance</div><div style="font-size:12.5px;color:var(--muted)">Full-time, extra-time or penalties — per tie</div></div><span class="dsp" style="font-size:22px;font-weight:800">+10</span></div>
-        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;padding:13px 22px;border-top:1px solid var(--line)"><div><div style="font-size:15px;font-weight:600">Exact final score</div><div style="font-size:12.5px;color:var(--muted)">Nail the scoreline of the Final</div></div><span class="dsp" style="font-size:22px;font-weight:800">+50</span></div>
-        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;padding:13px 22px;border-top:1px solid var(--line)"><div><div style="font-size:15px;font-weight:600">Early Round-of-32 pick</div><div style="font-size:12.5px;color:var(--muted)">Tiebreaker credit for calling them early — per pick</div></div><span class="dsp" style="font-size:22px;font-weight:800">+5</span></div>
-        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;padding:13px 22px;border-top:1px solid var(--line)"><div><div style="font-size:15px;font-weight:600">Exact knockout score 💵</div><div style="font-size:12.5px;color:var(--muted)">Win real Taka — paid after you verify</div></div><span class="dsp" style="font-size:22px;font-weight:800;color:var(--goldText)">100৳</span></div>
-      </div>
-      <div style="margin-top:20px">
-        <a class="btn-secondary" href="/wc2026/app/scoring" style="height:46px;padding:0 22px;font-size:15px">Full scoring rules →</a>
-      </div>
-    </div>
-  </div>
-</div>
+		<!-- SCORING -->
+		<div
+			id="scoring"
+			class="wrap sec"
+			style="padding: 104px 32px 0; scroll-margin-top: 88px"
+		>
+			<div
+				class="score-grid"
+				style="
+					display: grid;
+					grid-template-columns: 0.85fr 1.15fr;
+					gap: 48px;
+					align-items: start;
+				"
+			>
+				<div class="score-sticky" style="position: sticky; top: 104px">
+					<div class="eyebrow">Scoring</div>
+					<h2 class="h2" style="margin-top: 14px">
+						Deep runs win. Detail breaks ties.
+					</h2>
+					<p
+						style="
+							font-size: 17px;
+							line-height: 1.6;
+							color: var(--muted);
+							margin: 16px 0 0;
+							font-weight: 500;
+						"
+					>
+						Your <b style="color: var(--ink)">main points</b> come from picking
+						the right knockout winners — and they get bigger every round.
+						<b style="color: var(--ink)">Bonus points</b> reward the fine
+						details and settle the leaderboard when scores are level.
+					</p>
+					<div style="display: flex; gap: 11px; margin-top: 24px">
+						<div
+							class="score-pill"
+							style="
+								flex: 1;
+								border: 1px solid var(--primaryLine);
+								background: var(--primarySoft);
+								border-radius: 14px;
+								padding: 15px;
+							"
+						>
+							<div
+								style="
+									font-size: 11px;
+									font-weight: 800;
+									text-transform: uppercase;
+									color: var(--primary);
+								"
+							>
+								Final pick
+							</div>
+							<div
+								class="dsp"
+								style="
+									font-weight: 800;
+									font-size: 30px;
+									color: var(--ink);
+									margin-top: 3px;
+								"
+							>
+								500 pts
+							</div>
+						</div>
+						<div
+							class="score-pill"
+							style="
+								flex: 1;
+								border: 1px solid var(--line);
+								background: var(--surface);
+								border-radius: 14px;
+								padding: 15px;
+							"
+						>
+							<div
+								style="
+									font-size: 11px;
+									font-weight: 800;
+									text-transform: uppercase;
+									color: var(--goldText);
+								"
+							>
+								Exact score
+							</div>
+							<div
+								class="dsp"
+								style="
+									font-weight: 800;
+									font-size: 30px;
+									color: var(--ink);
+									margin-top: 3px;
+								"
+							>
+								+50 pts
+							</div>
+						</div>
+					</div>
+				</div>
+				<div style="display: flex; flex-direction: column; gap: 20px">
+					<div
+						style="
+							border: 1px solid var(--line);
+							border-radius: 20px;
+							background: var(--surface);
+							overflow: hidden;
+						"
+					>
+						<div
+							style="
+								display: flex;
+								align-items: center;
+								gap: 9px;
+								padding: 16px 22px;
+								border-bottom: 1px solid var(--line);
+								background: var(--surface2);
+							"
+						>
+							<span
+								style="
+									width: 10px;
+									height: 10px;
+									border-radius: 3px;
+									background: var(--primary);
+								"
+							></span
+							><span
+								style="
+									font-size: 13px;
+									font-weight: 800;
+									text-transform: uppercase;
+									color: var(--ink);
+								"
+								>Main points · correct knockout winner</span
+							>
+						</div>
+						<div
+							style="
+								display: grid;
+								grid-template-columns: 1fr auto;
+								padding: 13px 22px;
+							"
+						>
+							<span style="font-size: 15px; font-weight: 600">Round of 16</span
+							><span class="dsp" style="font-size: 22px; font-weight: 800"
+								>100</span
+							>
+						</div>
+						<div
+							style="
+								display: grid;
+								grid-template-columns: 1fr auto;
+								padding: 13px 22px;
+								border-top: 1px solid var(--line);
+							"
+						>
+							<span style="font-size: 15px; font-weight: 600"
+								>Quarter-final</span
+							><span class="dsp" style="font-size: 22px; font-weight: 800"
+								>200</span
+							>
+						</div>
+						<div
+							style="
+								display: grid;
+								grid-template-columns: 1fr auto;
+								padding: 13px 22px;
+								border-top: 1px solid var(--line);
+							"
+						>
+							<span style="font-size: 15px; font-weight: 600">Semi-final</span
+							><span class="dsp" style="font-size: 22px; font-weight: 800"
+								>300</span
+							>
+						</div>
+						<div
+							style="
+								display: grid;
+								grid-template-columns: 1fr auto;
+								padding: 13px 22px;
+								border-top: 1px solid var(--line);
+							"
+						>
+							<span style="font-size: 15px; font-weight: 600">Third place</span
+							><span class="dsp" style="font-size: 22px; font-weight: 800"
+								>400</span
+							>
+						</div>
+						<div
+							style="
+								display: grid;
+								grid-template-columns: 1fr auto;
+								padding: 14px 22px;
+								border-top: 1.5px solid var(--lineStrong);
+								background: var(--primarySoft);
+							"
+						>
+							<span
+								style="font-size: 15px; font-weight: 800; color: var(--primary)"
+								>Final</span
+							><span class="dsp" style="font-size: 26px; font-weight: 800"
+								>500</span
+							>
+						</div>
+					</div>
+					<div
+						style="
+							border: 1px solid var(--line);
+							border-radius: 20px;
+							background: var(--surface);
+							overflow: hidden;
+						"
+					>
+						<div
+							style="
+								display: flex;
+								align-items: center;
+								gap: 9px;
+								padding: 16px 22px;
+								border-bottom: 1px solid var(--line);
+								background: var(--surface2);
+							"
+						>
+							<span
+								style="
+									width: 10px;
+									height: 10px;
+									border-radius: 3px;
+									background: var(--teal);
+								"
+							></span
+							><span
+								style="
+									font-size: 13px;
+									font-weight: 800;
+									text-transform: uppercase;
+									color: var(--ink);
+								"
+								>Bonus points · tiebreakers</span
+							>
+						</div>
+						<div
+							style="
+								display: grid;
+								grid-template-columns: 1fr auto;
+								align-items: center;
+								padding: 13px 22px;
+							"
+						>
+							<div>
+								<div style="font-size: 15px; font-weight: 600">
+									Manner of advance
+								</div>
+								<div style="font-size: 12.5px; color: var(--muted)">
+									Full-time, extra-time or penalties — per tie
+								</div>
+							</div>
+							<span class="dsp" style="font-size: 22px; font-weight: 800"
+								>+10</span
+							>
+						</div>
+						<div
+							style="
+								display: grid;
+								grid-template-columns: 1fr auto;
+								align-items: center;
+								padding: 13px 22px;
+								border-top: 1px solid var(--line);
+							"
+						>
+							<div>
+								<div style="font-size: 15px; font-weight: 600">
+									Exact final score
+								</div>
+								<div style="font-size: 12.5px; color: var(--muted)">
+									Nail the scoreline of the Final
+								</div>
+							</div>
+							<span class="dsp" style="font-size: 22px; font-weight: 800"
+								>+50</span
+							>
+						</div>
+						<div
+							style="
+								display: grid;
+								grid-template-columns: 1fr auto;
+								align-items: center;
+								padding: 13px 22px;
+								border-top: 1px solid var(--line);
+							"
+						>
+							<div>
+								<div style="font-size: 15px; font-weight: 600">
+									Early Round-of-32 pick
+								</div>
+								<div style="font-size: 12.5px; color: var(--muted)">
+									Tiebreaker credit for calling them early — per pick
+								</div>
+							</div>
+							<span class="dsp" style="font-size: 22px; font-weight: 800"
+								>+5</span
+							>
+						</div>
+						<div
+							style="
+								display: grid;
+								grid-template-columns: 1fr auto;
+								align-items: center;
+								padding: 13px 22px;
+								border-top: 1px solid var(--line);
+							"
+						>
+							<div>
+								<div style="font-size: 15px; font-weight: 600">
+									Exact knockout score 💵
+								</div>
+								<div style="font-size: 12.5px; color: var(--muted)">
+									Win real Taka — paid after you verify
+								</div>
+							</div>
+							<span
+								class="dsp"
+								style="
+									font-size: 22px;
+									font-weight: 800;
+									color: var(--goldText);
+								"
+								>100৳</span
+							>
+						</div>
+					</div>
+					<div style="margin-top: 20px">
+						<a
+							class="btn-secondary"
+							href="/wc2026/app/scoring"
+							style="height: 46px; padding: 0 22px; font-size: 15px"
+							>Full scoring rules →</a
+						>
+					</div>
+				</div>
+			</div>
+		</div>
 
-<!-- LEADERBOARD TEASER -->
-<div id="ranks" class="wrap sec" style="padding:104px 32px 0;scroll-margin-top:88px">
-  <div class="card ranks-grid" style="display:grid;grid-template-columns:.9fr 1.1fr;overflow:hidden">
-    <div style="padding:42px 40px;border-right:1px solid var(--line)">
-      <div class="eyebrow">Live leaderboard</div>
-      <h2 class="h2" style="font-size:clamp(30px,4vw,46px);margin-top:14px">Every match moves the table</h2>
-      <p style="font-size:16px;line-height:1.6;color:var(--muted);margin:14px 0 0;font-weight:500">Rankings update the moment a result is confirmed. Filter to prize-eligible players, track your live position, and chase the top spot to the Final.</p>
-      <div style="display:flex;gap:10px;margin-top:22px;flex-wrap:wrap">
-        <a class="btn-secondary lb-btn-desktop" href="/wc2026/app/leaderboard" style="height:48px;padding:0 20px;font-size:15px">See full list</a>
-      </div>
-    </div>
-    <div style="padding:28px 32px;background:var(--surface)">
-      <div id="bigRanks">
-        <div style="display:flex;align-items:center;gap:12px;padding:13px 14px;margin:-4px -8px 0;border-radius:13px;background:linear-gradient(100deg,var(--goldSoft),transparent);border:1px solid var(--goldSoft)"><span style="flex:1;font-weight:800">Tanvir Ahmed</span><span style="color:var(--muted);font-size:13px">Dhaka, BD</span><span class="dsp" style="font-weight:800;margin:0 12px;color:var(--goldText)">2,710</span><span style="display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;background:linear-gradient(150deg,#ffd45f,#e8ab1f);color:#1a1405;font-weight:800;box-shadow:0 4px 12px rgba(232,171,31,.4)">👑</span></div>
-        <div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line)"><span style="flex:1;font-weight:700">Nusrat Jahan</span><span style="color:var(--muted);font-size:13px">Chattogram, BD</span><span class="dsp" style="font-weight:800;margin:0 12px">2,580</span><span style="display:inline-grid;place-items:center;width:28px;height:28px;border-radius:8px;background:var(--goldSoft);color:var(--goldText);font-weight:800">2</span></div>
-        <div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line)"><span style="flex:1;font-weight:700">Imran Hossain</span><span style="color:var(--muted);font-size:13px">Dubai, UAE</span><span class="dsp" style="font-weight:800;margin:0 12px">2,445</span><span style="display:inline-grid;place-items:center;width:28px;height:28px;border-radius:8px;background:var(--goldSoft);color:var(--goldText);font-weight:800">3</span></div>
-      </div>
-    </div>
-  </div>
-  <a class="btn-secondary lb-btn-mobile" href="/wc2026/app/leaderboard" style="display:none;width:100%;height:50px;font-size:15px;margin-top:16px">See full list</a>
-</div>
+		<!-- LEADERBOARD TEASER -->
+		<div
+			id="ranks"
+			class="wrap sec"
+			style="padding: 104px 32px 0; scroll-margin-top: 88px"
+		>
+			<div
+				class="card ranks-grid"
+				style="
+					display: grid;
+					grid-template-columns: 0.9fr 1.1fr;
+					overflow: hidden;
+				"
+			>
+				<div style="padding: 42px 40px; border-right: 1px solid var(--line)">
+					<div class="eyebrow">Live leaderboard</div>
+					<h2
+						class="h2"
+						style="font-size: clamp(30px, 4vw, 46px); margin-top: 14px"
+					>
+						Every match moves the table
+					</h2>
+					<p
+						style="
+							font-size: 16px;
+							line-height: 1.6;
+							color: var(--muted);
+							margin: 14px 0 0;
+							font-weight: 500;
+						"
+					>
+						Rankings update the moment a result is confirmed. Filter to
+						prize-eligible players, track your live position, and chase the top
+						spot to the Final.
+					</p>
+					<div style="margin-top: 22px">
+						<a
+							class="btn-secondary lb-btn-desktop"
+							href="/wc2026/app/leaderboard"
+							style="
+								width: 100%;
+								height: 50px;
+								padding: 0 20px;
+								font-size: 15px;
+							"
+							>See full list</a
+						>
+					</div>
+				</div>
+				<div style="padding: 28px 32px; background: var(--surface)">
+					<div id="bigRanks">
+						<div
+							style="
+								display: flex;
+								align-items: center;
+								gap: 12px;
+								padding: 13px 14px;
+								margin: -4px -8px 0;
+								border-radius: 13px;
+								background: linear-gradient(
+									100deg,
+									var(--goldSoft),
+									transparent
+								);
+								border: 1px solid var(--goldSoft);
+							"
+						>
+							<span style="flex: 1; font-weight: 800">Tanvir Ahmed</span
+							><span style="color: var(--muted); font-size: 13px"
+								>Dhaka, BD</span
+							><span
+								class="dsp"
+								style="font-weight: 800; margin: 0 12px; color: var(--goldText)"
+								>2,710</span
+							><span
+								style="
+									display: inline-grid;
+									place-items: center;
+									width: 30px;
+									height: 30px;
+									border-radius: 9px;
+									background: linear-gradient(150deg, #ffd45f, #e8ab1f);
+									color: #1a1405;
+									font-weight: 800;
+									box-shadow: 0 4px 12px rgba(232, 171, 31, 0.4);
+								"
+								>👑</span
+							>
+						</div>
+						<div
+							style="
+								display: flex;
+								align-items: center;
+								gap: 12px;
+								padding: 11px 0;
+								border-top: 1px solid var(--line);
+							"
+						>
+							<span style="flex: 1; font-weight: 700">Nusrat Jahan</span
+							><span style="color: var(--muted); font-size: 13px"
+								>Chattogram, BD</span
+							><span class="dsp" style="font-weight: 800; margin: 0 12px"
+								>2,580</span
+							><span
+								style="
+									display: inline-grid;
+									place-items: center;
+									width: 28px;
+									height: 28px;
+									border-radius: 8px;
+									background: var(--goldSoft);
+									color: var(--goldText);
+									font-weight: 800;
+								"
+								>2</span
+							>
+						</div>
+						<div
+							style="
+								display: flex;
+								align-items: center;
+								gap: 12px;
+								padding: 11px 0;
+								border-top: 1px solid var(--line);
+							"
+						>
+							<span style="flex: 1; font-weight: 700">Imran Hossain</span
+							><span style="color: var(--muted); font-size: 13px"
+								>Dubai, UAE</span
+							><span class="dsp" style="font-weight: 800; margin: 0 12px"
+								>2,445</span
+							><span
+								style="
+									display: inline-grid;
+									place-items: center;
+									width: 28px;
+									height: 28px;
+									border-radius: 8px;
+									background: var(--goldSoft);
+									color: var(--goldText);
+									font-weight: 800;
+								"
+								>3</span
+							>
+						</div>
+					</div>
+				</div>
+			</div>
+			<a
+				class="btn-secondary lb-btn-mobile"
+				href="/wc2026/app/leaderboard"
+				style="
+					display: none;
+					width: 100%;
+					height: 50px;
+					font-size: 15px;
+					margin-top: 16px;
+				"
+				>See full list</a
+			>
+		</div>
 
-<!-- WINNERS -->
-<div id="winners" class="wrap sec" style="padding:104px 32px 0;scroll-margin-top:88px">
-  <div style="text-align:center;max-width:34em;margin:0 auto 40px">
-    <div class="eyebrow">Winners</div>
-    <h2 class="h2" style="margin-top:14px">Real people. <span style="color:var(--goldText)">Real Taka.</span></h2>
-    <p style="font-size:17px;line-height:1.6;color:var(--muted);margin:14px 0 0;font-weight:500">Verified players, real Taka paid straight to bKash. You could be the next name on the wall.</p>
-  </div>
-  <div class="win-track" id="winTrack">
-    <!-- Grand prize -->
-    <div class="card win-card" style="display:flex;flex-direction:column;min-height:190px;padding:22px 22px 24px;border-color:var(--goldLine);background:linear-gradient(180deg,var(--goldSoft),transparent 48%),var(--cardGrad)">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-        <span style="width:54px;height:54px;flex:0 0 auto;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Baloo Da 2';font-weight:700;font-size:23px;color:#2a1f04;background:linear-gradient(150deg,#ffd45f,#e0a921);box-shadow:0 7px 16px rgba(20,35,27,.22);outline:2px dashed var(--goldLine);outline-offset:3px">?</span>
-        <span style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;font-size:11px;font-weight:800;line-height:1;white-space:nowrap;background:var(--goldSoft);color:var(--goldText);box-shadow:inset 0 0 0 1px var(--goldLine)"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h12v3a6 6 0 0 1-12 0V4z"/><path d="M6 5H3.6v1.4A3 3 0 0 0 6 9M18 5h2.4v1.4A3 3 0 0 1 18 9"/><path d="M12 13v3.5M9.2 20h5.6M10 17h4"/></svg>Grand prize</span>
-      </div>
-      <div style="font-size:16px;font-weight:700;color:var(--ink);margin-top:18px">You</div>
-      <div class="dsp" style="font-weight:800;font-size:37px;line-height:1;color:var(--goldText);margin-top:7px">৳1,00,000</div>
-      <div style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--muted);margin-top:9px"><span style="width:6px;height:6px;border-radius:50%;flex:0 0 auto;background:var(--gold)"></span>Could be you at the final whistle</div>
-      <div style="flex:1"></div>
-    </div>
-    <!-- Runner-up -->
-    <div class="card win-card" style="display:flex;flex-direction:column;min-height:190px;padding:22px 22px 24px">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-        <span style="width:54px;height:54px;flex:0 0 auto;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Baloo Da 2';font-weight:700;font-size:23px;color:#fff;background:linear-gradient(150deg,#2faa6b,#0b7a4b);box-shadow:0 7px 16px rgba(20,35,27,.22);outline:2px dashed var(--greenLine);outline-offset:3px">?</span>
-        <span style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;font-size:11px;font-weight:800;line-height:1;white-space:nowrap;background:var(--greenSoft);color:var(--green);box-shadow:inset 0 0 0 1px var(--greenLine)">Runner-up</span>
-      </div>
-      <div style="font-size:16px;font-weight:700;color:var(--ink);margin-top:18px">You</div>
-      <div style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--muted);margin-top:9px"><span style="width:6px;height:6px;border-radius:50%;flex:0 0 auto;background:var(--green)"></span>Announced after the Final</div>
-      <div style="flex:1"></div>
-    </div>
-    <!-- Third place -->
-    <div class="card win-card" style="display:flex;flex-direction:column;min-height:190px;padding:22px 22px 24px">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-        <span style="width:54px;height:54px;flex:0 0 auto;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Baloo Da 2';font-weight:700;font-size:23px;color:#fff;background:linear-gradient(150deg,#37b6d6,#0e7d9b);box-shadow:0 7px 16px rgba(20,35,27,.22);outline:2px dashed var(--tealLine);outline-offset:3px">?</span>
-        <span style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;font-size:11px;font-weight:800;line-height:1;white-space:nowrap;background:var(--tealSoft);color:var(--teal);box-shadow:inset 0 0 0 1px var(--tealLine)">Third place</span>
-      </div>
-      <div style="font-size:16px;font-weight:700;color:var(--ink);margin-top:18px">You</div>
-      <div style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--muted);margin-top:9px"><span style="width:6px;height:6px;border-radius:50%;flex:0 0 auto;background:var(--teal)"></span>Announced after the Final</div>
-      <div style="flex:1"></div>
-    </div>
-  </div>
-  <div class="win-controls">
-    <button class="win-nav" type="button" onclick="bbWin(-1)" aria-label="Previous winners"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
-    <span class="win-live"><span class="dot"></span>Paid out live</span>
-    <button class="win-nav" type="button" onclick="bbWin(1)" aria-label="Next winners"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
-  </div>
-  <div style="text-align:center;margin-top:32px">
-    <a class="btn-secondary" href="/wc2026/app/winners" style="height:46px;padding:0 22px;font-size:15px">View winners →</a>
-  </div>
-</div>
+		<!-- WINNERS -->
+		<div
+			id="winners"
+			class="wrap sec"
+			style="padding: 104px 32px 0; scroll-margin-top: 88px"
+		>
+			<div style="text-align: center; max-width: 34em; margin: 0 auto 40px">
+				<div class="eyebrow">Winners</div>
+				<h2 class="h2" style="margin-top: 14px">
+					Real people. <span style="color: var(--goldText)">Real Taka.</span>
+				</h2>
+				<p
+					style="
+						font-size: 17px;
+						line-height: 1.6;
+						color: var(--muted);
+						margin: 14px 0 0;
+						font-weight: 500;
+					"
+				>
+					Verified players, real Taka paid straight to bKash. You could be the
+					next name on the wall.
+				</p>
+			</div>
+			<div class="win-track" id="winTrack">
+				<!-- Grand prize -->
+				<div
+					class="card win-card"
+					style="
+						display: flex;
+						flex-direction: column;
+						min-height: 190px;
+						padding: 22px 22px 24px;
+						border-color: var(--goldLine);
+						background:
+							linear-gradient(180deg, var(--goldSoft), transparent 48%),
+							var(--cardGrad);
+					"
+				>
+					<div
+						style="
+							display: flex;
+							align-items: center;
+							justify-content: space-between;
+							gap: 10px;
+						"
+					>
+						<span
+							style="
+								width: 54px;
+								height: 54px;
+								flex: 0 0 auto;
+								border-radius: 50%;
+								display: flex;
+								align-items: center;
+								justify-content: center;
+								font-family: &quot;Baloo Da 2&quot;;
+								font-weight: 700;
+								font-size: 23px;
+								color: #2a1f04;
+								background: linear-gradient(150deg, #ffd45f, #e0a921);
+								box-shadow: 0 7px 16px rgba(20, 35, 27, 0.22);
+								outline: 2px dashed var(--goldLine);
+								outline-offset: 3px;
+							"
+							>?</span
+						>
+						<span
+							style="
+								display: inline-flex;
+								align-items: center;
+								gap: 5px;
+								padding: 5px 10px;
+								border-radius: 999px;
+								font-size: 11px;
+								font-weight: 800;
+								line-height: 1;
+								white-space: nowrap;
+								background: var(--goldSoft);
+								color: var(--goldText);
+								box-shadow: inset 0 0 0 1px var(--goldLine);
+							"
+							><svg
+								viewBox="0 0 24 24"
+								width="13"
+								height="13"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="1.9"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<path d="M6 4h12v3a6 6 0 0 1-12 0V4z" />
+								<path
+									d="M6 5H3.6v1.4A3 3 0 0 0 6 9M18 5h2.4v1.4A3 3 0 0 1 18 9"
+								/>
+								<path d="M12 13v3.5M9.2 20h5.6M10 17h4" /></svg
+							>Grand prize</span
+						>
+					</div>
+					<div
+						style="
+							font-size: 16px;
+							font-weight: 700;
+							color: var(--ink);
+							margin-top: 18px;
+						"
+					>
+						You
+					</div>
+					<div
+						class="dsp"
+						style="
+							font-weight: 800;
+							font-size: 37px;
+							line-height: 1;
+							color: var(--goldText);
+							margin-top: 7px;
+						"
+					>
+						৳1,00,000
+					</div>
+					<div
+						style="
+							display: flex;
+							align-items: center;
+							gap: 7px;
+							font-size: 13px;
+							font-weight: 600;
+							color: var(--muted);
+							margin-top: 9px;
+						"
+					>
+						<span
+							style="
+								width: 6px;
+								height: 6px;
+								border-radius: 50%;
+								flex: 0 0 auto;
+								background: var(--gold);
+							"
+						></span
+						>Could be you at the final whistle
+					</div>
+					<div style="flex: 1"></div>
+				</div>
+				<!-- Runner-up -->
+				<div
+					class="card win-card"
+					style="
+						display: flex;
+						flex-direction: column;
+						min-height: 190px;
+						padding: 22px 22px 24px;
+					"
+				>
+					<div
+						style="
+							display: flex;
+							align-items: center;
+							justify-content: space-between;
+							gap: 10px;
+						"
+					>
+						<span
+							style="
+								width: 54px;
+								height: 54px;
+								flex: 0 0 auto;
+								border-radius: 50%;
+								display: flex;
+								align-items: center;
+								justify-content: center;
+								font-family: &quot;Baloo Da 2&quot;;
+								font-weight: 700;
+								font-size: 23px;
+								color: #fff;
+								background: linear-gradient(150deg, #2faa6b, #0b7a4b);
+								box-shadow: 0 7px 16px rgba(20, 35, 27, 0.22);
+								outline: 2px dashed var(--greenLine);
+								outline-offset: 3px;
+							"
+							>?</span
+						>
+						<span
+							style="
+								display: inline-flex;
+								align-items: center;
+								gap: 5px;
+								padding: 5px 10px;
+								border-radius: 999px;
+								font-size: 11px;
+								font-weight: 800;
+								line-height: 1;
+								white-space: nowrap;
+								background: var(--greenSoft);
+								color: var(--green);
+								box-shadow: inset 0 0 0 1px var(--greenLine);
+							"
+							>Runner-up</span
+						>
+					</div>
+					<div
+						style="
+							font-size: 16px;
+							font-weight: 700;
+							color: var(--ink);
+							margin-top: 18px;
+						"
+					>
+						You
+					</div>
+					<div
+						style="
+							display: flex;
+							align-items: center;
+							gap: 7px;
+							font-size: 13px;
+							font-weight: 600;
+							color: var(--muted);
+							margin-top: 9px;
+						"
+					>
+						<span
+							style="
+								width: 6px;
+								height: 6px;
+								border-radius: 50%;
+								flex: 0 0 auto;
+								background: var(--green);
+							"
+						></span
+						>Announced after the Final
+					</div>
+					<div style="flex: 1"></div>
+				</div>
+				<!-- Third place -->
+				<div
+					class="card win-card"
+					style="
+						display: flex;
+						flex-direction: column;
+						min-height: 190px;
+						padding: 22px 22px 24px;
+					"
+				>
+					<div
+						style="
+							display: flex;
+							align-items: center;
+							justify-content: space-between;
+							gap: 10px;
+						"
+					>
+						<span
+							style="
+								width: 54px;
+								height: 54px;
+								flex: 0 0 auto;
+								border-radius: 50%;
+								display: flex;
+								align-items: center;
+								justify-content: center;
+								font-family: &quot;Baloo Da 2&quot;;
+								font-weight: 700;
+								font-size: 23px;
+								color: #fff;
+								background: linear-gradient(150deg, #37b6d6, #0e7d9b);
+								box-shadow: 0 7px 16px rgba(20, 35, 27, 0.22);
+								outline: 2px dashed var(--tealLine);
+								outline-offset: 3px;
+							"
+							>?</span
+						>
+						<span
+							style="
+								display: inline-flex;
+								align-items: center;
+								gap: 5px;
+								padding: 5px 10px;
+								border-radius: 999px;
+								font-size: 11px;
+								font-weight: 800;
+								line-height: 1;
+								white-space: nowrap;
+								background: var(--tealSoft);
+								color: var(--teal);
+								box-shadow: inset 0 0 0 1px var(--tealLine);
+							"
+							>Third place</span
+						>
+					</div>
+					<div
+						style="
+							font-size: 16px;
+							font-weight: 700;
+							color: var(--ink);
+							margin-top: 18px;
+						"
+					>
+						You
+					</div>
+					<div
+						style="
+							display: flex;
+							align-items: center;
+							gap: 7px;
+							font-size: 13px;
+							font-weight: 600;
+							color: var(--muted);
+							margin-top: 9px;
+						"
+					>
+						<span
+							style="
+								width: 6px;
+								height: 6px;
+								border-radius: 50%;
+								flex: 0 0 auto;
+								background: var(--teal);
+							"
+						></span
+						>Announced after the Final
+					</div>
+					<div style="flex: 1"></div>
+				</div>
+			</div>
+			<div class="win-controls">
+				<button
+					class="win-nav"
+					type="button"
+					onclick="bbWin(-1)"
+					aria-label="Previous winners"
+				>
+					<svg
+						viewBox="0 0 24 24"
+						width="20"
+						height="20"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2.2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<path d="M15 18l-6-6 6-6" />
+					</svg>
+				</button>
+				<span class="win-live"><span class="dot"></span>Paid out live</span>
+				<button
+					class="win-nav"
+					type="button"
+					onclick="bbWin(1)"
+					aria-label="Next winners"
+				>
+					<svg
+						viewBox="0 0 24 24"
+						width="20"
+						height="20"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2.2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<path d="M9 18l6-6-6-6" />
+					</svg>
+				</button>
+			</div>
+			<div style="text-align: center; margin-top: 32px">
+				<a
+					class="btn-secondary"
+					href="/wc2026/app/winners"
+					style="height: 46px; padding: 0 22px; font-size: 15px"
+					>View winners →</a
+				>
+			</div>
+		</div>
 
-<!-- Trust & Safety -->
-<div id="trust" class="wrap sec" style="padding:104px 32px 0;scroll-margin-top:88px">
-  <div style="text-align:center;max-width:36em;margin:0 auto 40px">
-    <div class="eyebrow">Trust &amp; safety</div>
-    <h2 class="h2" style="margin-top:14px">Fair, private, and free</h2>
-    <p style="font-size:17px;line-height:1.6;color:var(--muted);margin:14px 0 0;font-weight:500">Built to be safe to play. No fees, no card, and your ID never lives in the app.</p>
-  </div>
-  <div class="steps-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
-    <div class="card" style="padding:26px 24px 28px">
-      <span style="width:48px;height:48px;flex:0 0 auto;border-radius:13px;display:inline-flex;align-items:center;justify-content:center;background:var(--tealSoft);color:var(--teal);box-shadow:inset 0 0 0 1px var(--tealLine)"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></span>
-      <h3 style="font-size:18px;font-weight:800;color:var(--ink);margin:18px 0 0">Nationality, not residence</h3>
-      <p style="font-size:15px;line-height:1.6;color:var(--muted);margin:9px 0 0;font-weight:500">Prizes go to Bangladeshi nationals — and you can play and win from anywhere in the world.</p>
-    </div>
-    <div class="card" style="padding:26px 24px 28px">
-      <span style="width:48px;height:48px;flex:0 0 auto;border-radius:13px;display:inline-flex;align-items:center;justify-content:center;background:var(--primarySoft);color:var(--primary);box-shadow:inset 0 0 0 1px var(--primaryLine)"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
-      <h3 style="font-size:18px;font-weight:800;color:var(--ink);margin:18px 0 0">No uploads in the app</h3>
-      <p style="font-size:15px;line-height:1.6;color:var(--muted);margin:9px 0 0;font-weight:500">Winners verify by DMing a human admin privately. We store only your status — never your ID images.</p>
-    </div>
-    <div class="card" style="padding:26px 24px 28px">
-      <span style="width:48px;height:48px;flex:0 0 auto;border-radius:13px;display:inline-flex;align-items:center;justify-content:center;background:var(--greenSoft);color:var(--green);box-shadow:inset 0 0 0 1px var(--greenLine)"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.4-3 8.3-7 9.5C8 19.3 5 15.4 5 11V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg></span>
-      <h3 style="font-size:18px;font-weight:800;color:var(--ink);margin:18px 0 0">Free &amp; protected</h3>
-      <p style="font-size:15px;line-height:1.6;color:var(--muted);margin:9px 0 0;font-weight:500">No entry fee and no card required. Your data is encrypted, never sold, and only ever used to run the game.</p>
-    </div>
-  </div>
-</div>
+		<!-- Trust & Safety -->
+		<div
+			id="trust"
+			class="wrap sec"
+			style="padding: 104px 32px 0; scroll-margin-top: 88px"
+		>
+			<div style="text-align: center; max-width: 36em; margin: 0 auto 40px">
+				<div class="eyebrow">Trust &amp; safety</div>
+				<h2 class="h2" style="margin-top: 14px">Fair, private, and free</h2>
+				<p
+					style="
+						font-size: 17px;
+						line-height: 1.6;
+						color: var(--muted);
+						margin: 14px 0 0;
+						font-weight: 500;
+					"
+				>
+					Built to be safe to play. No fees, no card, and your ID never lives in
+					the app.
+				</p>
+			</div>
+			<div
+				class="steps-grid"
+				style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px"
+			>
+				<div class="card" style="padding: 26px 24px 28px">
+					<span
+						style="
+							width: 48px;
+							height: 48px;
+							flex: 0 0 auto;
+							border-radius: 13px;
+							display: inline-flex;
+							align-items: center;
+							justify-content: center;
+							background: var(--tealSoft);
+							color: var(--teal);
+							box-shadow: inset 0 0 0 1px var(--tealLine);
+						"
+						><svg
+							viewBox="0 0 24 24"
+							width="22"
+							height="22"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.9"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<circle cx="12" cy="12" r="9" />
+							<path
+								d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"
+							/></svg
+					></span>
+					<h3
+						style="
+							font-size: 18px;
+							font-weight: 800;
+							color: var(--ink);
+							margin: 18px 0 0;
+						"
+					>
+						Nationality, not residence
+					</h3>
+					<p
+						style="
+							font-size: 15px;
+							line-height: 1.6;
+							color: var(--muted);
+							margin: 9px 0 0;
+							font-weight: 500;
+						"
+					>
+						Prizes go to Bangladeshi nationals — and you can play and win from
+						anywhere in the world.
+					</p>
+				</div>
+				<div class="card" style="padding: 26px 24px 28px">
+					<span
+						style="
+							width: 48px;
+							height: 48px;
+							flex: 0 0 auto;
+							border-radius: 13px;
+							display: inline-flex;
+							align-items: center;
+							justify-content: center;
+							background: var(--primarySoft);
+							color: var(--primary);
+							box-shadow: inset 0 0 0 1px var(--primaryLine);
+						"
+						><svg
+							viewBox="0 0 24 24"
+							width="22"
+							height="22"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.9"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<rect x="4" y="11" width="16" height="10" rx="2" />
+							<path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg
+					></span>
+					<h3
+						style="
+							font-size: 18px;
+							font-weight: 800;
+							color: var(--ink);
+							margin: 18px 0 0;
+						"
+					>
+						No uploads in the app
+					</h3>
+					<p
+						style="
+							font-size: 15px;
+							line-height: 1.6;
+							color: var(--muted);
+							margin: 9px 0 0;
+							font-weight: 500;
+						"
+					>
+						Winners verify by DMing a human admin privately. We store only your
+						status — never your ID images.
+					</p>
+				</div>
+				<div class="card" style="padding: 26px 24px 28px">
+					<span
+						style="
+							width: 48px;
+							height: 48px;
+							flex: 0 0 auto;
+							border-radius: 13px;
+							display: inline-flex;
+							align-items: center;
+							justify-content: center;
+							background: var(--greenSoft);
+							color: var(--green);
+							box-shadow: inset 0 0 0 1px var(--greenLine);
+						"
+						><svg
+							viewBox="0 0 24 24"
+							width="22"
+							height="22"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.9"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path
+								d="M12 3l7 3v5c0 4.4-3 8.3-7 9.5C8 19.3 5 15.4 5 11V6l7-3z"
+							/>
+							<path d="M9 12l2 2 4-4" /></svg
+					></span>
+					<h3
+						style="
+							font-size: 18px;
+							font-weight: 800;
+							color: var(--ink);
+							margin: 18px 0 0;
+						"
+					>
+						Free &amp; protected
+					</h3>
+					<p
+						style="
+							font-size: 15px;
+							line-height: 1.6;
+							color: var(--muted);
+							margin: 9px 0 0;
+							font-weight: 500;
+						"
+					>
+						No entry fee and no card required. Your data is encrypted, never
+						sold, and only ever used to run the game.
+					</p>
+				</div>
+			</div>
+		</div>
 
-<!-- FAQ -->
-<div class="wrap sec" style="padding:104px 32px 0">
-  <div style="text-align:center;max-width:36em;margin:0 auto 40px">
-    <div class="eyebrow">FAQ</div>
-    <h2 class="h2" style="margin-top:14px">Quick answers</h2>
-  </div>
-  <div class="faq-list">
-    <div class="faq-item open">
-      <button class="faq-q" onclick="bbFaq(this)" aria-expanded="true"><span class="q">Is it really free?</span><span class="faq-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></button>
-      <div class="faq-a">Yes — no entry fee, no card, no catch. Just sign in, fill your bracket, and play. Cash prizes are won and paid out; you never pay a cent in.</div>
-    </div>
-    <div class="faq-item">
-      <button class="faq-q" onclick="bbFaq(this)" aria-expanded="false"><span class="q">Who can win the prize?</span><span class="faq-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></button>
-      <div class="faq-a">Bangladeshi nationals only (by nationality, not where you live). You can play and win from anywhere in the world. You must be 18+ and verify your identity if you finish in a prize position.</div>
-    </div>
-    <div class="faq-item">
-      <button class="faq-q" onclick="bbFaq(this)" aria-expanded="false"><span class="q">When does my bracket lock?</span><span class="faq-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></button>
-      <div class="faq-a">The bracket locks at the first Round-of-32 kick-off. After that, your picks are final. You get one free re-pick before then if you change your mind.</div>
-    </div>
-    <div class="faq-item">
-      <button class="faq-q" onclick="bbFaq(this)" aria-expanded="false"><span class="q">How do I claim a prize?</span><span class="faq-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></button>
-      <div class="faq-a">If you finish in a winning position, email your verification code and a photo of your NID/passport to admin@banglabracket.com before the 3rd-place match. Prize is paid via bKash.</div>
-    </div>
-    <div class="faq-item">
-      <button class="faq-q" onclick="bbFaq(this)" aria-expanded="false"><span class="q">Can I change my picks?</span><span class="faq-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></button>
-      <div class="faq-a">Yes, until the bracket locks you can edit picks freely. You also get one free re-pick to start fresh — but this clears your tiebreaker bonus points, so use it carefully.</div>
-    </div>
-    <div class="faq-item">
-      <button class="faq-q" onclick="bbFaq(this)" aria-expanded="false"><span class="q">Do I need to verify to play?</span><span class="faq-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></button>
-      <div class="faq-a">No — you only need to verify if you end up in a prize-winning position. Play first, verify later. You have until the 3rd-place match deadline once results are final.</div>
-    </div>
-  </div>
-</div>
+		<!-- FAQ -->
+		<div class="wrap sec" style="padding: 104px 32px 0">
+			<div style="text-align: center; max-width: 36em; margin: 0 auto 40px">
+				<div class="eyebrow">FAQ</div>
+				<h2 class="h2" style="margin-top: 14px">Quick answers</h2>
+			</div>
+			<div class="faq-list">
+				<div class="faq-item open">
+					<button class="faq-q" onclick="bbFaq(this)" aria-expanded="true">
+						<span class="q">Is it really free?</span
+						><span class="faq-ic"
+							><svg
+								width="15"
+								height="15"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2.6"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<path d="M6 9l6 6 6-6" /></svg
+						></span>
+					</button>
+					<div class="faq-a">
+						Yes — no entry fee, no card, no catch. Just sign in, fill your
+						bracket, and play. Cash prizes are won and paid out; you never pay a
+						cent in.
+					</div>
+				</div>
+				<div class="faq-item">
+					<button class="faq-q" onclick="bbFaq(this)" aria-expanded="false">
+						<span class="q">Who can win the prize?</span
+						><span class="faq-ic"
+							><svg
+								width="15"
+								height="15"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2.6"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<path d="M6 9l6 6 6-6" /></svg
+						></span>
+					</button>
+					<div class="faq-a">
+						Bangladeshi nationals only (by nationality, not where you live). You
+						can play and win from anywhere in the world. You must be 18+ and
+						verify your identity if you finish in a prize position.
+					</div>
+				</div>
+				<div class="faq-item">
+					<button class="faq-q" onclick="bbFaq(this)" aria-expanded="false">
+						<span class="q">When does my bracket lock?</span
+						><span class="faq-ic"
+							><svg
+								width="15"
+								height="15"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2.6"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<path d="M6 9l6 6 6-6" /></svg
+						></span>
+					</button>
+					<div class="faq-a">
+						The bracket locks at the first Round-of-32 kick-off. After that,
+						your picks are final. You get one free re-pick before then if you
+						change your mind.
+					</div>
+				</div>
+				<div class="faq-item">
+					<button class="faq-q" onclick="bbFaq(this)" aria-expanded="false">
+						<span class="q">How do I claim a prize?</span
+						><span class="faq-ic"
+							><svg
+								width="15"
+								height="15"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2.6"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<path d="M6 9l6 6 6-6" /></svg
+						></span>
+					</button>
+					<div class="faq-a">
+						If you finish in a winning position, email your verification code
+						and a photo of your NID/passport to admin@banglabracket.com before
+						the 3rd-place match. Prize is paid via bKash.
+					</div>
+				</div>
+				<div class="faq-item">
+					<button class="faq-q" onclick="bbFaq(this)" aria-expanded="false">
+						<span class="q">Can I change my picks?</span
+						><span class="faq-ic"
+							><svg
+								width="15"
+								height="15"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2.6"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<path d="M6 9l6 6 6-6" /></svg
+						></span>
+					</button>
+					<div class="faq-a">
+						Yes, until the bracket locks you can edit picks freely. You also get
+						one free re-pick to start fresh — but this clears your tiebreaker
+						bonus points, so use it carefully.
+					</div>
+				</div>
+				<div class="faq-item">
+					<button class="faq-q" onclick="bbFaq(this)" aria-expanded="false">
+						<span class="q">Do I need to verify to play?</span
+						><span class="faq-ic"
+							><svg
+								width="15"
+								height="15"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2.6"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<path d="M6 9l6 6 6-6" /></svg
+						></span>
+					</button>
+					<div class="faq-a">
+						No — you only need to verify if you end up in a prize-winning
+						position. Play first, verify later. You have until the 3rd-place
+						match deadline once results are final.
+					</div>
+				</div>
+			</div>
+		</div>
 
-<!-- FINAL CTA -->
-<div class="wrap sec" style="padding:104px 32px 0">
-  <div style="position:relative;border-radius:26px;overflow:hidden;background:linear-gradient(150deg,#0c2419,#07150e);box-shadow:0 40px 90px -34px rgba(7,21,14,.6)">
-    <div style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(60% 80% at 85% 10%,rgba(255,203,69,.18),transparent 60%),radial-gradient(50% 70% at 8% 90%,rgba(11,122,75,.42),transparent 62%)"></div>
-    <div class="cta-grid" style="position:relative;padding:52px 48px;display:grid;grid-template-columns:1.2fr .8fr;gap:40px;align-items:center">
-      <div>
-        <div style="display:inline-flex;align-items:center;gap:8px;padding:6px 13px;border-radius:999px;background:rgba(255,203,69,.12);border:1px solid rgba(255,203,69,.3)"><span style="width:6px;height:6px;border-radius:50%;background:#ffcb45;animation:bbGlow 1.6s infinite"></span><span style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#ffcb45">Bracket locks 28 June</span></div>
-        <h2 class="dsp" style="font-weight:800;font-size:clamp(32px,5vw,54px);line-height:.96;letter-spacing:-.01em;margin:18px 0 0;color:#fff">৳1,00,000 is waiting.<br>Get your picks in.</h2>
-        <p style="font-size:17px;line-height:1.6;color:#9fb6aa;margin:14px 0 0;max-width:32em">Free to enter, two minutes to set up. Lock your bracket before the first kick-off and you're in the running.</p>
-        <a class="btn-primary cta-btn" href="/wc2026/app/" style="height:56px;padding:0 28px;margin-top:26px;font-size:17px">Play free<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:11px">
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
-          <div style="text-align:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px 4px"><div class="dsp" data-d style="font-weight:700;font-size:34px;line-height:1;color:#fff;font-variant-numeric:tabular-nums">–</div><div style="font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#7d978b;margin-top:6px">Days</div></div>
-          <div style="text-align:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px 4px"><div class="dsp" data-h style="font-weight:700;font-size:34px;line-height:1;color:#fff;font-variant-numeric:tabular-nums">–</div><div style="font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#7d978b;margin-top:6px">Hrs</div></div>
-          <div style="text-align:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px 4px"><div class="dsp" data-m style="font-weight:700;font-size:34px;line-height:1;color:#fff;font-variant-numeric:tabular-nums">–</div><div style="font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#7d978b;margin-top:6px">Min</div></div>
-          <div style="text-align:center;background:rgba(255,203,69,.12);border:1px solid rgba(255,203,69,.3);border-radius:12px;padding:14px 4px"><div class="dsp" data-s style="font-weight:700;font-size:34px;line-height:1;color:#ffcb45;font-variant-numeric:tabular-nums">–</div><div style="font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#caa23f;margin-top:6px">Sec</div></div>
-        </div>
-        <div style="text-align:center;font-size:12.5px;color:#7d978b;font-weight:600">28 June 2026 · first Round-of-32 kick-off</div>
-      </div>
-    </div>
-  </div>
-</div>
+		<!-- FINAL CTA -->
+		<div class="wrap sec" style="padding: 104px 32px 0">
+			<div
+				style="
+					position: relative;
+					border-radius: 26px;
+					overflow: hidden;
+					background: linear-gradient(150deg, #0c2419, #07150e);
+					box-shadow: 0 40px 90px -34px rgba(7, 21, 14, 0.6);
+				"
+			>
+				<div
+					style="
+						position: absolute;
+						inset: 0;
+						pointer-events: none;
+						background:
+							radial-gradient(
+								60% 80% at 85% 10%,
+								rgba(255, 203, 69, 0.18),
+								transparent 60%
+							),
+							radial-gradient(
+								50% 70% at 8% 90%,
+								rgba(11, 122, 75, 0.42),
+								transparent 62%
+							);
+					"
+				></div>
+				<div
+					class="cta-grid"
+					style="
+						position: relative;
+						padding: 52px 48px;
+						display: grid;
+						grid-template-columns: 1.2fr 0.8fr;
+						gap: 40px;
+						align-items: center;
+					"
+				>
+					<div>
+						<div
+							style="
+								display: inline-flex;
+								align-items: center;
+								gap: 8px;
+								padding: 6px 13px;
+								border-radius: 999px;
+								background: rgba(255, 203, 69, 0.12);
+								border: 1px solid rgba(255, 203, 69, 0.3);
+							"
+						>
+							<span
+								style="
+									width: 6px;
+									height: 6px;
+									border-radius: 50%;
+									background: #ffcb45;
+									animation: bbGlow 1.6s infinite;
+								"
+							></span
+							><span
+								style="
+									font-size: 11px;
+									font-weight: 800;
+									letter-spacing: 0.12em;
+									text-transform: uppercase;
+									color: #ffcb45;
+								"
+								>Bracket locks 28 June</span
+							>
+						</div>
+						<h2
+							class="dsp"
+							style="
+								font-weight: 800;
+								font-size: clamp(32px, 5vw, 54px);
+								line-height: 0.96;
+								letter-spacing: -0.01em;
+								margin: 18px 0 0;
+								color: #fff;
+							"
+						>
+							৳1,00,000 is waiting.<br />Get your picks in.
+						</h2>
+						<p
+							style="
+								font-size: 17px;
+								line-height: 1.6;
+								color: #9fb6aa;
+								margin: 14px 0 0;
+								max-width: 32em;
+							"
+						>
+							Free to enter, two minutes to set up. Lock your bracket before the
+							first kick-off and you're in the running.
+						</p>
+						<a
+							class="btn-primary cta-btn"
+							href="/wc2026/app/"
+							style="
+								height: 56px;
+								padding: 0 28px;
+								margin-top: 26px;
+								font-size: 17px;
+							"
+							>Play free<svg
+								width="17"
+								height="17"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2.6"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<path d="M5 12h13M13 6l6 6-6 6" /></svg
+						></a>
+					</div>
+					<div style="display: flex; flex-direction: column; gap: 11px">
+						<div
+							style="
+								display: grid;
+								grid-template-columns: repeat(4, 1fr);
+								gap: 8px;
+							"
+						>
+							<div
+								style="
+									text-align: center;
+									background: rgba(255, 255, 255, 0.05);
+									border: 1px solid rgba(255, 255, 255, 0.08);
+									border-radius: 12px;
+									padding: 14px 4px;
+								"
+							>
+								<div
+									class="dsp"
+									data-d
+									style="
+										font-weight: 700;
+										font-size: 34px;
+										line-height: 1;
+										color: #fff;
+										font-variant-numeric: tabular-nums;
+									"
+								>
+									–
+								</div>
+								<div
+									style="
+										font-size: 9px;
+										font-weight: 800;
+										letter-spacing: 0.1em;
+										text-transform: uppercase;
+										color: #7d978b;
+										margin-top: 6px;
+									"
+								>
+									Days
+								</div>
+							</div>
+							<div
+								style="
+									text-align: center;
+									background: rgba(255, 255, 255, 0.05);
+									border: 1px solid rgba(255, 255, 255, 0.08);
+									border-radius: 12px;
+									padding: 14px 4px;
+								"
+							>
+								<div
+									class="dsp"
+									data-h
+									style="
+										font-weight: 700;
+										font-size: 34px;
+										line-height: 1;
+										color: #fff;
+										font-variant-numeric: tabular-nums;
+									"
+								>
+									–
+								</div>
+								<div
+									style="
+										font-size: 9px;
+										font-weight: 800;
+										letter-spacing: 0.1em;
+										text-transform: uppercase;
+										color: #7d978b;
+										margin-top: 6px;
+									"
+								>
+									Hrs
+								</div>
+							</div>
+							<div
+								style="
+									text-align: center;
+									background: rgba(255, 255, 255, 0.05);
+									border: 1px solid rgba(255, 255, 255, 0.08);
+									border-radius: 12px;
+									padding: 14px 4px;
+								"
+							>
+								<div
+									class="dsp"
+									data-m
+									style="
+										font-weight: 700;
+										font-size: 34px;
+										line-height: 1;
+										color: #fff;
+										font-variant-numeric: tabular-nums;
+									"
+								>
+									–
+								</div>
+								<div
+									style="
+										font-size: 9px;
+										font-weight: 800;
+										letter-spacing: 0.1em;
+										text-transform: uppercase;
+										color: #7d978b;
+										margin-top: 6px;
+									"
+								>
+									Min
+								</div>
+							</div>
+							<div
+								style="
+									text-align: center;
+									background: rgba(255, 203, 69, 0.12);
+									border: 1px solid rgba(255, 203, 69, 0.3);
+									border-radius: 12px;
+									padding: 14px 4px;
+								"
+							>
+								<div
+									class="dsp"
+									data-s
+									style="
+										font-weight: 700;
+										font-size: 34px;
+										line-height: 1;
+										color: #ffcb45;
+										font-variant-numeric: tabular-nums;
+									"
+								>
+									–
+								</div>
+								<div
+									style="
+										font-size: 9px;
+										font-weight: 800;
+										letter-spacing: 0.1em;
+										text-transform: uppercase;
+										color: #caa23f;
+										margin-top: 6px;
+									"
+								>
+									Sec
+								</div>
+							</div>
+						</div>
+						<div
+							style="
+								text-align: center;
+								font-size: 12.5px;
+								color: #7d978b;
+								font-weight: 600;
+							"
+						>
+							28 June 2026 · first Round-of-32 kick-off
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
 
-<!-- FOOTER -->
-<footer style="border-top:1px solid var(--lineStrong);margin-top:80px;padding:48px 0 36px;background:var(--surface2)">
-  <div class="wrap foot-grid" style="display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:30px">
-    <div class="foot-brand">
-      <div style="display:flex;align-items:center;gap:10px"><span style="width:34px;height:34px;border-radius:10px;background:linear-gradient(150deg,#ffd45f,#e8ab1f);display:flex;align-items:center;justify-content:center"><svg width="21" height="21" viewBox="0 0 48 48" fill="none" stroke="#1a1405" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6H14M4 18H14M4 30H14M4 42H14M14 6V18M14 30V42M14 12H24M14 36H24M24 12V36M24 24H34"/><path d="M39 19 44 24 39 29 34 24Z" fill="#1a1405" stroke="none"/></svg></span><span style="font-family:'Baloo Da 2';font-weight:800;font-size:19px">Bangla<span style="color:var(--goldText)">Bracket</span></span></div>
-      <p style="color:var(--muted);font-size:14px;margin:12px 0 0;max-width:26em;line-height:1.6">Brings World Cup 2026 to your hands. Predict the bracket, top the table, win &#2547;1,00,000. Free to play, made for Bangladesh.</p>
-    </div>
-    <div><div style="font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin-bottom:12px">Play</div><div style="display:flex;flex-direction:column;gap:9px"><a href="/wc2026/app/scoring" style="color:var(--muted);text-decoration:none;font-size:14px">Scoring</a><a href="/wc2026/app/howtoplay" style="color:var(--muted);text-decoration:none;font-size:14px">How to play</a><a href="/wc2026/app/leaderboard" style="color:var(--muted);text-decoration:none;font-size:14px">Leaderboard</a><a href="/wc2026/app/" style="color:var(--muted);text-decoration:none;font-size:14px">Play now</a></div></div>
-    <div><div style="font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin-bottom:12px">Prizes</div><div style="display:flex;flex-direction:column;gap:9px"><a href="/wc2026/app/prizes" style="color:var(--muted);text-decoration:none;font-size:14px">Full prize list</a><a href="/wc2026/app/winners" style="color:var(--muted);text-decoration:none;font-size:14px">All winners</a><a href="/wc2026/app/prizes" style="color:var(--muted);text-decoration:none;font-size:14px">How to win</a><a href="/wc2026/app/verify" style="color:var(--muted);text-decoration:none;font-size:14px">Verify ID</a></div></div>
-    <div><div style="font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin-bottom:12px">Support</div><div style="display:flex;flex-direction:column;gap:9px"><a href="mailto:admin@banglabracket.com" style="color:var(--muted);text-decoration:none;font-size:14px">Contact</a><a href="#" onclick="openLegal('terms');return false" style="color:var(--muted);text-decoration:none;font-size:14px">Terms</a><a href="#" onclick="openLegal('privacy');return false" style="color:var(--muted);text-decoration:none;font-size:14px">Privacy</a><a href="#" onclick="openLegal('deletion');return false" style="color:var(--muted);text-decoration:none;font-size:14px">Data deletion</a></div></div>
-  </div>
-  <div class="wrap" style="margin-top:34px;padding-top:20px;border-top:1px solid var(--line);color:var(--faint);font-size:13px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
-    <span>&#169; 2026 BanglaBracket &#183; Play responsibly &#183; 18+</span><span>Not affiliated with FIFA or any official body.</span>
-  </div>
-</footer>
+		<!-- FOOTER -->
+		<footer
+			style="
+				border-top: 1px solid var(--lineStrong);
+				margin-top: 80px;
+				padding: 48px 0 36px;
+				background: var(--surface2);
+			"
+		>
+			<div
+				class="wrap foot-grid"
+				style="
+					display: grid;
+					grid-template-columns: 1.5fr 1fr 1fr 1fr;
+					gap: 30px;
+				"
+			>
+				<div class="foot-brand">
+					<div style="display: flex; align-items: center; gap: 10px">
+						<span
+							style="
+								width: 34px;
+								height: 34px;
+								border-radius: 10px;
+								background: linear-gradient(150deg, #ffd45f, #e8ab1f);
+								display: flex;
+								align-items: center;
+								justify-content: center;
+							"
+							><svg
+								width="21"
+								height="21"
+								viewBox="0 0 48 48"
+								fill="none"
+								stroke="#1a1405"
+								stroke-width="3.2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<path
+									d="M4 6H14M4 18H14M4 30H14M4 42H14M14 6V18M14 30V42M14 12H24M14 36H24M24 12V36M24 24H34"
+								/>
+								<path
+									d="M39 19 44 24 39 29 34 24Z"
+									fill="#1a1405"
+									stroke="none"
+								/></svg></span
+						><span
+							style="
+								font-family: &quot;Baloo Da 2&quot;;
+								font-weight: 800;
+								font-size: 19px;
+							"
+							>Bangla<span style="color: var(--goldText)">Bracket</span></span
+						>
+					</div>
+					<p
+						style="
+							color: var(--muted);
+							font-size: 14px;
+							margin: 12px 0 0;
+							max-width: 26em;
+							line-height: 1.6;
+						"
+					>
+						Brings World Cup 2026 to your hands. Predict the bracket, top the
+						table, win &#2547;1,00,000. Free to play, made for Bangladesh.
+					</p>
+				</div>
+				<div>
+					<div
+						style="
+							font-weight: 800;
+							font-size: 12px;
+							text-transform: uppercase;
+							letter-spacing: 0.08em;
+							color: var(--faint);
+							margin-bottom: 12px;
+						"
+					>
+						Play
+					</div>
+					<div style="display: flex; flex-direction: column; gap: 9px">
+						<a
+							href="/wc2026/app/scoring"
+							style="
+								color: var(--muted);
+								text-decoration: none;
+								font-size: 14px;
+							"
+							>Scoring</a
+						><a
+							href="/wc2026/app/howtoplay"
+							style="
+								color: var(--muted);
+								text-decoration: none;
+								font-size: 14px;
+							"
+							>How to play</a
+						><a
+							href="/wc2026/app/leaderboard"
+							style="
+								color: var(--muted);
+								text-decoration: none;
+								font-size: 14px;
+							"
+							>Leaderboard</a
+						><a
+							href="/wc2026/app/"
+							style="
+								color: var(--muted);
+								text-decoration: none;
+								font-size: 14px;
+							"
+							>Play now</a
+						>
+					</div>
+				</div>
+				<div>
+					<div
+						style="
+							font-weight: 800;
+							font-size: 12px;
+							text-transform: uppercase;
+							letter-spacing: 0.08em;
+							color: var(--faint);
+							margin-bottom: 12px;
+						"
+					>
+						Prizes
+					</div>
+					<div style="display: flex; flex-direction: column; gap: 9px">
+						<a
+							href="/wc2026/app/prizes"
+							style="
+								color: var(--muted);
+								text-decoration: none;
+								font-size: 14px;
+							"
+							>Full prize list</a
+						><a
+							href="/wc2026/app/winners"
+							style="
+								color: var(--muted);
+								text-decoration: none;
+								font-size: 14px;
+							"
+							>All winners</a
+						><a
+							href="/wc2026/app/prizes"
+							style="
+								color: var(--muted);
+								text-decoration: none;
+								font-size: 14px;
+							"
+							>How to win</a
+						><a
+							href="/wc2026/app/verify"
+							style="
+								color: var(--muted);
+								text-decoration: none;
+								font-size: 14px;
+							"
+							>Verify ID</a
+						>
+					</div>
+				</div>
+				<div>
+					<div
+						style="
+							font-weight: 800;
+							font-size: 12px;
+							text-transform: uppercase;
+							letter-spacing: 0.08em;
+							color: var(--faint);
+							margin-bottom: 12px;
+						"
+					>
+						Support
+					</div>
+					<div style="display: flex; flex-direction: column; gap: 9px">
+						<a
+							href="mailto:admin@banglabracket.com"
+							style="
+								color: var(--muted);
+								text-decoration: none;
+								font-size: 14px;
+							"
+							>Contact</a
+						><a
+							href="#"
+							onclick="
+								openLegal('terms');
+								return false;
+							"
+							style="
+								color: var(--muted);
+								text-decoration: none;
+								font-size: 14px;
+							"
+							>Terms</a
+						><a
+							href="#"
+							onclick="
+								openLegal('privacy');
+								return false;
+							"
+							style="
+								color: var(--muted);
+								text-decoration: none;
+								font-size: 14px;
+							"
+							>Privacy</a
+						><a
+							href="#"
+							onclick="
+								openLegal('deletion');
+								return false;
+							"
+							style="
+								color: var(--muted);
+								text-decoration: none;
+								font-size: 14px;
+							"
+							>Data deletion</a
+						>
+					</div>
+				</div>
+			</div>
+			<div
+				class="wrap"
+				style="
+					margin-top: 34px;
+					padding-top: 20px;
+					border-top: 1px solid var(--line);
+					color: var(--faint);
+					font-size: 13px;
+					display: flex;
+					justify-content: space-between;
+					flex-wrap: wrap;
+					gap: 8px;
+				"
+			>
+				<span>&#169; 2026 BanglaBracket &#183; Play responsibly &#183; 18+</span
+				><span>Not affiliated with FIFA or any official body.</span>
+			</div>
+		</footer>
 
-<!-- STICKY MOBILE CTA -->
-<div class="sticky-bar">
-  <div style="flex:1;min-width:0">
-    <div class="sb-title">Win &#2547;1,00,000</div>
-    <div class="sb-sub">Locks in <b data-d>&ndash;</b>d <b data-h>&ndash;</b>h &middot; free</div>
-  </div>
-  <a class="btn-primary" href="/wc2026/app/">Play free<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a>
-</div>
+		<!-- STICKY MOBILE CTA -->
+		<div class="sticky-bar">
+			<div style="flex: 1; min-width: 0">
+				<div class="sb-title">Win &#2547;1,00,000</div>
+				<div class="sb-sub">
+					Locks in <b data-d>&ndash;</b>d <b data-h>&ndash;</b>h &middot; free
+				</div>
+			</div>
+			<a class="btn-primary" href="/wc2026/app/"
+				>Play free<svg
+					width="15"
+					height="15"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2.6"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<path d="M5 12h13M13 6l6 6-6 6" /></svg
+			></a>
+		</div>
 
-<!-- LEGAL MODAL (terms / privacy open here, no page leave) -->
-<div id="legalOverlay" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(8,16,11,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closeLegal()">
-  <div style="width:100%;max-width:640px;max-height:84vh;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:0 40px 90px -30px rgba(0,0,0,.6)">
-    <div style="position:sticky;top:0;background:var(--surface);display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--line)">
-      <h3 id="legalTitle" style="font-family:'Baloo Da 2';font-weight:800;font-size:22px">Terms</h3>
-      <button onclick="closeLegal()" aria-label="Close" style="width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--surface2);color:var(--ink);cursor:pointer;font-size:18px;line-height:1">&times;</button>
-    </div>
-    <div id="legalBody" style="padding:24px;color:var(--muted);font-size:14.5px;line-height:1.7"></div>
-  </div>
-</div>
+		<!-- LEGAL MODAL (terms / privacy open here, no page leave) -->
+		<div
+			id="legalOverlay"
+			style="
+				display: none;
+				position: fixed;
+				inset: 0;
+				z-index: 200;
+				background: rgba(8, 16, 11, 0.55);
+				backdrop-filter: blur(4px);
+				align-items: center;
+				justify-content: center;
+				padding: 20px;
+			"
+			onclick="if (event.target === this) closeLegal();"
+		>
+			<div
+				style="
+					width: 100%;
+					max-width: 640px;
+					max-height: 84vh;
+					overflow: auto;
+					background: var(--surface);
+					border: 1px solid var(--line);
+					border-radius: 20px;
+					box-shadow: 0 40px 90px -30px rgba(0, 0, 0, 0.6);
+				"
+			>
+				<div
+					style="
+						position: sticky;
+						top: 0;
+						background: var(--surface);
+						display: flex;
+						align-items: center;
+						justify-content: space-between;
+						padding: 20px 24px;
+						border-bottom: 1px solid var(--line);
+					"
+				>
+					<h3
+						id="legalTitle"
+						style="
+							font-family: &quot;Baloo Da 2&quot;;
+							font-weight: 800;
+							font-size: 22px;
+						"
+					>
+						Terms
+					</h3>
+					<button
+						onclick="closeLegal()"
+						aria-label="Close"
+						style="
+							width: 34px;
+							height: 34px;
+							border-radius: 10px;
+							border: 1px solid var(--line);
+							background: var(--surface2);
+							color: var(--ink);
+							cursor: pointer;
+							font-size: 18px;
+							line-height: 1;
+						"
+					>
+						&times;
+					</button>
+				</div>
+				<div
+					id="legalBody"
+					style="
+						padding: 24px;
+						color: var(--muted);
+						font-size: 14.5px;
+						line-height: 1.7;
+					"
+				></div>
+			</div>
+		</div>
 
-<script>
-  // Theme toggle (persisted)
-  function setTheme(t){
-    document.documentElement.setAttribute('data-theme', t==='dark'?'dark':'');
-    document.getElementById('segLight').classList.toggle('on', t!=='dark');
-    document.getElementById('segDark').classList.toggle('on', t==='dark');
-    try{localStorage.setItem('bb-theme', t)}catch(e){}
-  }
-  (function(){ var s; try{s=localStorage.getItem('bb-theme')}catch(e){}; setTheme(s==='dark'?'dark':'light'); })();
+		<script>
+			// Theme toggle (persisted)
+			function setTheme(t) {
+				document.documentElement.setAttribute(
+					"data-theme",
+					t === "dark" ? "dark" : "",
+				);
+				document
+					.getElementById("segLight")
+					.classList.toggle("on", t !== "dark");
+				document.getElementById("segDark").classList.toggle("on", t === "dark");
+				try {
+					localStorage.setItem("bb-theme", t);
+				} catch (e) {}
+			}
+			(function () {
+				var s;
+				try {
+					s = localStorage.getItem("bb-theme");
+				} catch (e) {}
+				setTheme(s === "dark" ? "dark" : "light");
+			})();
 
-  // Countdown
-  var LOCK=new Date('2026-06-28T19:00:00Z');
-  var API='https://api.banglabracket.com';
-  fetch(API+'/api/tournament').then(function(r){return r.json()}).then(function(t){if(t&&t.lockAt)LOCK=new Date(t.lockAt)}).catch(function(){});
-  fetch(API+'/api/stats').then(function(r){return r.json()}).then(function(s){if(s&&s.totalUsers!=null)document.getElementById('players').textContent=Number(s.totalUsers).toLocaleString()}).catch(function(){});
-  function bbEsc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-  function bbRenderRanks(rows){
-    if(!rows||rows.length<3)return;
-    var small='';
-    rows.slice(0,3).forEach(function(r,i){
-      var pts=Number(r.main||r.points||0).toLocaleString(),name=bbEsc(r.name||'Player');
-      var border=i>0?';border-top:1px solid var(--line)':'';
-      var bg=i===0?'var(--gold);color:#1a1405':'var(--goldSoft);color:var(--goldText)';
-      small+='<div style="display:flex;align-items:center;gap:9px;padding:5px 0'+border+'">'
-        +'<span style="flex:1;font-size:12.5px;font-weight:700;color:var(--ink)">'+name+'</span>'
-        +'<span class="dsp" style="font-size:16px;font-weight:800;color:var(--ink)">'+pts+'</span>'
-        +'<span style="display:inline-grid;place-items:center;width:22px;height:22px;border-radius:7px;background:'+bg+';font-size:11px;font-weight:800">'+(i+1)+'</span></div>';
-    });
-    document.getElementById('liveRanks').innerHTML=small;
-    var big='';
-    rows.slice(0,3).forEach(function(r,i){
-      var pts=Number(r.main||r.points||0).toLocaleString(),name=bbEsc(r.name||'Player');
-      var loc=r.district?bbEsc(r.district)+', BD':(r.overseas?'Overseas':'');
-      var locHtml=loc?'<span style="color:var(--muted);font-size:13px">'+loc+'</span>':'';
-      if(i===0){
-        big+='<div style="display:flex;align-items:center;gap:12px;padding:13px 14px;margin:-4px -8px 0;border-radius:13px;background:linear-gradient(100deg,var(--goldSoft),transparent);border:1px solid var(--goldSoft)">'
-          +'<span style="flex:1;font-weight:800">'+name+'</span>'+locHtml
-          +'<span class="dsp" style="font-weight:800;margin:0 12px;color:var(--goldText)">'+pts+'</span>'
-          +'<span style="display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;background:linear-gradient(150deg,#ffd45f,#e8ab1f);color:#1a1405;font-weight:800;box-shadow:0 4px 12px rgba(232,171,31,.4)">&#x1F451;</span></div>';
-      }else{
-        big+='<div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line)">'
-          +'<span style="flex:1;font-weight:700">'+name+'</span>'+locHtml
-          +'<span class="dsp" style="font-weight:800;margin:0 12px">'+pts+'</span>'
-          +'<span style="display:inline-grid;place-items:center;width:28px;height:28px;border-radius:8px;background:var(--goldSoft);color:var(--goldText);font-weight:800">'+(i+1)+'</span></div>';
-      }
-    });
-    document.getElementById('bigRanks').innerHTML=big;
-  }
-  fetch(API+'/api/leaderboard').then(function(r){return r.json()}).then(function(d){bbRenderRanks(d&&d.rows)}).catch(function(){});
-  function tick(){var d=Math.max(0,LOCK-new Date()),D=Math.floor(d/864e5),H=Math.floor(d/36e5)%24,M=Math.floor(d/6e4)%60,S=Math.floor(d/1e3)%60,p=function(n){return String(n).padStart(2,'0')},
-    set=function(sel,v){document.querySelectorAll(sel).forEach(function(el){el.textContent=v;});};
-    set('[data-d]',D);set('[data-h]',p(H));set('[data-m]',p(M));set('[data-s]',p(S));}
-  tick();setInterval(tick,1000);
+			// Countdown
+			var LOCK = new Date("2026-06-28T19:00:00Z");
+			var API = "https://api.banglabracket.com";
+			fetch(API + "/api/tournament")
+				.then(function (r) {
+					return r.json();
+				})
+				.then(function (t) {
+					if (t && t.lockAt) LOCK = new Date(t.lockAt);
+				})
+				.catch(function () {});
+			fetch(API + "/api/stats")
+				.then(function (r) {
+					return r.json();
+				})
+				.then(function (s) {
+					if (s && s.totalUsers != null)
+						document.getElementById("players").textContent = Number(
+							s.totalUsers,
+						).toLocaleString();
+				})
+				.catch(function () {});
+			function bbEsc(s) {
+				return String(s || "")
+					.replace(/&/g, "&amp;")
+					.replace(/</g, "&lt;")
+					.replace(/>/g, "&gt;");
+			}
+			function bbRenderRanks(rows) {
+				if (!rows || rows.length < 3) return;
+				var small = "";
+				rows.slice(0, 3).forEach(function (r, i) {
+					var pts = Number(r.main || r.points || 0).toLocaleString(),
+						name = bbEsc(r.name || "Player");
+					var border = i > 0 ? ";border-top:1px solid var(--line)" : "";
+					var bg =
+						i === 0
+							? "var(--gold);color:#1a1405"
+							: "var(--goldSoft);color:var(--goldText)";
+					small +=
+						'<div style="display:flex;align-items:center;gap:9px;padding:5px 0' +
+						border +
+						'">' +
+						'<span style="flex:1;font-size:12.5px;font-weight:700;color:var(--ink)">' +
+						name +
+						"</span>" +
+						'<span class="dsp" style="font-size:16px;font-weight:800;color:var(--ink)">' +
+						pts +
+						"</span>" +
+						'<span style="display:inline-grid;place-items:center;width:22px;height:22px;border-radius:7px;background:' +
+						bg +
+						';font-size:11px;font-weight:800">' +
+						(i + 1) +
+						"</span></div>";
+				});
+				document.getElementById("liveRanks").innerHTML = small;
+				var big = "";
+				rows.slice(0, 3).forEach(function (r, i) {
+					var pts = Number(r.main || r.points || 0).toLocaleString(),
+						name = bbEsc(r.name || "Player");
+					var loc = r.district
+						? bbEsc(r.district) + ", BD"
+						: r.overseas
+							? "Overseas"
+							: "";
+					var locHtml = loc
+						? '<span style="color:var(--muted);font-size:13px">' +
+							loc +
+							"</span>"
+						: "";
+					if (i === 0) {
+						big +=
+							'<div style="display:flex;align-items:center;gap:12px;padding:13px 14px;margin:-4px -8px 0;border-radius:13px;background:linear-gradient(100deg,var(--goldSoft),transparent);border:1px solid var(--goldSoft)">' +
+							'<span style="flex:1;font-weight:800">' +
+							name +
+							"</span>" +
+							locHtml +
+							'<span class="dsp" style="font-weight:800;margin:0 12px;color:var(--goldText)">' +
+							pts +
+							"</span>" +
+							'<span style="display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;background:linear-gradient(150deg,#ffd45f,#e8ab1f);color:#1a1405;font-weight:800;box-shadow:0 4px 12px rgba(232,171,31,.4)">&#x1F451;</span></div>';
+					} else {
+						big +=
+							'<div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line)">' +
+							'<span style="flex:1;font-weight:700">' +
+							name +
+							"</span>" +
+							locHtml +
+							'<span class="dsp" style="font-weight:800;margin:0 12px">' +
+							pts +
+							"</span>" +
+							'<span style="display:inline-grid;place-items:center;width:28px;height:28px;border-radius:8px;background:var(--goldSoft);color:var(--goldText);font-weight:800">' +
+							(i + 1) +
+							"</span></div>";
+					}
+				});
+				document.getElementById("bigRanks").innerHTML = big;
+			}
+			fetch(API + "/api/leaderboard")
+				.then(function (r) {
+					return r.json();
+				})
+				.then(function (d) {
+					bbRenderRanks(d && d.rows);
+				})
+				.catch(function () {});
+			function tick() {
+				var d = Math.max(0, LOCK - new Date()),
+					D = Math.floor(d / 864e5),
+					H = Math.floor(d / 36e5) % 24,
+					M = Math.floor(d / 6e4) % 60,
+					S = Math.floor(d / 1e3) % 60,
+					p = function (n) {
+						return String(n).padStart(2, "0");
+					},
+					set = function (sel, v) {
+						document.querySelectorAll(sel).forEach(function (el) {
+							el.textContent = v;
+						});
+					};
+				set("[data-d]", D);
+				set("[data-h]", p(H));
+				set("[data-m]", p(M));
+				set("[data-s]", p(S));
+			}
+			tick();
+			setInterval(tick, 1000);
 
-  // FAQ accordion (single item open at a time)
-  function bbFaq(btn){
-    var item=btn.parentElement,wasOpen=item.classList.contains('open');
-    document.querySelectorAll('.faq-item.open').forEach(function(i){i.classList.remove('open');i.querySelector('.faq-q').setAttribute('aria-expanded','false');});
-    if(!wasOpen){item.classList.add('open');btn.setAttribute('aria-expanded','true');}
-  }
+			// FAQ accordion (single item open at a time)
+			function bbFaq(btn) {
+				var item = btn.parentElement,
+					wasOpen = item.classList.contains("open");
+				document.querySelectorAll(".faq-item.open").forEach(function (i) {
+					i.classList.remove("open");
+					i.querySelector(".faq-q").setAttribute("aria-expanded", "false");
+				});
+				if (!wasOpen) {
+					item.classList.add("open");
+					btn.setAttribute("aria-expanded", "true");
+				}
+			}
 
-  // Mobile menu
-  function toggleMenu(){
-    var m=document.getElementById('mobileMenu'),b=document.getElementById('menuBtn'),open=m.classList.toggle('open');
-    if(b)b.setAttribute('aria-expanded',open?'true':'false');
-  }
-  function closeMenu(){
-    var m=document.getElementById('mobileMenu'),b=document.getElementById('menuBtn');
-    if(m)m.classList.remove('open');
-    if(b)b.setAttribute('aria-expanded','false');
-  }
+			// Mobile menu
+			function toggleMenu() {
+				var m = document.getElementById("mobileMenu"),
+					b = document.getElementById("menuBtn"),
+					open = m.classList.toggle("open");
+				if (b) b.setAttribute("aria-expanded", open ? "true" : "false");
+			}
+			function closeMenu() {
+				var m = document.getElementById("mobileMenu"),
+					b = document.getElementById("menuBtn");
+				if (m) m.classList.remove("open");
+				if (b) b.setAttribute("aria-expanded", "false");
+			}
 
-  // Winners carousel (web: 3 at a time, mobile: 1 at a time)
-  function bbWin(dir){
-    var t=document.getElementById('winTrack');if(!t)return;
-    var card=t.querySelector('.win-card');if(!card)return;
-    var styles=getComputedStyle(t),gap=parseFloat(styles.columnGap||styles.gap||'16')||16;
-    var step=card.getBoundingClientRect().width+gap;
-    var per=window.innerWidth<=920?1:3;
-    t.scrollBy({left:dir*step*per,behavior:'smooth'});
-  }
-</script>
+			// Winners carousel (web: 3 at a time, mobile: 1 at a time)
+			function bbWin(dir) {
+				var t = document.getElementById("winTrack");
+				if (!t) return;
+				var card = t.querySelector(".win-card");
+				if (!card) return;
+				var styles = getComputedStyle(t),
+					gap = parseFloat(styles.columnGap || styles.gap || "16") || 16;
+				var step = card.getBoundingClientRect().width + gap;
+				var per = window.innerWidth <= 920 ? 1 : 3;
+				t.scrollBy({ left: dir * step * per, behavior: "smooth" });
+			}
+		</script>
 
-<script>
-  var LEGAL={
-    terms:{title:'Terms of Play',html:`
+		<script>
+			var LEGAL = {
+				terms: {
+					title: "Terms of Play",
+					html: `
       <p><b>Free to play.</b> BanglaBracket is a free prediction game for the 2026 World Cup. No entry fee, no purchase, no card required.</p>
       <p><b>Eligibility.</b> Prizes are for Bangladeshi nationals (by nationality, not residence) aged 18+. You can play and win from anywhere in the world. Winners must verify their identity before prizes are paid.</p>
       <p><b>Winners on the Wall &amp; social media.</b> If you appear on the leaderboard, finish near the top, or win a prize, your <b>display name and profile photo may be shown publicly</b> on the in-app Winners Wall and leaderboard, and may be <b>used and shared by BanglaBracket on social media</b> to announce results and winners. By playing, you consent to this use of your name and image for these purposes.</p>
       <p><b>Admin decisions.</b> All admin decisions are final. BanglaBracket may withhold or reallocate any prize — including paying the next eligible player — at its sole discretion and without explanation, including where cheating or multiple/fake accounts are suspected. We are not obligated to disclose our reasoning.</p>
       <p><b>Fair play.</b> One account per person. Multiple, fake, or automated accounts may be disqualified. The bracket locks at the first Round-of-32 kick-off; picks are final after lock.</p>
       <p><b>Prizes.</b> The grand prize is &#2547;1,00,000 for the top of the points leaderboard. Additional cash rewards are paid for exact knockout scorelines. Prize details may be updated before lock; the current rules in-app govern.</p>
-      <p><b>Not affiliated</b> with FIFA or any official body. Play responsibly. 18+.</p>`},
-    privacy:{title:'Privacy Policy',html:`
+      <p><b>Not affiliated</b> with FIFA or any official body. Play responsibly. 18+.</p>`,
+				},
+				privacy: {
+					title: "Privacy Policy",
+					html: `
       <p><b>What we collect.</b> Your name, email and/or phone, the bracket picks you make, and — only if you choose to verify — your nationality status. We never store images of your ID.</p>
       <p><b>How we use it.</b> Only to run the game: sign you in, score your bracket, rank the leaderboard, and contact winners. We do not sell your data.</p>
       <p><b>Public display.</b> Your display name and profile photo may appear publicly on the leaderboard and Winners Wall, and may be shared by BanglaBracket on social media if you rank highly or win (see Terms).</p>
       <p><b>Security.</b> Sensitive data is encrypted. Sessions use secure cookies.</p>
-      <p><b>Your choices.</b> You can request deletion of your account and data any time via <a href="mailto:admin@banglabracket.com" style="color:var(--primary)">admin@banglabracket.com</a>.</p>`},
-    deletion:{title:'Data Deletion',html:`
+      <p><b>Your choices.</b> You can request deletion of your account and data any time via <a href="mailto:admin@banglabracket.com" style="color:var(--primary)">admin@banglabracket.com</a>.</p>`,
+				},
+				deletion: {
+					title: "Data Deletion",
+					html: `
       <p><b>How to delete your data.</b> To request deletion of your BanglaBracket account and all associated data, email <a href="mailto:admin@banglabracket.com" style="color:var(--primary)">admin@banglabracket.com</a> with the subject line <b>"Delete my account"</b>. Please include the name or email address linked to your account.</p>
       <p><b>What we delete.</b> We will permanently delete your profile (name, phone, email), your bracket picks, your score history, and any verification data we hold. We will process your request within 30 days.</p>
-      <p><b>Note.</b> If you have won a prize, we retain minimal records required by law or for prize payment purposes until those obligations are fulfilled.</p>`}
-  };
-  function openLegal(k){var L=LEGAL[k];if(!L)return;document.getElementById('legalTitle').textContent=L.title;document.getElementById('legalBody').innerHTML=L.html;var o=document.getElementById('legalOverlay');o.style.display='flex';document.body.style.overflow='hidden';}
-  function closeLegal(){document.getElementById('legalOverlay').style.display='none';document.body.style.overflow='';}
-  document.addEventListener('keydown',function(e){if(e.key==='Escape')closeLegal();});
-</script>
-</body>
+      <p><b>Note.</b> If you have won a prize, we retain minimal records required by law or for prize payment purposes until those obligations are fulfilled.</p>`,
+				},
+			};
+			function openLegal(k) {
+				var L = LEGAL[k];
+				if (!L) return;
+				document.getElementById("legalTitle").textContent = L.title;
+				document.getElementById("legalBody").innerHTML = L.html;
+				var o = document.getElementById("legalOverlay");
+				o.style.display = "flex";
+				document.body.style.overflow = "hidden";
+			}
+			function closeLegal() {
+				document.getElementById("legalOverlay").style.display = "none";
+				document.body.style.overflow = "";
+			}
+			document.addEventListener("keydown", function (e) {
+				if (e.key === "Escape") closeLegal();
+			});
+		</script>
+	</body>
 </html>
