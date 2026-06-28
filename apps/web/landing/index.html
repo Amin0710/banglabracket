@@ -52,7 +52,7 @@
 				--primaryGlow: rgba(11, 122, 75, 0.28);
 				--navBg: rgba(244, 247, 238, 0.82);
 				--cardGrad: linear-gradient(180deg, #fff, #f7faf2);
-				--btnSec: #0e8fb8;
+				--btnSec: rgba(14, 143, 184, 0.32);
 				--glowGold: rgba(255, 203, 69, 0.16);
 				--glowGreen: rgba(11, 122, 75, 0.1);
 			}
@@ -84,7 +84,7 @@
 				--primaryGlow: rgba(255, 203, 69, 0.22);
 				--navBg: rgba(8, 16, 11, 0.82);
 				--cardGrad: linear-gradient(180deg, #122017, #0e1b13);
-				--btnSec: #26402f;
+				--btnSec: rgba(58, 208, 255, 0.4);
 				--glowGold: rgba(255, 203, 69, 0.14);
 				--glowGreen: rgba(63, 199, 127, 0.1);
 			}
@@ -147,6 +147,10 @@
 				cursor: pointer;
 				text-decoration: none;
 				box-shadow: 0 10px 26px var(--primaryGlow);
+			}
+			.btn-primary.cta-btn {
+				background: #ffcb45 !important;
+				color: #231a05 !important;
 			}
 			.btn-ghost {
 				display: inline-flex;
@@ -433,7 +437,7 @@
 				display: flex;
 				justify-content: center;
 				width: 100%;
-				height: 50px;
+				height: 46px;
 				margin-top: 8px;
 				font-size: 16px;
 			}
@@ -477,6 +481,11 @@
 				color: var(--onPrimary);
 			}
 			@media (max-width: 920px) {
+				.btn-secondary {
+					display: flex !important;
+					width: 100% !important;
+					justify-content: center !important;
+				}
 				.wrap {
 					padding: 0 18px;
 				}
@@ -1308,7 +1317,7 @@
 						class="float-chip card"
 						style="
 							position: absolute;
-							left: -26px;
+							right: -26px;
 							bottom: -30px;
 							width: 230px;
 							padding: 13px 14px;
@@ -1348,18 +1357,6 @@
 							>
 								<span
 									style="
-										flex: 1;
-										font-size: 12.5px;
-										font-weight: 700;
-										color: var(--ink);
-									"
-									>Tanvir A.</span
-								><span
-									class="dsp"
-									style="font-size: 16px; font-weight: 800; color: var(--ink)"
-									>2,400</span
-								><span
-									style="
 										display: inline-grid;
 										place-items: center;
 										width: 22px;
@@ -1372,6 +1369,20 @@
 									"
 									>1</span
 								>
+								<span
+									style="
+										flex: 1;
+										font-size: 12.5px;
+										font-weight: 700;
+										color: var(--ink);
+									"
+									>Tanvir A.</span
+								>
+								<span
+									class="dsp"
+									style="font-size: 16px; font-weight: 800; color: var(--ink)"
+									>2,400</span
+								>
 							</div>
 							<div
 								style="
@@ -1383,18 +1394,6 @@
 								"
 							>
 								<span
-									style="
-										flex: 1;
-										font-size: 12.5px;
-										font-weight: 700;
-										color: var(--ink);
-									"
-									>Nusrat J.</span
-								><span
-									class="dsp"
-									style="font-size: 16px; font-weight: 800; color: var(--ink)"
-									>2,300</span
-								><span
 									style="
 										display: inline-grid;
 										place-items: center;
@@ -1408,6 +1407,20 @@
 									"
 									>2</span
 								>
+								<span
+									style="
+										flex: 1;
+										font-size: 12.5px;
+										font-weight: 700;
+										color: var(--ink);
+									"
+									>Nusrat J.</span
+								>
+								<span
+									class="dsp"
+									style="font-size: 16px; font-weight: 800; color: var(--ink)"
+									>2,300</span
+								>
 							</div>
 							<div
 								style="
@@ -1420,18 +1433,6 @@
 							>
 								<span
 									style="
-										flex: 1;
-										font-size: 12.5px;
-										font-weight: 700;
-										color: var(--ink);
-									"
-									>Imran H.</span
-								><span
-									class="dsp"
-									style="font-size: 16px; font-weight: 800; color: var(--ink)"
-									>2,200</span
-								><span
-									style="
 										display: inline-grid;
 										place-items: center;
 										width: 22px;
@@ -1443,6 +1444,20 @@
 										font-weight: 800;
 									"
 									>3</span
+								>
+								<span
+									style="
+										flex: 1;
+										font-size: 12.5px;
+										font-weight: 700;
+										color: var(--ink);
+									"
+									>Imran H.</span
+								>
+								<span
+									class="dsp"
+									style="font-size: 16px; font-weight: 800; color: var(--ink)"
+									>2,200</span
 								>
 							</div>
 						</div>
@@ -2155,11 +2170,11 @@
 							href="/wc2026/app/leaderboard"
 							style="
 								width: 100%;
-								height: 50px;
-								padding: 0 20px;
+								height: 46px;
+								padding: 0 22px;
 								font-size: 15px;
 							"
-							>See full list</a
+							>See full list →</a
 						>
 					</div>
 				</div>
@@ -2268,7 +2283,7 @@
 				style="
 					display: none;
 					width: 100%;
-					height: 50px;
+					height: 46px;
 					font-size: 15px;
 					margin-top: 16px;
 				"
@@ -3009,7 +3024,7 @@
 							),
 							radial-gradient(
 								50% 70% at 8% 90%,
-								rgba(11, 122, 75, 0.42),
+								rgba(255, 203, 69, 0.42),
 								transparent 62%
 							);
 					"
