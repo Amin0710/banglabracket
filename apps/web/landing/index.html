@@ -40,8 +40,8 @@
   .navlink:hover{color:var(--ink);background:var(--surface2)}
   .btn-primary{display:inline-flex;align-items:center;gap:9px;border:none;border-radius:14px;background:var(--primary);color:var(--onPrimary);font-family:inherit;font-weight:800;cursor:pointer;text-decoration:none;box-shadow:0 10px 26px var(--primaryGlow)}
   .btn-ghost{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--lineStrong);border-radius:14px;background:var(--surface);color:var(--ink);font-weight:700;text-decoration:none}
-  .btn-secondary{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);border-radius:14px;background:var(--surface2);color:var(--ink);font-family:inherit;font-weight:700;text-decoration:none;cursor:pointer;transition:background .15s,border-color .15s}
-  .btn-secondary:hover{background:var(--surface3);border-color:var(--lineStrong)}
+  .btn-secondary{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);border-radius:14px;background:var(--surface3);color:var(--ink);font-family:inherit;font-weight:700;text-decoration:none;cursor:pointer;transition:background .15s,border-color .15s}
+  .btn-secondary:hover{background:var(--surface2);border-color:var(--lineStrong)}
   .seg{border:none;background:transparent;cursor:pointer;width:30px;height:26px;border-radius:999px;display:grid;place-items:center;color:var(--muted)}
   .seg.on{background:var(--primary);color:var(--onPrimary)}
   @keyframes bbBlink{0%,100%{opacity:1}50%{opacity:.25}}
@@ -60,21 +60,56 @@
   .faq-item.open .faq-ic{background:var(--primarySoft);color:var(--primary);transform:rotate(180deg)}
   .faq-a{display:none;padding:0 22px 20px;font-size:15px;line-height:1.65;color:var(--muted);font-weight:500;max-width:62ch}
   .faq-item.open .faq-a{display:block}
+  /* Winners carousel */
+  .win-track{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;-ms-overflow-style:none;scrollbar-width:none;padding:4px 2px}
+  .win-track::-webkit-scrollbar{display:none}
+  .win-card{scroll-snap-align:start;flex:0 0 auto;width:calc((100% - 32px)/3)}
+  .win-controls{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:24px}
+  .win-nav{width:44px;height:44px;flex:0 0 auto;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--surface);border:1px solid var(--line);color:var(--ink);cursor:pointer;box-shadow:0 4px 14px rgba(20,35,27,.09);transition:background .15s,border-color .15s}
+  .win-nav:hover{background:var(--surface2);border-color:var(--lineStrong)}
+  .win-live{display:inline-flex;align-items:center;gap:8px;padding:8px 15px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-size:12px;font-weight:700;color:var(--muted)}
+  .win-live .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px var(--greenSoft);animation:bbGlow 1.8s infinite}
+  /* Mobile header menu */
+  .menu-btn{display:none;width:42px;height:42px;border-radius:11px;border:1px solid var(--line);background:var(--surface2);color:var(--ink);cursor:pointer;align-items:center;justify-content:center}
+  .mobile-menu{display:none;border-top:1px solid var(--line);background:var(--surface)}
+  .mobile-menu .inner{padding:12px 18px 16px;display:flex;flex-direction:column;gap:2px}
+  .mobile-menu a.navlink{display:block;padding:13px 12px;font-size:16px;border-radius:10px}
+  .mobile-menu .btn-primary{display:flex;justify-content:center;width:100%;height:50px;margin-top:8px;font-size:16px}
+  /* Sticky bottom CTA (mobile) */
+  .sticky-bar{display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:0;z-index:60;width:100%;max-width:460px;align-items:center;gap:12px;padding:11px 16px calc(11px + env(safe-area-inset-bottom));background:var(--navBg);backdrop-filter:saturate(1.4) blur(14px);border-top:1px solid var(--line)}
+  .sticky-bar .sb-title{font-family:'Baloo Da 2';font-weight:800;font-size:17px;line-height:1;color:var(--ink)}
+  .sticky-bar .sb-sub{font-size:11.5px;color:var(--muted);margin-top:3px;font-weight:600}
+  .sticky-bar .btn-primary{height:48px;padding:0 20px;font-size:15px;flex:0 0 auto}
   @media(max-width:920px){
     .wrap{padding:0 18px}
     .nav-links{display:none}
+    .nav-cta{display:none !important}
+    .menu-btn{display:inline-flex}
+    .mobile-menu.open{display:block}
     .sec{padding:60px 18px 0 !important}
     .hero-grid{grid-template-columns:1fr !important;gap:36px !important;padding:40px 18px 48px !important}
     .h1{font-size:clamp(40px,11vw,60px) !important}
+    .hero-cta{flex-direction:column !important;align-items:stretch !important}
+    .hero-cta>a{width:100%;justify-content:center}
     .stats-grid{grid-template-columns:repeat(2,1fr) !important}
+    .stat-cell{padding:15px 16px !important}
+    .stat-num{font-size:30px !important}
     .steps-grid,.score-grid,.ranks-grid,.faq-grid,.cta-grid{grid-template-columns:1fr !important}
-    .cta-grid{gap:28px !important;padding:34px 24px !important}
+    .steps-grid{margin-top:22px !important;gap:12px !important}
+    .how-head{text-align:left !important;margin:0 !important}
+    .score-pill{padding:12px 13px !important}
+    .score-pill .dsp{font-size:25px !important}
+    .cta-grid{gap:26px !important;padding:30px 22px !important}
+    .cta-btn{width:100%;justify-content:center}
+    .lb-btn-desktop{display:none !important}
+    .lb-btn-mobile{display:flex !important}
+    .win-card{width:88% !important}
     .float-chip{position:static !important;width:auto !important;margin-top:16px;left:auto !important;bottom:auto !important}
     .score-sticky{position:static !important}
-    .foot-grid{grid-template-columns:1fr 1fr !important;gap:24px !important}
-  }
-  @media(max-width:520px){
-    .foot-grid{grid-template-columns:1fr !important}
+    .foot-grid{grid-template-columns:1fr 1fr !important;gap:24px 22px !important}
+    .foot-brand{grid-column:1 / -1}
+    .sticky-bar{display:flex}
+    body{padding-bottom:calc(78px + env(safe-area-inset-bottom))}
   }
 </style>
 </head>
@@ -94,7 +129,17 @@
         <button class="seg on" id="segLight" onclick="setTheme('light')" aria-label="Light"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4" fill="currentColor" stroke="none"/><path d="M12 2.6v2M12 19.4v2M2.6 12h2M19.4 12h2M5.2 5.2l1.5 1.5M17.3 17.3l1.5 1.5M18.8 5.2l-1.5 1.5M6.7 17.3l-1.5 1.5"/></svg></button>
         <button class="seg" id="segDark" onclick="setTheme('dark')" aria-label="Dark"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.9A9 9 0 1111.1 3 7 7 0 0021 12.9z"/></svg></button>
       </div>
-      <a class="btn-primary" href="/wc2026/app/" style="height:42px;padding:0 19px;font-size:14.5px">Play free<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a>
+      <a class="btn-primary nav-cta" href="/wc2026/app/" style="height:42px;padding:0 19px;font-size:14.5px">Play free<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a>
+      <button class="menu-btn" id="menuBtn" onclick="toggleMenu()" aria-label="Menu" aria-expanded="false" aria-controls="mobileMenu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+  <div class="mobile-menu" id="mobileMenu">
+    <div class="inner">
+      <a class="navlink" href="#how" onclick="closeMenu()">How to play</a>
+      <a class="navlink" href="#scoring" onclick="closeMenu()">Scoring</a>
+      <a class="navlink" href="#ranks" onclick="closeMenu()">Leaderboard</a>
+      <a class="navlink" href="#winners" onclick="closeMenu()">Winners</a>
+      <a class="btn-primary" href="/wc2026/app/" onclick="closeMenu()">Play free<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a>
     </div>
   </div>
 </div>
@@ -110,7 +155,7 @@
       </div>
       <h1 class="h1" style="font-family:'Baloo Da 2';font-weight:800;font-size:78px;line-height:.93;letter-spacing:-.01em;margin:22px 0 0;color:var(--ink)">Predict the World Cup.<br>Top the table.<br><span style="color:var(--goldText)">Win ৳1,00,000.</span></h1>
       <p style="font-size:18px;line-height:1.6;color:var(--muted);margin:22px 0 0;max-width:33em;font-weight:500">BanglaBracket brings all 104 matches to your hands — call the final group games, send teams through every knockout, and climb a live leaderboard. No fees, no catch.</p>
-      <div style="display:flex;align-items:center;gap:13px;margin-top:30px;flex-wrap:wrap">
+      <div class="hero-cta" style="display:flex;align-items:center;gap:13px;margin-top:30px;flex-wrap:wrap">
         <a class="btn-primary" href="/wc2026/app/" style="height:56px;padding:0 26px;font-size:16.5px">Play free<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a>
         <a class="btn-ghost" href="#scoring" style="height:56px;padding:0 22px;font-size:16px">How scoring works</a>
       </div>
@@ -154,18 +199,18 @@
     </div>
   </div>
   <div class="wrap" style="position:relative">
-    <div class="stats-grid" style="display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);border-radius:18px;background:var(--surface);overflow:hidden">
-      <div style="padding:22px 24px;border-right:1px solid var(--line)"><div class="dsp" style="font-weight:800;font-size:34px;color:var(--ink)">48</div><div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-top:6px">Nations</div></div>
-      <div style="padding:22px 24px;border-right:1px solid var(--line)"><div class="dsp" style="font-weight:800;font-size:34px;color:var(--ink)">104</div><div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-top:6px">Matches</div></div>
-      <div style="padding:22px 24px;border-right:1px solid var(--line)"><div class="dsp" style="font-weight:800;font-size:34px;color:var(--goldText)">৳1,00,000</div><div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-top:6px">Prize pool</div></div>
-      <div style="padding:22px 24px"><div class="dsp" id="players" style="font-weight:800;font-size:34px;color:var(--ink)">—</div><div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-top:6px">Players</div></div>
+    <div class="stats-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;border:1px solid var(--line);border-radius:18px;background:var(--line);overflow:hidden">
+      <div class="stat-cell" style="padding:22px 24px;background:var(--surface)"><div class="dsp stat-num" style="font-weight:800;font-size:34px;color:var(--ink)">48</div><div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-top:6px">Nations</div></div>
+      <div class="stat-cell" style="padding:22px 24px;background:var(--surface)"><div class="dsp stat-num" style="font-weight:800;font-size:34px;color:var(--ink)">104</div><div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-top:6px">Matches</div></div>
+      <div class="stat-cell" style="padding:22px 24px;background:var(--surface)"><div class="dsp stat-num" style="font-weight:800;font-size:34px;color:var(--goldText)">৳1,00,000</div><div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-top:6px">Prize pool</div></div>
+      <div class="stat-cell" style="padding:22px 24px;background:var(--surface)"><div class="dsp stat-num" id="players" style="font-weight:800;font-size:34px;color:var(--ink)">—</div><div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-top:6px">Players</div></div>
     </div>
   </div>
 </div>
 
 <!-- HOW -->
 <div id="how" class="wrap sec" style="padding:104px 32px 0;scroll-margin-top:88px">
-  <div style="text-align:center;max-width:36em;margin:0 auto">
+  <div class="how-head" style="text-align:center;max-width:36em;margin:0 auto">
     <div class="eyebrow">How it works</div>
     <h2 class="h2" style="margin-top:14px">Three steps to the top of the table</h2>
     <p style="font-size:17px;line-height:1.6;color:var(--muted);margin:14px 0 0;font-weight:500">Sign in, predict the bracket, and watch your points climb as the real tournament plays out.</p>
@@ -176,7 +221,7 @@
     <div class="card" style="padding:22px"><div style="display:flex;align-items:center;justify-content:space-between"><span style="width:42px;height:42px;border-radius:12px;background:var(--primarySoft);border:1px solid var(--primaryLine);display:flex;align-items:center;justify-content:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6a6 6 0 01-12 0z"/><path d="M6 5H3v1.5A3 3 0 006 9M18 5h3v1.5A3 3 0 0118 9M12 15v3M9 21h6M10 18h4"/></svg></span><span class="dsp" style="font-weight:700;font-size:38px;color:var(--surface3)">03</span></div><h3 style="font-size:21px;margin:16px 0 0;color:var(--ink)">Climb the leaderboard</h3><p style="font-size:15px;line-height:1.6;color:var(--muted);margin:8px 0 0;font-weight:500">Earn points as real matches finish. Top the live table by the Final to win your share of ৳1,00,000.</p></div>
   </div>
   <div style="text-align:center;margin-top:32px">
-    <a class="btn-ghost" href="/wc2026/app/howtoplay" style="height:46px;padding:0 22px;font-size:15px">Full guide →</a>
+    <a class="btn-secondary" href="/wc2026/app/howtoplay" style="height:46px;padding:0 22px;font-size:15px">Full guide →</a>
   </div>
 </div>
 
@@ -188,8 +233,8 @@
       <h2 class="h2" style="margin-top:14px">Deep runs win. Detail breaks ties.</h2>
       <p style="font-size:17px;line-height:1.6;color:var(--muted);margin:16px 0 0;font-weight:500">Your <b style="color:var(--ink)">main points</b> come from picking the right knockout winners — and they get bigger every round. <b style="color:var(--ink)">Bonus points</b> reward the fine details and settle the leaderboard when scores are level.</p>
       <div style="display:flex;gap:11px;margin-top:24px">
-        <div style="flex:1;border:1px solid var(--primaryLine);background:var(--primarySoft);border-radius:14px;padding:15px"><div style="font-size:11px;font-weight:800;text-transform:uppercase;color:var(--primary)">Final pick</div><div class="dsp" style="font-weight:800;font-size:30px;color:var(--ink);margin-top:3px">500 pts</div></div>
-        <div style="flex:1;border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:15px"><div style="font-size:11px;font-weight:800;text-transform:uppercase;color:var(--goldText)">Exact score</div><div class="dsp" style="font-weight:800;font-size:30px;color:var(--ink);margin-top:3px">+50 pts</div></div>
+        <div class="score-pill" style="flex:1;border:1px solid var(--primaryLine);background:var(--primarySoft);border-radius:14px;padding:15px"><div style="font-size:11px;font-weight:800;text-transform:uppercase;color:var(--primary)">Final pick</div><div class="dsp" style="font-weight:800;font-size:30px;color:var(--ink);margin-top:3px">500 pts</div></div>
+        <div class="score-pill" style="flex:1;border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:15px"><div style="font-size:11px;font-weight:800;text-transform:uppercase;color:var(--goldText)">Exact score</div><div class="dsp" style="font-weight:800;font-size:30px;color:var(--ink);margin-top:3px">+50 pts</div></div>
       </div>
     </div>
     <div style="display:flex;flex-direction:column;gap:20px">
@@ -223,7 +268,7 @@
       <h2 class="h2" style="font-size:clamp(30px,4vw,46px);margin-top:14px">Every match moves the table</h2>
       <p style="font-size:16px;line-height:1.6;color:var(--muted);margin:14px 0 0;font-weight:500">Rankings update the moment a result is confirmed. Filter to prize-eligible players, track your live position, and chase the top spot to the Final.</p>
       <div style="display:flex;gap:10px;margin-top:22px;flex-wrap:wrap">
-        <a class="btn-secondary" href="/wc2026/app/leaderboard" style="height:48px;padding:0 20px;font-size:15px">See full list</a>
+        <a class="btn-secondary lb-btn-desktop" href="/wc2026/app/leaderboard" style="height:48px;padding:0 20px;font-size:15px">See full list</a>
       </div>
     </div>
     <div style="padding:28px 32px;background:var(--surface)">
@@ -234,6 +279,7 @@
       </div>
     </div>
   </div>
+  <a class="btn-secondary lb-btn-mobile" href="/wc2026/app/leaderboard" style="display:none;width:100%;height:50px;font-size:15px;margin-top:16px">See full list</a>
 </div>
 
 <!-- WINNERS -->
@@ -243,9 +289,9 @@
     <h2 class="h2" style="margin-top:14px">Real people. <span style="color:var(--goldText)">Real Taka.</span></h2>
     <p style="font-size:17px;line-height:1.6;color:var(--muted);margin:14px 0 0;font-weight:500">Verified players, real Taka paid straight to bKash. You could be the next name on the wall.</p>
   </div>
-  <div class="steps-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+  <div class="win-track" id="winTrack">
     <!-- Grand prize -->
-    <div class="card" style="display:flex;flex-direction:column;min-height:190px;padding:22px 22px 24px;border-color:var(--goldLine);background:linear-gradient(180deg,var(--goldSoft),transparent 48%),var(--cardGrad)">
+    <div class="card win-card" style="display:flex;flex-direction:column;min-height:190px;padding:22px 22px 24px;border-color:var(--goldLine);background:linear-gradient(180deg,var(--goldSoft),transparent 48%),var(--cardGrad)">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
         <span style="width:54px;height:54px;flex:0 0 auto;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Baloo Da 2';font-weight:700;font-size:23px;color:#2a1f04;background:linear-gradient(150deg,#ffd45f,#e0a921);box-shadow:0 7px 16px rgba(20,35,27,.22);outline:2px dashed var(--goldLine);outline-offset:3px">?</span>
         <span style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;font-size:11px;font-weight:800;line-height:1;white-space:nowrap;background:var(--goldSoft);color:var(--goldText);box-shadow:inset 0 0 0 1px var(--goldLine)"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h12v3a6 6 0 0 1-12 0V4z"/><path d="M6 5H3.6v1.4A3 3 0 0 0 6 9M18 5h2.4v1.4A3 3 0 0 1 18 9"/><path d="M12 13v3.5M9.2 20h5.6M10 17h4"/></svg>Grand prize</span>
@@ -256,7 +302,7 @@
       <div style="flex:1"></div>
     </div>
     <!-- Runner-up -->
-    <div class="card" style="display:flex;flex-direction:column;min-height:190px;padding:22px 22px 24px">
+    <div class="card win-card" style="display:flex;flex-direction:column;min-height:190px;padding:22px 22px 24px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
         <span style="width:54px;height:54px;flex:0 0 auto;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Baloo Da 2';font-weight:700;font-size:23px;color:#fff;background:linear-gradient(150deg,#2faa6b,#0b7a4b);box-shadow:0 7px 16px rgba(20,35,27,.22);outline:2px dashed var(--greenLine);outline-offset:3px">?</span>
         <span style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;font-size:11px;font-weight:800;line-height:1;white-space:nowrap;background:var(--greenSoft);color:var(--green);box-shadow:inset 0 0 0 1px var(--greenLine)">Runner-up</span>
@@ -266,7 +312,7 @@
       <div style="flex:1"></div>
     </div>
     <!-- Third place -->
-    <div class="card" style="display:flex;flex-direction:column;min-height:190px;padding:22px 22px 24px">
+    <div class="card win-card" style="display:flex;flex-direction:column;min-height:190px;padding:22px 22px 24px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
         <span style="width:54px;height:54px;flex:0 0 auto;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Baloo Da 2';font-weight:700;font-size:23px;color:#fff;background:linear-gradient(150deg,#37b6d6,#0e7d9b);box-shadow:0 7px 16px rgba(20,35,27,.22);outline:2px dashed var(--tealLine);outline-offset:3px">?</span>
         <span style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;font-size:11px;font-weight:800;line-height:1;white-space:nowrap;background:var(--tealSoft);color:var(--teal);box-shadow:inset 0 0 0 1px var(--tealLine)">Third place</span>
@@ -276,8 +322,39 @@
       <div style="flex:1"></div>
     </div>
   </div>
+  <div class="win-controls">
+    <button class="win-nav" type="button" onclick="bbWin(-1)" aria-label="Previous winners"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <span class="win-live"><span class="dot"></span>Paid out live</span>
+    <button class="win-nav" type="button" onclick="bbWin(1)" aria-label="Next winners"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+  </div>
   <div style="text-align:center;margin-top:32px">
     <a class="btn-secondary" href="/wc2026/app/winners" style="height:46px;padding:0 22px;font-size:15px">View winners →</a>
+  </div>
+</div>
+
+<!-- Trust & Safety -->
+<div id="trust" class="wrap sec" style="padding:104px 32px 0;scroll-margin-top:88px">
+  <div style="text-align:center;max-width:36em;margin:0 auto 40px">
+    <div class="eyebrow">Trust &amp; safety</div>
+    <h2 class="h2" style="margin-top:14px">Fair, private, and free</h2>
+    <p style="font-size:17px;line-height:1.6;color:var(--muted);margin:14px 0 0;font-weight:500">Built to be safe to play. No fees, no card, and your ID never lives in the app.</p>
+  </div>
+  <div class="steps-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+    <div class="card" style="padding:26px 24px 28px">
+      <span style="width:48px;height:48px;flex:0 0 auto;border-radius:13px;display:inline-flex;align-items:center;justify-content:center;background:var(--tealSoft);color:var(--teal);box-shadow:inset 0 0 0 1px var(--tealLine)"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></span>
+      <h3 style="font-size:18px;font-weight:800;color:var(--ink);margin:18px 0 0">Nationality, not residence</h3>
+      <p style="font-size:15px;line-height:1.6;color:var(--muted);margin:9px 0 0;font-weight:500">Prizes go to Bangladeshi nationals — and you can play and win from anywhere in the world.</p>
+    </div>
+    <div class="card" style="padding:26px 24px 28px">
+      <span style="width:48px;height:48px;flex:0 0 auto;border-radius:13px;display:inline-flex;align-items:center;justify-content:center;background:var(--primarySoft);color:var(--primary);box-shadow:inset 0 0 0 1px var(--primaryLine)"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+      <h3 style="font-size:18px;font-weight:800;color:var(--ink);margin:18px 0 0">No uploads in the app</h3>
+      <p style="font-size:15px;line-height:1.6;color:var(--muted);margin:9px 0 0;font-weight:500">Winners verify by DMing a human admin privately. We store only your status — never your ID images.</p>
+    </div>
+    <div class="card" style="padding:26px 24px 28px">
+      <span style="width:48px;height:48px;flex:0 0 auto;border-radius:13px;display:inline-flex;align-items:center;justify-content:center;background:var(--greenSoft);color:var(--green);box-shadow:inset 0 0 0 1px var(--greenLine)"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.4-3 8.3-7 9.5C8 19.3 5 15.4 5 11V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg></span>
+      <h3 style="font-size:18px;font-weight:800;color:var(--ink);margin:18px 0 0">Free &amp; protected</h3>
+      <p style="font-size:15px;line-height:1.6;color:var(--muted);margin:9px 0 0;font-weight:500">No entry fee and no card required. Your data is encrypted, never sold, and only ever used to run the game.</p>
+    </div>
   </div>
 </div>
 
@@ -324,7 +401,7 @@
         <div style="display:inline-flex;align-items:center;gap:8px;padding:6px 13px;border-radius:999px;background:rgba(255,203,69,.12);border:1px solid rgba(255,203,69,.3)"><span style="width:6px;height:6px;border-radius:50%;background:#ffcb45;animation:bbGlow 1.6s infinite"></span><span style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#ffcb45">Bracket locks 28 June</span></div>
         <h2 class="dsp" style="font-weight:800;font-size:clamp(32px,5vw,54px);line-height:.96;letter-spacing:-.01em;margin:18px 0 0;color:#fff">৳1,00,000 is waiting.<br>Get your picks in.</h2>
         <p style="font-size:17px;line-height:1.6;color:#9fb6aa;margin:14px 0 0;max-width:32em">Free to enter, two minutes to set up. Lock your bracket before the first kick-off and you're in the running.</p>
-        <a class="btn-primary" href="/wc2026/app/" style="height:56px;padding:0 28px;margin-top:26px;font-size:17px">Play free<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a>
+        <a class="btn-primary cta-btn" href="/wc2026/app/" style="height:56px;padding:0 28px;margin-top:26px;font-size:17px">Play free<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a>
       </div>
       <div style="display:flex;flex-direction:column;gap:11px">
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
@@ -342,7 +419,7 @@
 <!-- FOOTER -->
 <footer style="border-top:1px solid var(--lineStrong);margin-top:80px;padding:48px 0 36px;background:var(--surface2)">
   <div class="wrap foot-grid" style="display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:30px">
-    <div>
+    <div class="foot-brand">
       <div style="display:flex;align-items:center;gap:10px"><span style="width:34px;height:34px;border-radius:10px;background:linear-gradient(150deg,#ffd45f,#e8ab1f);display:flex;align-items:center;justify-content:center"><svg width="21" height="21" viewBox="0 0 48 48" fill="none" stroke="#1a1405" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6H14M4 18H14M4 30H14M4 42H14M14 6V18M14 30V42M14 12H24M14 36H24M24 12V36M24 24H34"/><path d="M39 19 44 24 39 29 34 24Z" fill="#1a1405" stroke="none"/></svg></span><span style="font-family:'Baloo Da 2';font-weight:800;font-size:19px">Bangla<span style="color:var(--goldText)">Bracket</span></span></div>
       <p style="color:var(--muted);font-size:14px;margin:12px 0 0;max-width:26em;line-height:1.6">Brings World Cup 2026 to your hands. Predict the bracket, top the table, win &#2547;1,00,000. Free to play, made for Bangladesh.</p>
     </div>
@@ -354,6 +431,15 @@
     <span>&#169; 2026 BanglaBracket &#183; Play responsibly &#183; 18+</span><span>Not affiliated with FIFA or any official body.</span>
   </div>
 </footer>
+
+<!-- STICKY MOBILE CTA -->
+<div class="sticky-bar">
+  <div style="flex:1;min-width:0">
+    <div class="sb-title">Win &#2547;1,00,000</div>
+    <div class="sb-sub">Locks in <b data-d>&ndash;</b>d <b data-h>&ndash;</b>h &middot; free</div>
+  </div>
+  <a class="btn-primary" href="/wc2026/app/">Play free<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a>
+</div>
 
 <!-- LEGAL MODAL (terms / privacy open here, no page leave) -->
 <div id="legalOverlay" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(8,16,11,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closeLegal()">
@@ -425,6 +511,27 @@
     var item=btn.parentElement,wasOpen=item.classList.contains('open');
     document.querySelectorAll('.faq-item.open').forEach(function(i){i.classList.remove('open');i.querySelector('.faq-q').setAttribute('aria-expanded','false');});
     if(!wasOpen){item.classList.add('open');btn.setAttribute('aria-expanded','true');}
+  }
+
+  // Mobile menu
+  function toggleMenu(){
+    var m=document.getElementById('mobileMenu'),b=document.getElementById('menuBtn'),open=m.classList.toggle('open');
+    if(b)b.setAttribute('aria-expanded',open?'true':'false');
+  }
+  function closeMenu(){
+    var m=document.getElementById('mobileMenu'),b=document.getElementById('menuBtn');
+    if(m)m.classList.remove('open');
+    if(b)b.setAttribute('aria-expanded','false');
+  }
+
+  // Winners carousel (web: 3 at a time, mobile: 1 at a time)
+  function bbWin(dir){
+    var t=document.getElementById('winTrack');if(!t)return;
+    var card=t.querySelector('.win-card');if(!card)return;
+    var styles=getComputedStyle(t),gap=parseFloat(styles.columnGap||styles.gap||'16')||16;
+    var step=card.getBoundingClientRect().width+gap;
+    var per=window.innerWidth<=920?1:3;
+    t.scrollBy({left:dir*step*per,behavior:'smooth'});
   }
 </script>
 
