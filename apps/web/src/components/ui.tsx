@@ -50,6 +50,55 @@ export function Countdown({ to, compact }: { to: string; compact?: boolean }) {
   );
 }
 
+const pad2 = (n: number) => String(n).padStart(2, '0');
+function fmtDiff(ms: number) {
+  const d = Math.floor(ms / 86400000), h = Math.floor(ms / 3600000) % 24,
+    m = Math.floor(ms / 60000) % 60, s = Math.floor(ms / 1000) % 60;
+  return `${d}d ${pad2(h)}:${pad2(m)}:${pad2(s)}`;
+}
+function useNowTick() {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
+  return now;
+}
+
+export interface NextMatchInfo { kickoff: string; label: string; matchNumber?: number | null; }
+export interface NextRoundInfo { round: string; startsAt: string | null; }
+
+// "Next match starts in…" — sits at the top of the front page.
+export function NextMatchBanner({ nextMatch }: { nextMatch?: NextMatchInfo | null }) {
+  const now = useNowTick();
+  if (!nextMatch?.kickoff) return null;
+  const diff = Math.max(0, new Date(nextMatch.kickoff).getTime() - now);
+  return (
+    <div className="card" style={{ padding: '14px 18px', marginBottom: 16, display: 'flex', alignItems: 'center',
+      gap: 14, flexWrap: 'wrap', background: 'linear-gradient(120deg,var(--greenSoft),transparent)', borderColor: 'var(--green)' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        <span className="faint" style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.08em' }}>NEXT MATCH STARTS IN</span>
+        <strong style={{ fontSize: 16 }}>{nextMatch.label}</strong>
+      </div>
+      <span className="tabular" style={{ marginLeft: 'auto', fontWeight: 800, fontSize: 22 }}>
+        {diff === 0 ? 'Kicking off' : fmtDiff(diff)}
+      </span>
+    </div>
+  );
+}
+
+// "Next round starts in… (Round of 16)" — sits in the strip just above the footer.
+export function NextRoundStrip({ nextRound }: { nextRound?: NextRoundInfo | null }) {
+  const now = useNowTick();
+  if (!nextRound?.round) return null;
+  const ms = nextRound.startsAt ? Math.max(0, new Date(nextRound.startsAt).getTime() - now) : null;
+  return (
+    <div className="card" style={{ padding: '12px 16px', marginTop: 28, display: 'flex', alignItems: 'center',
+      gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+      <span className="faint" style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.08em' }}>NEXT ROUND STARTS IN</span>
+      <span style={{ fontWeight: 800, color: 'var(--green)', fontSize: 13 }}>({nextRound.round})</span>
+      <span className="tabular" style={{ fontWeight: 800, fontSize: 18 }}>{ms == null ? 'Schedule TBD' : fmtDiff(ms)}</span>
+    </div>
+  );
+}
+
 export function Flag({ name, size = 24 }: { name?: string | null; size?: number }) {
   const f = flagUrl(name);
   return f

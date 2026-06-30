@@ -5,16 +5,28 @@ import { Entry, User } from '../models/index.js';
 import { getTournament, isLocked, scoreOne, invalidateLeaderboard, getUserCash } from '../services/tournament.js';
 import { requireAuth, validate, type AuthedRequest } from '../middleware/index.js';
 import { publicUser } from './auth.js';
+import { deriveSchedule } from '../services/scores/schedule.js';
 
 export const bracketRouter = Router();
 
-// Public tournament view: base tables, remaining fixtures, confirmed R32, lock time.
+// Public tournament view: base tables, remaining fixtures, confirmed R32, lock
+// time, plus the two live countdown targets (nextMatch / nextRound).
 bracketRouter.get('/tournament', async (_req, res) => {
   const t = await getTournament();
+  const schedule = deriveSchedule((t.fixtures as any) || []);
   res.json({
     key: t.key, name: t.name, tagline: t.tagline, lockAt: t.lockAt, locked: isLocked(t),
     base: t.base, remaining: t.remaining, r32: t.r32, results: t.results,
+    nextMatch: schedule.nextMatch, nextRound: schedule.nextRound,
+    syncedAt: (t.sync as any)?.lastSyncAt || null,
   });
+});
+
+// Lightweight schedule-only endpoint for the marketing landing page / widgets.
+bracketRouter.get('/schedule', async (_req, res) => {
+  const t = await getTournament();
+  const schedule = deriveSchedule((t.fixtures as any) || []);
+  res.json({ ...schedule, lockAt: t.lockAt, locked: isLocked(t), syncedAt: (t.sync as any)?.lastSyncAt || null });
 });
 
 const predictionSchema = z.object({

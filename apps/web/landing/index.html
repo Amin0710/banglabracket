@@ -1002,7 +1002,7 @@
 										text-transform: uppercase;
 										color: #8aa79a;
 									"
-									>Kick-off countdown</span
+									>Next match starts in</span
 								>
 								<span
 									style="
@@ -2794,7 +2794,8 @@
 						"
 					>
 						Winners verify by DMing a human admin privately. We store only your
-						status — never your ID images.
+						verification status; your ID is sent by email for the check and
+						never kept in our database.
 					</p>
 				</div>
 				<div class="card" style="padding: 26px 24px 28px">
@@ -3540,7 +3541,7 @@
 			<div style="flex: 1; min-width: 0">
 				<div class="sb-title">Win &#2547;1,00,000</div>
 				<div class="sb-sub">
-					Locks in <b data-d>&ndash;</b>d <b data-h>&ndash;</b>h &middot; free
+					Next match in <b data-d>&ndash;</b>d <b data-h>&ndash;</b>h &middot; free
 				</div>
 			</div>
 			<a class="btn-primary" href="/wc2026/app/"
@@ -3664,12 +3665,64 @@
 			// Countdown
 			var LOCK = new Date("2026-06-28T19:00:00Z");
 			var API = "https://api.banglabracket.com";
+				// Two live countdowns, fed by /api/tournament (nextMatch / nextRound).
+				var NEXT_MATCH = null, NEXT_ROUND = null;
+				function bbPad(n) { return String(n).padStart(2, "0"); }
+				function bbParts(target) {
+					var d = Math.max(0, target - new Date());
+					return { D: Math.floor(d / 864e5), H: Math.floor(d / 36e5) % 24, M: Math.floor(d / 6e4) % 60, S: Math.floor(d / 1e3) % 60 };
+				}
+				function bbApplyNextMatch() {
+					if (!NEXT_MATCH) return;
+					var anchor = document.querySelector("[data-d]");
+					var grid = anchor ? anchor.parentElement.parentElement : null;
+					var el = document.getElementById("nmTeams");
+					if (!el && grid) {
+						el = document.createElement("div");
+						el.id = "nmTeams";
+						el.style.cssText = "margin-top:16px;font-size:14px;font-weight:800;color:#e9f2ee;text-align:center;letter-spacing:.01em";
+						grid.insertAdjacentElement("afterend", el);
+					}
+					if (el) el.textContent = NEXT_MATCH.label || "";
+				}
+				function bbBuildNextRound() {
+					if (!NEXT_ROUND) return;
+					var f = document.querySelector("footer");
+					if (!f) return;
+					var wrap = document.getElementById("nextRoundStrip");
+					if (!wrap) {
+						wrap = document.createElement("div");
+						wrap.id = "nextRoundStrip";
+						wrap.style.cssText = "max-width:1120px;margin:8px auto 30px;padding:16px 22px;border:1px solid var(--line,#e6e1d6);border-radius:16px;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;text-align:center;background:var(--card,#fff)";
+						wrap.innerHTML =
+							'<span style="font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted,#7d978b)">Next round starts in</span>' +
+							'<span id="nrLabel" style="font-size:13px;font-weight:800;color:var(--primary,#0a7a52)"></span>' +
+							'<span id="nrTime" class="dsp" style="font-weight:800;font-size:20px;font-variant-numeric:tabular-nums;color:var(--ink,#1a1405)"></span>';
+						f.parentNode.insertBefore(wrap, f);
+					}
+					document.getElementById("nrLabel").textContent = "(" + (NEXT_ROUND.round || "") + ")";
+				}
+				function bbTickRound() {
+					var nr = document.getElementById("nrTime");
+					if (!nr) return;
+					if (NEXT_ROUND && NEXT_ROUND.startsAt) {
+						var p = bbParts(new Date(NEXT_ROUND.startsAt));
+						nr.textContent = p.D + "d " + bbPad(p.H) + ":" + bbPad(p.M) + ":" + bbPad(p.S);
+					} else {
+						nr.textContent = "Schedule TBD";
+					}
+				}
 			fetch(API + "/api/tournament")
 				.then(function (r) {
 					return r.json();
 				})
 				.then(function (t) {
 					if (t && t.lockAt) LOCK = new Date(t.lockAt);
+						NEXT_MATCH = (t && t.nextMatch) || null;
+						NEXT_ROUND = (t && t.nextRound) || null;
+						bbApplyNextMatch();
+						bbBuildNextRound();
+						tick();
 				})
 				.catch(function () {});
 			fetch(API + "/api/stats")
@@ -3768,7 +3821,7 @@
 				})
 				.catch(function () {});
 			function tick() {
-				var d = Math.max(0, LOCK - new Date()),
+				var d = Math.max(0, ((NEXT_MATCH && NEXT_MATCH.kickoff) ? new Date(NEXT_MATCH.kickoff) : LOCK) - new Date()),
 					D = Math.floor(d / 864e5),
 					H = Math.floor(d / 36e5) % 24,
 					M = Math.floor(d / 6e4) % 60,
@@ -3784,7 +3837,7 @@
 				set("[data-d]", D);
 				set("[data-h]", p(H));
 				set("[data-m]", p(M));
-				set("[data-s]", p(S));
+				set("[data-s]", p(S)); bbTickRound();
 			}
 			tick();
 			setInterval(tick, 1000);
@@ -3857,7 +3910,7 @@
 				privacy: {
 					title: "Privacy Policy",
 					html: `
-      <p><b>What we collect.</b> Your name, email and/or phone, the bracket picks you make, and — only if you choose to verify — your nationality status. We never store images of your ID.</p>
+      <p><b>What we collect.</b> Your name, email and/or phone, the bracket picks you make, and — only if you choose to verify — your nationality status. We don't store ID images in our database. If you email your ID to verify, it stays in that email only, and we delete it when and if you ask.</p>
       <p><b>How we use it.</b> Only to run the game: sign you in, score your bracket, rank the leaderboard, and contact winners. We do not sell your data.</p>
       <p><b>Public display.</b> Your display name and profile photo may appear publicly on the leaderboard and Winners Wall, and may be shared by BanglaBracket on social media if you rank highly or win (see Terms).</p>
       <p><b>Security.</b> Sensitive data is encrypted. Sessions use secure cookies.</p>

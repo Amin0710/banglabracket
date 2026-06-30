@@ -69,7 +69,7 @@ const LEGAL_CONTENT = {
 	privacy: {
 		title: "Privacy Policy",
 		html: `
-      <p><b>What we collect.</b> Your name, email and/or phone, the bracket picks you make, and — only if you choose to verify — your nationality status. We never store images of your ID.</p>
+      <p><b>What we collect.</b> Your name, email and/or phone, the bracket picks you make, and — only if you choose to verify — your nationality status. We don't store ID images in our database. If you email your ID to verify, it stays in that email only, and we delete it when and if you ask.</p>
       <p><b>How we use it.</b> Only to run the game: sign you in, score your bracket, rank the leaderboard, and contact winners. We do not sell your data.</p>
       <p><b>Public display.</b> Your display name and profile photo may appear publicly on the leaderboard and Winners Wall, and may be shared by BanglaBracket on social media if you rank highly or win (see Terms).</p>
       <p><b>Security.</b> Sensitive data is encrypted. Sessions use secure cookies.</p>

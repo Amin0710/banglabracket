@@ -58,6 +58,22 @@ export const env = {
 	emailCodeTtlMin: parseInt(process.env.EMAIL_CODE_TTL_MIN || "10", 10),
 
 	tournamentKey: process.env.TOURNAMENT_KEY || "wc2026",
+
+	// ---- Live scores (API-Football) ----
+	// Key is server-side only and never sent to the client. League id is
+	// discovered at runtime (GET /leagues?search=World Cup) when left blank.
+	apiFootball: {
+		key: process.env.API_FOOTBALL_KEY || "",
+		// 1 = "World Cup" (men's). Left configurable; 0/blank => discover at runtime.
+		leagueId: parseInt(process.env.API_FOOTBALL_LEAGUE_ID || "0", 10) || 0,
+		season: parseInt(process.env.API_FOOTBALL_SEASON || "2026", 10),
+		get enabled() {
+			return !!this.key;
+		},
+	},
+	// Set to true to let the API process run the background score poller
+	// (one instance only — keep it false on extra web replicas).
+	scoresPoller: bool(process.env.SCORES_POLLER, false),
 };
 
 export function validateEnv(): string[] {
@@ -81,6 +97,10 @@ export function validateEnv(): string[] {
 	if (!env.resend.enabled)
 		warn.push(
 			"Resend not configured — email login codes will print to the server console.",
+		);
+	if (!env.apiFootball.enabled)
+		warn.push(
+			"API_FOOTBALL_KEY not set — live score sync (npm run sync) is disabled; seed remains the data source.",
 		);
 	return warn;
 }

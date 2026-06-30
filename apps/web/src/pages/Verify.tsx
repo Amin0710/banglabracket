@@ -182,8 +182,8 @@ export default function Verify() {
 				</div>
 			</div>
 			<p className="faint" style={{ marginTop: 14, fontSize: 13 }}>
-				🔒 No uploads in the app. We store only your verification status — never
-				your ID images.
+				🔒 No uploads in the app. We store only your verification status — your
+				ID is sent by email for the check, never kept in our database.
 			</p>
 		</div>
 	);

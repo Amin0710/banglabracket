@@ -56,8 +56,9 @@ export default function HowToPlay() {
 			<Section title="Eligibility & verifying">
 				Prizes are for Bangladeshi nationals (by nationality, not residence),
 				16+. You can play and win from anywhere. Winners verify by emailing{" "}
-				<strong>verify@banglabracket.com</strong> — we store only your status,
-				never your ID images.
+				<strong>verify@banglabracket.com</strong> — we store only your
+				verification status; your ID is sent by email for the check and never
+				kept in our database.
 				<div style={{ marginTop: 12 }}>
 					<button className="btn" onClick={() => nav("/verify")}>
 						Go to verify →

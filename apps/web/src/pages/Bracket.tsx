@@ -6,7 +6,7 @@ import {
 } from '@banglabracket/shared';
 import { api } from '../lib/api';
 import { useAuth } from '../context/Providers';
-import { PageHeader, Flag } from '../components/ui';
+import { PageHeader, Flag, NextMatchBanner, NextRoundStrip } from '../components/ui';
 
 type Scores = Record<string, { sa: number | ''; sb: number | '' }[]>;
 const RL: Record<string, string> = { R16: 'Round of 16', QF: 'Quarter-final', SF: 'Semi-final', THIRD: 'Third place', FINAL: 'Final' };
@@ -95,6 +95,8 @@ export default function Bracket() {
           {locked ? <span className="pill pill-gold">Locked</span> : <><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="3"><path d="M5 13l4 4L19 7" /></svg><span style={{ fontWeight: 600, fontSize: 14 }}>{saved ? 'Saved' : 'Saving…'}</span></>}
         </div>} />
 
+      <NextMatchBanner nextMatch={t.nextMatch} />
+
       <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
         <button className="btn" onClick={() => setTab('groups')} style={tab === 'groups' ? { background: 'var(--greenSoft)', color: 'var(--green)', borderColor: 'transparent' } : {}}>Group stage</button>
         <button className="btn" onClick={() => setTab('ko')} style={tab === 'ko' ? { background: 'var(--greenSoft)', color: 'var(--green)', borderColor: 'transparent' } : {}}>Knockout bracket</button>
@@ -181,6 +183,8 @@ export default function Bracket() {
           })}
         </div>
       </>)}
+
+      <NextRoundStrip nextRound={t.nextRound} />
     </div>
   );
 }
