@@ -12,9 +12,11 @@
   /* sign-in / ticket accents (values mirrored from the landing page) */
   --goldSoft: rgba(255, 203, 69, 0.24); --goldLine: rgba(201, 150, 30, 0.5);
   --cardGrad: linear-gradient(180deg, #fff, #f7faf2);
-  --glow1: rgba(11, 122, 75, 0.10); --glow2: rgba(255, 203, 69, 0.16);
+  --glow1: rgba(11, 122, 75, 0.10); --glow2: rgba(255, 203, 69, 0.06);
   --teal: #128a9c;
-  --signinGrad: linear-gradient(180deg, rgba(255, 203, 69, .12) 0%, var(--bg) 42%, var(--surface2) 100%);
+  /* opaque cream top stop (#f4f2df) — must stay opaque so the dark modal backdrop
+     never bleeds through the panel; settles to the soft grey --surface2 at the bottom */
+  --signinGrad: linear-gradient(180deg, #f4f2df 0%, var(--bg) 42%, var(--surface2) 100%);
 }
 .dark {
   --bg: #0a140e; --surface: #122017; --surface2: #16271c;

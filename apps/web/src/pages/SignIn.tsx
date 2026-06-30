@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api, API_BASE } from '../lib/api';
-import { useAuth } from '../context/Providers';
+import { useAuth, useTheme } from '../context/Providers';
 import { LogoMark, ThemeToggle } from '../components/ui';
 import { showLegal } from '../lib/feedback';
 
@@ -22,7 +22,7 @@ function CountdownStrip({ nextMatch }: { nextMatch?: { kickoff?: string; label?:
     { v: Math.floor(diff / 86400000), label: 'Days' },
     { v: Math.floor(diff / 3600000) % 24, label: 'Hrs' },
     { v: Math.floor(diff / 60000) % 60, label: 'Min' },
-    { v: Math.floor(diff / 1000) % 60, label: 'Sec' },
+    { v: Math.floor(diff / 1000) % 60, label: 'Sec', teal: true },
   ];
   const dateLine = new Date(nextMatch.kickoff).toLocaleString(undefined, {
     weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
@@ -40,7 +40,7 @@ function CountdownStrip({ nextMatch }: { nextMatch?: { kickoff?: string; label?:
             background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 13,
             padding: '10px 4px', textAlign: 'center', boxShadow: '0 6px 16px rgba(0,0,0,.06)',
           }}>
-            <div className="display tabular" style={{ fontSize: 30, fontWeight: 800, lineHeight: 1 }}>
+            <div className="display tabular" style={{ fontSize: 30, fontWeight: 800, lineHeight: 1, color: c.teal ? 'var(--teal)' : undefined }}>
               {pad2(c.v)}
             </div>
             <div className="faint" style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', marginTop: 4 }}>
@@ -60,6 +60,7 @@ function CountdownStrip({ nextMatch }: { nextMatch?: { kickoff?: string; label?:
 
 export default function LoginModal({ onClose }: Props) {
   const { user, refresh } = useAuth();
+  const { dark } = useTheme();
   const [t, setT] = useState<any>(null);
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
@@ -112,7 +113,7 @@ export default function LoginModal({ onClose }: Props) {
         <div className="bb-signin-accent" />
 
         <div style={{
-          padding: 'clamp(22px,5vw,30px)', display: 'grid', gap: 18,
+          padding: '24px 20px 28px', display: 'grid', gap: 18,
           maxWidth: 420, margin: '0 auto', width: '100%',
         }}>
           {/* Top bar: logo left, theme toggle + close right */}
@@ -151,7 +152,7 @@ export default function LoginModal({ onClose }: Props) {
             <div className="bb-wordmark">
               Bangla<span style={{ color: 'var(--goldText)' }}>Bracket</span>
             </div>
-            <p className="muted" style={{ margin: '10px 0 0', fontSize: 13.5 }}>
+            <p className="muted" style={{ margin: '10px 0 0', fontSize: 15.5 }}>
               Brings World Cup 2026 to your hands
             </p>
           </div>
@@ -167,23 +168,22 @@ export default function LoginModal({ onClose }: Props) {
               position: 'absolute', inset: 0, opacity: .5, pointerEvents: 'none',
               background: 'repeating-linear-gradient(135deg, rgba(255,255,255,.14) 0 2px, transparent 2px 16px)',
             }} />
-            <div style={{ position: 'relative' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase' }}>
-                  Entry Pass · 2026
-                </span>
-                <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.06em' }}>FREE</span>
-              </div>
-              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', opacity: .72, marginTop: 14 }}>
+            <div style={{ position: 'relative', textAlign: 'center' }}>
+              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', opacity: .72 }}>
                 Grand Prize
               </div>
-              <div className="display" style={{ fontWeight: 800, fontSize: 48, lineHeight: 1, marginTop: 2 }}>
+              <div className="display" style={{ fontWeight: 800, fontSize: 40, lineHeight: 1, marginTop: 4 }}>
                 ৳1,00,000
               </div>
               <p style={{ margin: '8px 0 0', fontSize: 12.5, opacity: .85 }}>
                 Predict the bracket. Top the table. Win.
               </p>
             </div>
+          </div>
+
+          {/* Small info line under the prize block */}
+          <div className="muted" style={{ textAlign: 'center', fontSize: 12.5, marginTop: -6 }}>
+            Correct score predictions also win cash · Entry is free
           </div>
 
           {/* Live countdown (hidden when no upcoming match) */}
@@ -204,7 +204,7 @@ export default function LoginModal({ onClose }: Props) {
             {stage === 'idle' && (
               <button
                 onClick={() => setStage('email')}
-                style={{ ...btnBase, background: 'var(--green)', color: '#fff', border: '1px solid var(--green)' }}
+                style={{ ...btnBase, background: dark ? 'var(--teal)' : 'var(--green)', color: '#fff', border: `1px solid ${dark ? 'var(--teal)' : 'var(--green)'}` }}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" />

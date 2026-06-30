@@ -25,12 +25,13 @@ export function Wordmark() {
 }
 
 // Light/Dark switch — shared by the app shell (App.tsx) and the sign-in screen.
+// Active segment is theme-aware: --green in light, --gold in dark.
 export function ThemeToggle() {
   const { dark, toggle } = useTheme();
   return (
     <div style={{ display: 'inline-flex', background: 'var(--surface2)', borderRadius: 999, padding: 3, border: '1px solid var(--line)' }}>
       <button onClick={() => dark && toggle()} title="Light" style={{ border: 'none', borderRadius: 999, width: 32, height: 28, cursor: 'pointer', background: !dark ? 'var(--green)' : 'transparent', color: !dark ? '#fff' : 'var(--muted)' }}>☀</button>
-      <button onClick={() => !dark && toggle()} title="Dark" style={{ border: 'none', borderRadius: 999, width: 32, height: 28, cursor: 'pointer', background: dark ? 'var(--green)' : 'transparent', color: dark ? '#fff' : 'var(--muted)' }}>☾</button>
+      <button onClick={() => !dark && toggle()} title="Dark" style={{ border: 'none', borderRadius: 999, width: 32, height: 28, cursor: 'pointer', background: dark ? 'var(--gold)' : 'transparent', color: dark ? '#1a1405' : 'var(--muted)' }}>☾</button>
     </div>
   );
 }
