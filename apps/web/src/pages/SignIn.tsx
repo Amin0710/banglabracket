@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api, API_BASE } from '../lib/api';
 import { useAuth } from '../context/Providers';
+import { LogoMark, ThemeToggle } from '../components/ui';
 import { showLegal } from '../lib/feedback';
 
 interface Props {
@@ -29,14 +30,15 @@ function CountdownStrip({ nextMatch }: { nextMatch?: { kickoff?: string; label?:
 
   return (
     <div style={{ display: 'grid', gap: 8 }}>
-      <div className="faint" style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.1em', textAlign: 'center' }}>
+      <div className="faint" style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.1em', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
+        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--teal)', display: 'inline-block', animation: 'bbGlow 1.6s infinite' }} />
         NEXT MATCH STARTS IN
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
         {cells.map((c) => (
           <div key={c.label} style={{
             background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 13,
-            padding: '10px 4px', textAlign: 'center',
+            padding: '10px 4px', textAlign: 'center', boxShadow: '0 6px 16px rgba(0,0,0,.06)',
           }}>
             <div className="display tabular" style={{ fontSize: 30, fontWeight: 800, lineHeight: 1 }}>
               {pad2(c.v)}
@@ -101,8 +103,6 @@ export default function LoginModal({ onClose }: Props) {
     fontSize: 11, textDecoration: 'underline', cursor: 'pointer', fontFamily: 'inherit',
   };
 
-  const TICKET_PAD = 18;
-
   return (
     <div
       className="bb-signin-overlay"
@@ -111,23 +111,28 @@ export default function LoginModal({ onClose }: Props) {
       <div className="bb-signin-panel">
         <div className="bb-signin-accent" />
 
-        {/* X close — only dismiss mechanism */}
-        <button
-          onClick={onClose}
-          aria-label="Close"
-          style={{
-            position: 'absolute', top: 14, right: 14, zIndex: 1,
-            width: 34, height: 34, border: '1px solid var(--line)',
-            borderRadius: 10, background: 'var(--surface2)',
-            color: 'var(--ink)', cursor: 'pointer', fontSize: 20, lineHeight: 1,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}
-        >×</button>
-
         <div style={{
           padding: 'clamp(22px,5vw,30px)', display: 'grid', gap: 18,
           maxWidth: 420, margin: '0 auto', width: '100%',
         }}>
+          {/* Top bar: logo left, theme toggle + close right */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <LogoMark size={36} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <ThemeToggle />
+              <button
+                onClick={onClose}
+                aria-label="Close"
+                style={{
+                  width: 34, height: 34, border: '1px solid var(--line)',
+                  borderRadius: 10, background: 'var(--surface2)',
+                  color: 'var(--ink)', cursor: 'pointer', fontSize: 20, lineHeight: 1,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 auto',
+                }}
+              >×</button>
+            </div>
+          </div>
+
           {/* Pill badge */}
           <div style={{ display: 'flex', justifyContent: 'center' }}>
             <span style={{
@@ -143,58 +148,42 @@ export default function LoginModal({ onClose }: Props) {
 
           {/* Wordmark + tagline */}
           <div style={{ textAlign: 'center' }}>
-            <div className="display" style={{ fontWeight: 800, fontSize: 40, lineHeight: 1.02, letterSpacing: '-.01em' }}>
+            <div className="bb-wordmark">
               Bangla<span style={{ color: 'var(--goldText)' }}>Bracket</span>
             </div>
-            <p className="muted" style={{ margin: '6px 0 0', fontSize: 13.5 }}>
+            <p className="muted" style={{ margin: '10px 0 0', fontSize: 13.5 }}>
               Brings World Cup 2026 to your hands
             </p>
           </div>
 
-          {/* Entry Pass ticket */}
+          {/* Grand prize — solid gold block */}
           <div style={{
-            position: 'relative', borderRadius: 18, border: '1px solid var(--goldLine)',
-            background: 'var(--cardGrad)', padding: TICKET_PAD,
+            position: 'relative', overflow: 'hidden', borderRadius: 18, padding: 16,
+            background: 'linear-gradient(150deg,#ffd76a,#f0a921)', color: '#231a05',
+            boxShadow: '0 14px 30px rgba(255,176,30,.28)',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--goldText)' }}>
-                Entry Pass · 2026
-              </span>
-              <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.06em', color: 'var(--green)' }}>
-                FREE
-              </span>
-            </div>
-
-            {/* dashed divider with edge notches */}
-            <div style={{ position: 'relative', height: 0, margin: `${TICKET_PAD - 2}px 0`, borderTop: '1px dashed var(--goldLine)' }}>
-              <span style={{ position: 'absolute', top: -7, left: -(TICKET_PAD + 7), width: 14, height: 14, borderRadius: '50%', background: 'var(--bg)', border: '1px solid var(--goldLine)' }} />
-              <span style={{ position: 'absolute', top: -7, right: -(TICKET_PAD + 7), width: 14, height: 14, borderRadius: '50%', background: 'var(--bg)', border: '1px solid var(--goldLine)' }} />
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-              <div style={{ minWidth: 0 }}>
-                <div className="muted" style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase' }}>
-                  Grand Prize
-                </div>
-                <div className="display" style={{ fontWeight: 800, fontSize: 34, lineHeight: 1.05, marginTop: 2 }}>
-                  ৳1,00,000
-                </div>
+            {/* subtle diagonal sheen */}
+            <div style={{
+              position: 'absolute', inset: 0, opacity: .5, pointerEvents: 'none',
+              background: 'repeating-linear-gradient(135deg, rgba(255,255,255,.14) 0 2px, transparent 2px 16px)',
+            }} />
+            <div style={{ position: 'relative' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase' }}>
+                  Entry Pass · 2026
+                </span>
+                <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.06em' }}>FREE</span>
               </div>
-              <span style={{
-                width: 60, height: 60, flex: '0 0 auto', borderRadius: 16,
-                background: 'linear-gradient(150deg,#ffd45f,#e8ab1f)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 6px 15px rgba(232,171,31,.3)',
-              }}>
-                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#1a1405" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M8 21h8M12 17v4M17 8a5 5 0 0 0-10 0c0 2 1 3 2 4l1 1h6l1-1c1-1 2-2 2-4z" />
-                </svg>
-              </span>
+              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', opacity: .72, marginTop: 14 }}>
+                Grand Prize
+              </div>
+              <div className="display" style={{ fontWeight: 800, fontSize: 48, lineHeight: 1, marginTop: 2 }}>
+                ৳1,00,000
+              </div>
+              <p style={{ margin: '8px 0 0', fontSize: 12.5, opacity: .85 }}>
+                Predict the bracket. Top the table. Win.
+              </p>
             </div>
-
-            <p className="muted" style={{ margin: '10px 0 0', fontSize: 12.5 }}>
-              Predict the bracket. Top the table. Win.
-            </p>
           </div>
 
           {/* Live countdown (hidden when no upcoming match) */}
@@ -215,7 +204,7 @@ export default function LoginModal({ onClose }: Props) {
             {stage === 'idle' && (
               <button
                 onClick={() => setStage('email')}
-                style={{ ...btnBase, background: 'var(--surface2)', color: 'var(--ink)', border: '1px solid var(--lineStrong)' }}
+                style={{ ...btnBase, background: 'var(--green)', color: '#fff', border: '1px solid var(--green)' }}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" />

@@ -24,6 +24,17 @@ export function Wordmark() {
   );
 }
 
+// Light/Dark switch — shared by the app shell (App.tsx) and the sign-in screen.
+export function ThemeToggle() {
+  const { dark, toggle } = useTheme();
+  return (
+    <div style={{ display: 'inline-flex', background: 'var(--surface2)', borderRadius: 999, padding: 3, border: '1px solid var(--line)' }}>
+      <button onClick={() => dark && toggle()} title="Light" style={{ border: 'none', borderRadius: 999, width: 32, height: 28, cursor: 'pointer', background: !dark ? 'var(--green)' : 'transparent', color: !dark ? '#fff' : 'var(--muted)' }}>☀</button>
+      <button onClick={() => !dark && toggle()} title="Dark" style={{ border: 'none', borderRadius: 999, width: 32, height: 28, cursor: 'pointer', background: dark ? 'var(--green)' : 'transparent', color: dark ? '#fff' : 'var(--muted)' }}>☾</button>
+    </div>
+  );
+}
+
 // Real PNG wordmark (theme-aware). Falls back to the SVG mark + text if the
 // image is missing, so the app never shows a broken logo.
 export function BrandLogo({ height = 30 }: { height?: number }) {

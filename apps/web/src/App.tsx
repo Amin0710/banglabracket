@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth, useTheme, type User } from './context/Providers';
-import { LogoMark, Wordmark } from './components/ui';
+import { useAuth, type User } from './context/Providers';
+import { LogoMark, Wordmark, ThemeToggle } from './components/ui';
 import { api } from './lib/api';
 import LoginModal from './pages/SignIn';
 import OnboardModal from './pages/Onboard';
@@ -31,16 +31,6 @@ const PLAY_NAV = NAV.filter((n) => !n.info && !n.admin);
 
 function NavIcon({ d }: { d: string }) {
   return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>;
-}
-
-function ThemeToggle() {
-  const { dark, toggle } = useTheme();
-  return (
-    <div style={{ display: 'inline-flex', background: 'var(--surface2)', borderRadius: 999, padding: 3, border: '1px solid var(--line)' }}>
-      <button onClick={() => dark && toggle()} title="Light" style={{ border: 'none', borderRadius: 999, width: 32, height: 28, cursor: 'pointer', background: !dark ? 'var(--green)' : 'transparent', color: !dark ? '#fff' : 'var(--muted)' }}>☀</button>
-      <button onClick={() => !dark && toggle()} title="Dark" style={{ border: 'none', borderRadius: 999, width: 32, height: 28, cursor: 'pointer', background: dark ? 'var(--green)' : 'transparent', color: dark ? '#fff' : 'var(--muted)' }}>☾</button>
-    </div>
-  );
 }
 
 function UserChip() {
