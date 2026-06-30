@@ -3541,7 +3541,8 @@
 			<div style="flex: 1; min-width: 0">
 				<div class="sb-title">Win &#2547;1,00,000</div>
 				<div class="sb-sub">
-					Next match in <b data-d>&ndash;</b>d <b data-h>&ndash;</b>h &middot; free
+					Next match in <b data-d>&ndash;</b>d <b data-h>&ndash;</b>h &middot;
+					free
 				</div>
 			</div>
 			<a class="btn-primary" href="/wc2026/app/"
@@ -3665,64 +3666,76 @@
 			// Countdown
 			var LOCK = new Date("2026-06-28T19:00:00Z");
 			var API = "https://api.banglabracket.com";
-				// Two live countdowns, fed by /api/tournament (nextMatch / nextRound).
-				var NEXT_MATCH = null, NEXT_ROUND = null;
-				function bbPad(n) { return String(n).padStart(2, "0"); }
-				function bbParts(target) {
-					var d = Math.max(0, target - new Date());
-					return { D: Math.floor(d / 864e5), H: Math.floor(d / 36e5) % 24, M: Math.floor(d / 6e4) % 60, S: Math.floor(d / 1e3) % 60 };
+			// Two live countdowns, fed by /api/tournament (nextMatch / nextRound).
+			var NEXT_MATCH = null,
+				NEXT_ROUND = null;
+			function bbPad(n) {
+				return String(n).padStart(2, "0");
+			}
+			function bbParts(target) {
+				var d = Math.max(0, target - new Date());
+				return {
+					D: Math.floor(d / 864e5),
+					H: Math.floor(d / 36e5) % 24,
+					M: Math.floor(d / 6e4) % 60,
+					S: Math.floor(d / 1e3) % 60,
+				};
+			}
+			function bbApplyNextMatch() {
+				if (!NEXT_MATCH) return;
+				var anchor = document.querySelector("[data-d]");
+				var grid = anchor ? anchor.parentElement.parentElement : null;
+				var el = document.getElementById("nmTeams");
+				if (!el && grid) {
+					el = document.createElement("div");
+					el.id = "nmTeams";
+					el.style.cssText =
+						"margin-top:16px;font-size:14px;font-weight:800;color:#e9f2ee;text-align:center;letter-spacing:.01em";
+					grid.insertAdjacentElement("afterend", el);
 				}
-				function bbApplyNextMatch() {
-					if (!NEXT_MATCH) return;
-					var anchor = document.querySelector("[data-d]");
-					var grid = anchor ? anchor.parentElement.parentElement : null;
-					var el = document.getElementById("nmTeams");
-					if (!el && grid) {
-						el = document.createElement("div");
-						el.id = "nmTeams";
-						el.style.cssText = "margin-top:16px;font-size:14px;font-weight:800;color:#e9f2ee;text-align:center;letter-spacing:.01em";
-						grid.insertAdjacentElement("afterend", el);
-					}
-					if (el) el.textContent = NEXT_MATCH.label || "";
+				if (el) el.textContent = NEXT_MATCH.label || "";
+			}
+			function bbBuildNextRound() {
+				if (!NEXT_ROUND) return;
+				var f = document.querySelector("footer");
+				if (!f) return;
+				var wrap = document.getElementById("nextRoundStrip");
+				if (!wrap) {
+					wrap = document.createElement("div");
+					wrap.id = "nextRoundStrip";
+					wrap.style.cssText =
+						"max-width:1120px;margin:8px auto 30px;padding:16px 22px;border:1px solid var(--line,#e6e1d6);border-radius:16px;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;text-align:center;background:var(--card,#fff)";
+					wrap.innerHTML =
+						'<span style="font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted,#7d978b)">Next round starts in</span>' +
+						'<span id="nrLabel" style="font-size:13px;font-weight:800;color:var(--primary,#0a7a52)"></span>' +
+						'<span id="nrTime" class="dsp" style="font-weight:800;font-size:20px;font-variant-numeric:tabular-nums;color:var(--ink,#1a1405)"></span>';
+					f.parentNode.insertBefore(wrap, f);
 				}
-				function bbBuildNextRound() {
-					if (!NEXT_ROUND) return;
-					var f = document.querySelector("footer");
-					if (!f) return;
-					var wrap = document.getElementById("nextRoundStrip");
-					if (!wrap) {
-						wrap = document.createElement("div");
-						wrap.id = "nextRoundStrip";
-						wrap.style.cssText = "max-width:1120px;margin:8px auto 30px;padding:16px 22px;border:1px solid var(--line,#e6e1d6);border-radius:16px;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;text-align:center;background:var(--card,#fff)";
-						wrap.innerHTML =
-							'<span style="font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted,#7d978b)">Next round starts in</span>' +
-							'<span id="nrLabel" style="font-size:13px;font-weight:800;color:var(--primary,#0a7a52)"></span>' +
-							'<span id="nrTime" class="dsp" style="font-weight:800;font-size:20px;font-variant-numeric:tabular-nums;color:var(--ink,#1a1405)"></span>';
-						f.parentNode.insertBefore(wrap, f);
-					}
-					document.getElementById("nrLabel").textContent = "(" + (NEXT_ROUND.round || "") + ")";
+				document.getElementById("nrLabel").textContent =
+					"(" + (NEXT_ROUND.round || "") + ")";
+			}
+			function bbTickRound() {
+				var nr = document.getElementById("nrTime");
+				if (!nr) return;
+				if (NEXT_ROUND && NEXT_ROUND.startsAt) {
+					var p = bbParts(new Date(NEXT_ROUND.startsAt));
+					nr.textContent =
+						p.D + "d " + bbPad(p.H) + ":" + bbPad(p.M) + ":" + bbPad(p.S);
+				} else {
+					nr.textContent = "Schedule TBD";
 				}
-				function bbTickRound() {
-					var nr = document.getElementById("nrTime");
-					if (!nr) return;
-					if (NEXT_ROUND && NEXT_ROUND.startsAt) {
-						var p = bbParts(new Date(NEXT_ROUND.startsAt));
-						nr.textContent = p.D + "d " + bbPad(p.H) + ":" + bbPad(p.M) + ":" + bbPad(p.S);
-					} else {
-						nr.textContent = "Schedule TBD";
-					}
-				}
+			}
 			fetch(API + "/api/tournament")
 				.then(function (r) {
 					return r.json();
 				})
 				.then(function (t) {
 					if (t && t.lockAt) LOCK = new Date(t.lockAt);
-						NEXT_MATCH = (t && t.nextMatch) || null;
-						NEXT_ROUND = (t && t.nextRound) || null;
-						bbApplyNextMatch();
-						bbBuildNextRound();
-						tick();
+					NEXT_MATCH = (t && t.nextMatch) || null;
+					NEXT_ROUND = (t && t.nextRound) || null;
+					bbApplyNextMatch();
+					bbBuildNextRound();
+					tick();
 				})
 				.catch(function () {});
 			fetch(API + "/api/stats")
@@ -3821,7 +3834,12 @@
 				})
 				.catch(function () {});
 			function tick() {
-				var d = Math.max(0, ((NEXT_MATCH && NEXT_MATCH.kickoff) ? new Date(NEXT_MATCH.kickoff) : LOCK) - new Date()),
+				var d = Math.max(
+						0,
+						(NEXT_MATCH && NEXT_MATCH.kickoff
+							? new Date(NEXT_MATCH.kickoff)
+							: LOCK) - new Date(),
+					),
 					D = Math.floor(d / 864e5),
 					H = Math.floor(d / 36e5) % 24,
 					M = Math.floor(d / 6e4) % 60,
@@ -3837,7 +3855,8 @@
 				set("[data-d]", D);
 				set("[data-h]", p(H));
 				set("[data-m]", p(M));
-				set("[data-s]", p(S)); bbTickRound();
+				set("[data-s]", p(S));
+				bbTickRound();
 			}
 			tick();
 			setInterval(tick, 1000);
@@ -3901,7 +3920,7 @@
 					html: `
       <p><b>Free to play.</b> BanglaBracket is a free prediction game for the 2026 World Cup. No entry fee, no purchase, no card required.</p>
       <p><b>Eligibility.</b> Prizes are for Bangladeshi nationals (by nationality, not residence) aged 18+. You can play and win from anywhere in the world. Winners must verify their identity before prizes are paid.</p>
-      <p><b>Winners on the Wall &amp; social media.</b> If you appear on the leaderboard, finish near the top, or win a prize, your <b>display name and profile photo may be shown publicly</b> on the in-app Winners Wall and leaderboard, and may be <b>used and shared by BanglaBracket on social media</b> to announce results and winners. By playing, you consent to this use of your name and image for these purposes.</p>
+      <p><b>Winners on the Wall &amp; social media.</b> If you appear on the leaderboard or win, your <b>display name and profile photo may be shown publicly</b> on the Winners Wall and shared by BanglaBracket on social media to announce results and winners. By playing, you consent to this use of your name and image for these purposes.</p>
       <p><b>Admin decisions.</b> All admin decisions are final. BanglaBracket may withhold or reallocate any prize — including paying the next eligible player — at its sole discretion and without explanation, including where cheating or multiple/fake accounts are suspected. We are not obligated to disclose our reasoning.</p>
       <p><b>Fair play.</b> One account per person. Multiple, fake, or automated accounts may be disqualified. The bracket locks at the first Round-of-32 kick-off; picks are final after lock.</p>
       <p><b>Prizes.</b> The grand prize is &#2547;1,00,000 for the top of the points leaderboard. Additional cash rewards are paid for exact knockout scorelines. Prize details may be updated before lock; the current rules in-app govern.</p>
