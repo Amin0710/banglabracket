@@ -211,10 +211,7 @@ export default function App() {
       </div>
 
       {loginOpen && (
-        <LoginModal
-          onClose={toLanding}
-          onPhoneSignup={() => { setLoginOpen(false); setOnboardOpen(true); }}
-        />
+        <LoginModal onClose={toLanding} />
       )}
       {onboardOpen && (
         <OnboardModal

@@ -9,6 +9,10 @@
   --line: #e0e8d6; --lineStrong: #ccd9bf;
   --gold: #ffcb45; --goldText: #9a7400;
   --green: #0b7a4b; --greenSoft: #e8f3ec; --bad: #d23f57; --bronze: #b9712f;
+  /* sign-in / ticket accents (values mirrored from the landing page) */
+  --goldSoft: rgba(255, 203, 69, 0.24); --goldLine: rgba(201, 150, 30, 0.5);
+  --cardGrad: linear-gradient(180deg, #fff, #f7faf2);
+  --glow1: rgba(11, 122, 75, 0.10); --glow2: rgba(255, 203, 69, 0.16);
 }
 .dark {
   --bg: #0a140e; --surface: #122017; --surface2: #16271c;
@@ -16,6 +20,10 @@
   --line: #264231; --lineStrong: #37633f;
   --gold: #ffcb45; --goldText: #ffd76a;
   --green: #3fc77f; --greenSoft: #16301f; --bad: #e0748a; --bronze: #d08a4e;
+  /* sign-in / ticket accents */
+  --goldSoft: rgba(255, 203, 69, 0.18); --goldLine: rgba(255, 203, 69, 0.45);
+  --cardGrad: linear-gradient(180deg, #122017, #0e1b13);
+  --glow1: rgba(63, 199, 127, 0.12); --glow2: rgba(255, 203, 69, 0.10);
 }
 
 * { box-sizing: border-box; }
@@ -43,6 +51,38 @@ h1, h2, h3, .display { font-family: 'Baloo Da 2', system-ui, sans-serif; }
 .tabular { font-variant-numeric: tabular-nums; }
 @keyframes bbBlink { 0%,100%{opacity:1} 50%{opacity:.3} }
 .dot-live { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: bbBlink 1.6s infinite; display:inline-block; }
+
+/* ===== sign-in: one component, two containers =====
+   desktop → centered modal card; mobile (≤640px) → full-screen page */
+.bb-signin-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  background: rgba(8, 16, 11, .6); backdrop-filter: blur(4px);
+}
+.bb-signin-panel {
+  position: relative; width: 100%; max-width: 460px;
+  max-height: 92vh; overflow-y: auto;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 20px; box-shadow: 0 30px 70px -20px rgba(0, 0, 0, .5);
+  /* soft ambient glows behind the content */
+  background-image:
+    radial-gradient(120% 60% at 50% -10%, var(--glow2), transparent 60%),
+    radial-gradient(120% 50% at 50% 110%, var(--glow1), transparent 60%);
+}
+.bb-signin-accent {
+  height: 4px; border-radius: 20px 20px 0 0;
+  background: repeating-linear-gradient(45deg,
+    var(--gold) 0 10px, var(--green) 10px 20px, var(--bad) 20px 30px);
+}
+@media (max-width: 640px) {
+  .bb-signin-overlay { padding: 0; align-items: stretch; background: var(--bg); backdrop-filter: none; }
+  .bb-signin-panel {
+    max-width: none; max-height: none; min-height: 100vh; min-height: 100dvh;
+    border: none; border-radius: 0; box-shadow: none;
+  }
+  .bb-signin-accent { border-radius: 0; }
+}
 
 /* responsive shell: sidebar on desktop, bottom-nav on mobile */
 .bb-bottomnav { display: none; }
