@@ -19,6 +19,7 @@ export default function OnboardModal({ onClose, onDone }: Props) {
   const [district, setDistrict] = useState('');
   const [bkash, setBkash] = useState('');
   const [overseas, setOverseas] = useState(false);
+  const [agreed, setAgreed] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -153,7 +154,22 @@ export default function OnboardModal({ onClose, onDone }: Props) {
               </div>
             )}
 
-            <button className="btn btn-primary" onClick={submit} disabled={busy} style={{ marginTop: 4, padding: 13 }}>
+            <label style={{ display: 'flex', gap: 9, alignItems: 'flex-start', fontSize: 13, lineHeight: 1.4, cursor: 'pointer', marginTop: 4 }}>
+              <input
+                type="checkbox"
+                checked={agreed}
+                onChange={(e) => setAgreed(e.target.checked)}
+                style={{ marginTop: 2, width: 16, height: 16, accentColor: 'var(--gold)', flexShrink: 0, cursor: 'pointer' }}
+              />
+              <span>
+                I confirm I am 13+ and agree to the{' '}
+                <button type="button" style={{ ...linkStyle, fontSize: 'inherit', color: 'var(--ink)' }} onClick={() => showLegal('terms')}>Terms</button>
+                {' '}and{' '}
+                <button type="button" style={{ ...linkStyle, fontSize: 'inherit', color: 'var(--ink)' }} onClick={() => showLegal('privacy')}>Privacy Policy</button>.
+              </span>
+            </label>
+
+            <button className="btn btn-primary" onClick={submit} disabled={busy || !agreed} style={{ marginTop: 4, padding: 13 }}>
               {busy ? 'Saving…' : 'Start predicting →'}
             </button>
 
