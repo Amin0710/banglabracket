@@ -9,6 +9,7 @@ import { configurePassport, passport } from './services/oauth.js';
 import { authRouter } from './routes/auth.js';
 import { bracketRouter } from './routes/bracket.js';
 import { apiRouter } from './routes/admin.js';
+import { startScoresPoller } from './services/scores/poller.js';
 
 const app = express();
 app.set('trust proxy', 1);
@@ -54,6 +55,8 @@ async function start() {
     console.log(`  BanglaBracket API → ${env.apiUrl} (port ${env.port})`);
     console.log(`  Web origin (CORS): ${env.webUrl}`);
   });
+  // Live World Cup score sync (no-op unless SCORES_POLLER=true + key set).
+  startScoresPoller();
 }
 
 start().catch((e) => { console.error('Fatal startup error:', e); process.exit(1); });

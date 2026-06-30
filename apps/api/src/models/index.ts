@@ -69,6 +69,11 @@ const tournamentSchema = new Schema({
   r32: { type: Schema.Types.Mixed, default: {} },      // truth slots {match:{A:{team,confirmedAt},B}}
   results: { type: Schema.Types.Mixed, default: {} },  // {match:{winner,manner,scoreA,scoreB,confirmedAt}}
 
+  // Live schedule from the score provider (normalized fixtures). Drives the two
+  // countdowns; written by the sync job, read-only everywhere else.
+  fixtures: { type: Schema.Types.Mixed, default: [] }, // NormFixture[] (+ matchNumber)
+  sync: { type: Schema.Types.Mixed, default: {} },     // {lastSyncAt, lastLiveAt, source, rateRemaining}
+
   scoringConfig: { type: Schema.Types.Mixed },         // optional override of defaults
 }, { timestamps: true });
 

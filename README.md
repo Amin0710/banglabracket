@@ -55,6 +55,62 @@ so a player out of the points race can still win money and stay engaged.
 The app is served under **`/wc2026/app`** (configurable via `WEB_APP_PATH` on the API and the Vite
 `base`), leaving the domain root free for marketing and future tournaments (e.g. `/euro2028/app`).
 
+## Live scores (API-Football)
+
+The tournament data (group tables, R32 occupants, knockout results) can be driven **live** from
+[API-Football](https://www.api-football.com/) instead of the hardcoded seed snapshot. All API calls
+happen **server-side only** — the key is never sent to the browser, and every user reads the synced
+data from Mongo, so API usage is independent of traffic. The seed remains the cold-start fallback.
+
+The code lives in `apps/api/src/services/scores/` behind a provider abstraction
+(`ScoreProvider`), so a second source (e.g. SofaScore) can be added later without touching the sync
+logic. Team names from the provider are normalized to our canonical names in `teamMap.ts`.
+
+**Setup** — add to `apps/api/.env` (see `.env.example`):
+
+```bash
+API_FOOTBALL_KEY=your_key_here     # dashboard.api-football.com → API key (server-side only)
+API_FOOTBALL_LEAGUE_ID=1           # men's World Cup; leave 0/blank to auto-discover at runtime
+API_FOOTBALL_SEASON=2026
+SCORES_POLLER=false                # set true on ONE instance to run the background poller
+```
+
+**Verify before going live (dry-run)** — computes and logs the full base/r32/results mapping and
+every `fixture → match number` decision **without writing to Mongo**:
+
+```bash
+npm run sync -w @banglabracket/api -- --dry-run
+# if your runner swallows the flag, this always works:
+DRY_RUN=1 npm run sync -w @banglabracket/api
+```
+
+**Run the live sync** (writes to the `wc2026` doc; idempotent and safe to re-run):
+
+```bash
+npm run sync -w @banglabracket/api                 # fixtures + standings → Mongo
+npm run sync -w @banglabracket/api -- --no-standings   # fixtures only (cheaper)
+npm run sync -w @banglabracket/api -- --watch          # stay running on the poller cadence
+```
+
+**Polling cadence** (respects the rate-limit budget — free tier is 100 req/day; `/status` is free):
+
+| State | Frequency | What it fetches |
+| --- | --- | --- |
+| Any WC fixture **live** | every **60s** | fixtures |
+| Otherwise | every **60 min** | fixtures |
+| Standings | at most **once / 24h** | standings |
+
+Finished fixtures are never re-decided, the league id is cached, and the poller backs off to hourly
+when daily requests run low (it reads `x-ratelimit-requests-remaining`). Drive it either by setting
+`SCORES_POLLER=true` on **exactly one** API instance (it starts with the server) or by running
+`npm run sync` from a single external cron job. **Idempotency:** a `confirmedAt` that is already set
+is never overwritten — re-running only adds/advances.
+
+The sync also derives two countdown targets exposed on `GET /api/tournament` (and `GET /api/schedule`):
+`nextMatch` (earliest not-yet-started fixture) and `nextRound` (kickoff of the next round). The web
+front page renders these as **"Next match starts in…"** (top) and **"Next round starts in… (Round of
+16)"** (above the footer).
+
 ## Local development
 
 Prereqs: Node 20+, a MongoDB connection string (Atlas free tier is fine).
@@ -139,6 +195,8 @@ AES-256-GCM encrypted, with an HMAC unique index so one ID maps to one account. 
 banglabracket/
 ├─ packages/shared/      bracket wiring + resolver + scoring (the brain)
 ├─ apps/api/             Express API, Mongoose models, auth, admin
-│  └─ src/scripts/seed.ts  loads the tournament snapshot + lock time
+│  ├─ src/scripts/seed.ts  loads the tournament snapshot + lock time
+│  ├─ src/scripts/sync.ts  CLI for the live score sync (--dry-run / --watch)
+│  └─ src/services/scores/ provider abstraction + API-Football sync + countdowns
 └─ apps/web/             React client (light/dark themes, mobile-first)
 ```
