@@ -2947,7 +2947,7 @@
 					</button>
 					<div class="faq-a">
 						If you finish in a winning position, email your verification code
-						and a photo of your NID/passport to admin@banglabracket.com before
+						and a photo of your NID/passport to verify@banglabracket.com before
 						the 3rd-place match. Prize is paid via bKash.
 					</div>
 				</div>
@@ -3465,7 +3465,11 @@
 					</div>
 					<div style="display: flex; flex-direction: column; gap: 9px">
 						<a
-							href="mailto:admin@banglabracket.com"
+							href="#"
+							onclick="
+								openLegal('contact');
+								return false;
+							"
 							style="
 								color: var(--muted);
 								text-decoration: none;
@@ -3829,6 +3833,16 @@
 
 		<script>
 			var LEGAL = {
+				contact: {
+					title: "Contact",
+					html: `
+      <p>Questions about the prize, the rules, our Terms &amp; Conditions, or anything else? Email us and we'll get back to you within 48 hours:</p>
+      <p style="font-size:16px;font-weight:700;color:var(--primary)">support@banglabracket.com</p>
+      <p style="margin-top:14px"><b>ID verification:</b><br>
+      <span style="font-weight:600;color:var(--primary)">verify@banglabracket.com</span></p>
+      <p><b>Delete your data:</b><br>
+      <span style="font-weight:600;color:var(--primary)">data.delete@banglabracket.com</span></p>`,
+				},
 				terms: {
 					title: "Terms of Play",
 					html: `
@@ -3847,12 +3861,12 @@
       <p><b>How we use it.</b> Only to run the game: sign you in, score your bracket, rank the leaderboard, and contact winners. We do not sell your data.</p>
       <p><b>Public display.</b> Your display name and profile photo may appear publicly on the leaderboard and Winners Wall, and may be shared by BanglaBracket on social media if you rank highly or win (see Terms).</p>
       <p><b>Security.</b> Sensitive data is encrypted. Sessions use secure cookies.</p>
-      <p><b>Your choices.</b> You can request deletion of your account and data any time via <a href="mailto:admin@banglabracket.com" style="color:var(--primary)">admin@banglabracket.com</a>.</p>`,
+      <p><b>Your choices.</b> You can request deletion of your account and data any time via <a href="mailto:data.delete@banglabracket.com" style="color:var(--primary)">data.delete@banglabracket.com</a>.</p>`,
 				},
 				deletion: {
 					title: "Data Deletion",
 					html: `
-      <p><b>How to delete your data.</b> To request deletion of your BanglaBracket account and all associated data, email <a href="mailto:admin@banglabracket.com" style="color:var(--primary)">admin@banglabracket.com</a> with the subject line <b>"Delete my account"</b>. Please include the name or email address linked to your account.</p>
+      <p><b>How to delete your data.</b> To request deletion of your BanglaBracket account and all associated data, email <a href="mailto:data.delete@banglabracket.com" style="color:var(--primary)">data.delete@banglabracket.com</a> with the subject line <b>"Delete my account"</b>. Please include the name or email address linked to your account.</p>
       <p><b>What we delete.</b> We will permanently delete your profile (name, phone, email), your bracket picks, your score history, and any verification data we hold. We will process your request within 30 days.</p>
       <p><b>Note.</b> If you have won a prize, we retain minimal records required by law or for prize payment purposes until those obligations are fulfilled.</p>`,
 				},
