@@ -11,16 +11,69 @@ import { PageHeader, Flag, NextMatchBanner, NextRoundStrip } from '../components
 type Scores = Record<string, { sa: number | ''; sb: number | '' }[]>;
 const RL: Record<string, string> = { R16: 'Round of 16', QF: 'Quarter-final', SF: 'Semi-final', THIRD: 'Third place', FINAL: 'Final' };
 
-function TeamRow({ name, onClick, selected, dim }: { name: string | null; onClick?: () => void; selected?: boolean; dim?: boolean }) {
+type MatchState = 'upcoming' | 'live' | 'decided';
+interface RowOutcome { score: number | null; won: boolean; decided: boolean }
+
+function TeamRow({ name, onClick, selected, dim, interactive = true, outcome }: {
+  name: string | null; onClick?: () => void; selected?: boolean; dim?: boolean;
+  interactive?: boolean; outcome?: RowOutcome;
+}) {
+  const clickable = interactive && !!onClick && !!name;
+  const won = !!outcome?.decided && outcome.won;
+  const lost = !!outcome?.decided && !outcome.won;
   return (
-    <button onClick={onClick} disabled={!name || !onClick}
+    <button onClick={clickable ? onClick : undefined} disabled={!clickable}
       style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', textAlign: 'left',
-        background: selected ? 'var(--greenSoft)' : 'transparent', color: 'var(--ink)',
-        border: 'none', borderRadius: 9, padding: '8px 10px', cursor: onClick && name ? 'pointer' : 'default',
-        opacity: dim ? 0.4 : 1, fontWeight: 600, fontSize: 14 }}>
-      <Flag name={name} /><span style={{ flex: 1, textDecoration: dim ? 'line-through' : 'none' }}>{name || '—'}</span>
+        background: won ? 'var(--greenSoft)' : selected ? 'var(--greenSoft)' : 'transparent', color: 'var(--ink)',
+        border: 'none', borderRadius: 9, padding: '8px 10px', cursor: clickable ? 'pointer' : 'default',
+        opacity: (lost || dim) ? 0.45 : 1, fontWeight: won ? 800 : 600, fontSize: 14 }}>
+      <Flag name={name} />
+      <span style={{ flex: 1, textDecoration: (lost || dim) ? 'line-through' : 'none' }}>{name || '—'}</span>
+      {outcome && outcome.score != null && <span className="tabular" style={{ fontWeight: won ? 800 : 700 }}>{outcome.score}</span>}
       {selected && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="3"><path d="M5 13l4 4L19 7" /></svg>}
     </button>
+  );
+}
+
+function StatusBadge({ state }: { state: MatchState }) {
+  if (state === 'live') return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 800, color: '#d83a3a' }}>
+      <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#d83a3a', animation: 'bbBlink 1.2s infinite' }} />LIVE
+    </span>
+  );
+  if (state === 'decided') return <span className="faint" style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.04em' }}>FINAL</span>;
+  return null;
+}
+
+// Map the actual fixture/result onto a card's predicted A/B slots, but only when
+// the predicted pair equals the actual pair (orientation-aware). Returns null
+// when the match hasn't started or the user's predicted teams differ from reality.
+function alignedOutcome(state: MatchState, fx: any, res: any, pA: string | null, pB: string | null): { A: RowOutcome; B: RowOutcome } | null {
+  if (state === 'upcoming' || !fx || !pA || !pB) return null;
+  const decided = state === 'decided';
+  const aA = fx.teamA, aB = fx.teamB;
+  const sa = decided ? res?.scoreA : fx.scoreA;
+  const sb = decided ? res?.scoreB : fx.scoreB;
+  const winner = decided ? res?.winner : null;
+  if (aA === pA && aB === pB) return { A: { score: sa ?? null, won: winner === aA, decided }, B: { score: sb ?? null, won: winner === aB, decided } };
+  if (aA === pB && aB === pA) return { A: { score: sb ?? null, won: winner === aB, decided }, B: { score: sa ?? null, won: winner === aA, decided } };
+  return null;
+}
+
+// Compact line showing the ACTUAL match when it differs from the user's predicted pair.
+function ActualResultLine({ state, fx, res }: { state: MatchState; fx: any; res: any }) {
+  if (!fx) return null;
+  const decided = state === 'decided';
+  const sa = decided ? res?.scoreA : fx.scoreA, sb = decided ? res?.scoreB : fx.scoreB;
+  const winner = decided ? res?.winner : null;
+  const mannerTag = decided && res?.manner && res.manner !== 'FT' ? (res.manner === 'PEN' ? ' (pens)' : ' (a.e.t.)') : '';
+  return (
+    <div style={{ marginTop: 6, padding: '6px 8px', borderRadius: 8, background: 'var(--surface2)', fontSize: 11.5, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+      <StatusBadge state={state} />
+      <span style={{ fontWeight: winner === fx.teamA ? 800 : 600 }}>{fx.teamA}</span>
+      <span className="tabular" style={{ fontWeight: 800 }}>{sa ?? 0}–{sb ?? 0}{mannerTag}</span>
+      <span style={{ fontWeight: winner === fx.teamB ? 800 : 600 }}>{fx.teamB}</span>
+    </div>
   );
 }
 
@@ -66,6 +119,20 @@ export default function Bracket() {
   const r32 = useMemo(() => t ? resolveR32(t.base || {}, t.remaining || {}, predForShared) : {}, [t, predForShared]);
   const participants = useMemo(() => resolveBracketParticipants(r32 as any, winners), [r32, winners]);
 
+  // Per-match live status, derived from the synced truth (results[] + fixtures[]).
+  const fixturesByMatch = useMemo(() => {
+    const map: Record<number, any> = {};
+    for (const f of (t?.fixtures || [])) if (f?.matchNumber != null) map[f.matchNumber] = f;
+    return map;
+  }, [t]);
+  const matchStatus = useMemo(() => (m: number): { state: MatchState; res: any; fx: any } => {
+    const res = t?.results?.[m];
+    if (res && res.winner) return { state: 'decided', res, fx: fixturesByMatch[m] };
+    const fx = fixturesByMatch[m];
+    if (fx && fx.status === 'live') return { state: 'live', res: null, fx };
+    return { state: 'upcoming', res: null, fx };
+  }, [t, fixturesByMatch]);
+
   useEffect(() => {
     if (!loaded || !user || locked) return;
     setSaved(false); clearTimeout(timer.current);
@@ -90,9 +157,13 @@ export default function Bracket() {
 
   return (
     <div>
-      <PageHeader title="Bracket" subtitle="Predict the groups, then fill the knockout tree" lockAt={t.lockAt}
+      <PageHeader title="Bracket" subtitle="Predict the groups, then fill the knockout tree" lockAt={locked ? undefined : t.lockAt}
         right={<div className="card" style={{ padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
-          {locked ? <span className="pill pill-gold">Locked</span> : <><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="3"><path d="M5 13l4 4L19 7" /></svg><span style={{ fontWeight: 600, fontSize: 14 }}>{saved ? 'Saved' : 'Saving…'}</span></>}
+          {locked
+            ? <span className="faint" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 600, fontSize: 13 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>Picks locked
+              </span>
+            : <><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="3"><path d="M5 13l4 4L19 7" /></svg><span style={{ fontWeight: 600, fontSize: 14 }}>{saved ? 'Saved' : 'Saving…'}</span></>}
         </div>} />
 
       <NextMatchBanner nextMatch={t.nextMatch} />
@@ -138,11 +209,20 @@ export default function Bracket() {
       {tab === 'ko' && (<>
         <div style={{ marginBottom: 8, fontWeight: 700, color: 'var(--green)', fontSize: 13 }}>BONUS ROUND · ROUND OF 32 <span className="faint" style={{ fontWeight: 400, textTransform: 'none' }}>early picks earn tiebreaker points only</span></div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(210px,1fr))', gap: 10, marginBottom: 24 }}>
-          {R32_MATCHES.map((m) => { const p = r32[m] || { A: null, B: null }; return (
+          {R32_MATCHES.map((m) => {
+            const p = r32[m] || { A: null, B: null };
+            const st = matchStatus(m);
+            const oc = alignedOutcome(st.state, st.fx, st.res, p.A, p.B);
+            const interactive = st.state === 'upcoming' && !locked;
+            return (
             <div key={m} className="card" style={{ padding: 8 }}>
-              <span className="faint" style={{ fontSize: 10, fontWeight: 700 }}>M{m}</span>
-              <TeamRow name={p.A} onClick={() => pick(m, p.A)} selected={winners[m] === p.A && !!p.A} />
-              <TeamRow name={p.B} onClick={() => pick(m, p.B)} selected={winners[m] === p.B && !!p.B} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span className="faint" style={{ fontSize: 10, fontWeight: 700 }}>M{m}</span>
+                <StatusBadge state={st.state} />
+              </div>
+              <TeamRow name={p.A} onClick={() => pick(m, p.A)} selected={winners[m] === p.A && !!p.A} interactive={interactive} outcome={oc?.A} />
+              <TeamRow name={p.B} onClick={() => pick(m, p.B)} selected={winners[m] === p.B && !!p.B} interactive={interactive} outcome={oc?.B} />
+              {st.state !== 'upcoming' && !oc && <ActualResultLine state={st.state} fx={st.fx} res={st.res} />}
             </div>
           ); })}
         </div>
@@ -151,15 +231,22 @@ export default function Bracket() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(250px,1fr))', gap: 12 }}>
           {KO_MATCHES.map((m) => {
             const p = participants[m] || { A: null, B: null }; const round = ROUND_OF(m);
+            const st = matchStatus(m);
+            const oc = alignedOutcome(st.state, st.fx, st.res, p.A, p.B);
+            const interactive = st.state === 'upcoming' && !locked;
             return (
               <div key={m} className="card" style={{ padding: 10 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                   <span className="faint" style={{ fontSize: 11, fontWeight: 700 }}>{RL[round]} · M{m}</span>
-                  <span className="pill pill-gold" style={{ fontSize: 10 }}>+{ROUND_MULTIPLIER[round] * 100}</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                    <StatusBadge state={st.state} />
+                    <span className="pill pill-gold" style={{ fontSize: 10 }}>+{ROUND_MULTIPLIER[round] * 100}</span>
+                  </span>
                 </div>
-                <TeamRow name={p.A} onClick={() => pick(m, p.A)} selected={winners[m] === p.A && !!p.A} />
-                <TeamRow name={p.B} onClick={() => pick(m, p.B)} selected={winners[m] === p.B && !!p.B} />
-                {winners[m] && (p.A || p.B) && (expanded[m] ? (
+                <TeamRow name={p.A} onClick={() => pick(m, p.A)} selected={winners[m] === p.A && !!p.A} interactive={interactive} outcome={oc?.A} />
+                <TeamRow name={p.B} onClick={() => pick(m, p.B)} selected={winners[m] === p.B && !!p.B} interactive={interactive} outcome={oc?.B} />
+                {st.state !== 'upcoming' && !oc && <ActualResultLine state={st.state} fx={st.fx} res={st.res} />}
+                {st.state === 'upcoming' && winners[m] && (p.A || p.B) && (expanded[m] ? (
                   <div style={{ display: 'grid', gap: 6, marginTop: 4, padding: 8, background: 'var(--surface2)', borderRadius: 10 }}>
                     <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                       <span style={{ fontSize: 11 }}>🎯 Score</span>
