@@ -4,13 +4,11 @@
 // Pure presentation helper. The later design pass consumes the structured
 // parts returned here; nothing about layout/styling lives in this file.
 //
-// Conventions:
-//   • FT          — decided in 90' (normal time)
-//   • AET         — decided in extra time
-//   • AET (P)     — drawn after ET, decided on penalties
-//   • Extra-time score is rendered split as "90'+ET", e.g. a 2–2 after 90'
-//     that became 3–2 in extra time shows the home side as "2+1".
-//   • Penalty shoot-out result is returned separately as e.g. "4–3".
+// Conventions (final score only — NO 90'+ET split):
+//   • FT          — decided in 90' (normal time)          → "France 3–0 Sweden"  FT
+//   • AET         — decided in extra time (show final)     → "Spain 2–1 Italy"    AET
+//   • AET (P)     — drawn after ET, decided on penalties   → "Germany 1–1 …"      AET (P)  (pens 3–4)
+//   • Penalty shoot-out tally is returned separately as e.g. "3–4".
 
 import type { Manner } from './types.js';
 
@@ -18,7 +16,7 @@ export interface CompletedMatchScore {
   manner?: Manner | null;
   scoreA: number | null; // final on-pitch total (includes extra time, excludes pens)
   scoreB: number | null;
-  ftA?: number | null;   // score after 90' (regulation), if known
+  ftA?: number | null;   // (accepted for back-compat; no longer displayed)
   ftB?: number | null;
   penA?: number | null;  // penalty shoot-out tally, if any
   penB?: number | null;
@@ -26,36 +24,25 @@ export interface CompletedMatchScore {
 
 export interface FormattedMatch {
   statusLabel: string;     // 'FT' | 'AET' | 'AET (P)'
-  scoreA: string;          // '2' or, in ET, '2+1'
+  scoreA: string;          // final score only, e.g. '3'
   scoreB: string;
-  pens: string | null;     // '4–3' when decided on penalties, else null
+  pens: string | null;     // '3–4' when decided on penalties, else null
   aet: boolean;            // went to extra time
   pen: boolean;            // decided on penalties
 }
 
 /**
- * Format a finished match into display-ready parts. Robust to a missing 90'
- * split: extra-time goals are derived as (final total − 90' score), so the
- * "2+1" form appears only when we actually know the regulation score.
+ * Format a finished match into display-ready parts. Always shows the FINAL
+ * on-pitch score (no "90'+ET" split); extra time is conveyed by the AET tag and
+ * penalties by the separate `pens` shoot-out tally.
  */
 export function formatCompletedMatch(r: CompletedMatchScore): FormattedMatch {
   const manner: Manner = r.manner || 'FT';
   const aet = manner === 'ET' || manner === 'PEN';
   const pen = manner === 'PEN';
-  const sa = r.scoreA ?? 0;
-  const sb = r.scoreB ?? 0;
 
-  let scoreA = String(sa);
-  let scoreB = String(sb);
-  // Split into 90'+ET only when the regulation score is known and ET goals are non-negative.
-  if (aet && r.ftA != null && r.ftB != null) {
-    const etA = sa - r.ftA;
-    const etB = sb - r.ftB;
-    if (etA >= 0 && etB >= 0) {
-      scoreA = `${r.ftA}+${etA}`;
-      scoreB = `${r.ftB}+${etB}`;
-    }
-  }
+  const scoreA = String(r.scoreA ?? 0);
+  const scoreB = String(r.scoreB ?? 0);
 
   let statusLabel = aet ? 'AET' : 'FT';
   let pens: string | null = null;

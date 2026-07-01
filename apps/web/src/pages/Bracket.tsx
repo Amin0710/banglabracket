@@ -2,155 +2,133 @@ import type React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  GROUP_KEYS, R32_MATCHES, KO_MATCHES, ROUND_OF, ROUND_MULTIPLIER, MATCH_DEF,
-  resolveR32, resolveBracketParticipants, rankGroup, formatCompletedMatch,
+  GROUP_KEYS, R32_MATCHES, KO_MATCHES, ALL_MATCHES, ROUND_OF,
+  resolveR32, resolveBracketParticipants, resolveActualParticipants, rankGroup, formatCompletedMatch,
 } from '@banglabracket/shared';
 import { api } from '../lib/api';
 import { useAuth } from '../context/Providers';
 import { confirmFreezeEdit } from '../lib/feedback';
-import { PageHeader, Flag, NextMatchBanner, NextRoundStrip, StatusChip, LiveDot, SubTabs, useIsMobile } from '../components/ui';
+import { PageHeader, Flag, NextMatchBanner, NextRoundStrip, StatusChip, SubTabs, useIsMobile } from '../components/ui';
 
 type Scores = Record<string, { sa: number | ''; sb: number | '' }[]>;
-const RL: Record<string, string> = { R16: 'Round of 16', QF: 'Quarter-final', SF: 'Semi-final', THIRD: 'Third place', FINAL: 'Final' };
+type Manner = 'FT' | 'ET' | 'PEN';
+const RL: Record<string, string> = { R32: 'Round of 32', R16: 'Round of 16', QF: 'Quarter-final', SF: 'Semi-final', THIRD: 'Third place', FINAL: 'Final' };
+const MANNER_LABEL: Record<Manner, string> = { FT: 'Full time', ET: 'Extra time', PEN: 'Penalties' };
+const MANNER_SHORT: Record<Manner, string> = { FT: 'FT', ET: 'AET', PEN: 'PENS' };
 
 type MatchState = 'upcoming' | 'live' | 'decided';
-interface RowOutcome { score: number | null; won: boolean; decided: boolean }
 
-function TeamRow({ name, onClick, selected, dim, interactive = true, outcome }: {
-  name: string | null; onClick?: () => void; selected?: boolean; dim?: boolean;
-  interactive?: boolean; outcome?: RowOutcome;
-}) {
-  const clickable = interactive && !!onClick && !!name;
-  const won = !!outcome?.decided && outcome.won;
-  const lost = !!outcome?.decided && !outcome.won;
-  return (
-    <button onClick={clickable ? onClick : undefined} disabled={!clickable}
-      style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', textAlign: 'left',
-        background: won ? 'var(--greenSoft)' : selected ? 'var(--greenSoft)' : 'transparent', color: 'var(--ink)',
-        border: 'none', borderRadius: 9, padding: '8px 10px', cursor: clickable ? 'pointer' : 'default',
-        opacity: (lost || dim) ? 0.45 : 1, fontWeight: won ? 800 : 600, fontSize: 14 }}>
-      <Flag name={name} />
-      <span style={{ flex: 1, textDecoration: (lost || dim) ? 'line-through' : 'none' }}>{name || '—'}</span>
-      {outcome && outcome.score != null && <span className="tabular" style={{ fontWeight: won ? 800 : 700 }}>{outcome.score}</span>}
-      {selected && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="3"><path d="M5 13l4 4L19 7" /></svg>}
-    </button>
-  );
-}
-
-function StatusBadge({ state }: { state: MatchState }) {
-  if (state === 'live') return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 800, color: '#d83a3a' }}>
-      <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#d83a3a', animation: 'bbBlink 1.2s infinite' }} />LIVE
-    </span>
-  );
-  if (state === 'decided') return <span className="faint" style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.04em' }}>FINAL</span>;
-  return null;
-}
-
-// Map the actual fixture/result onto a card's predicted A/B slots, but only when
-// the predicted pair equals the actual pair (orientation-aware). Returns null
-// when the match hasn't started or the user's predicted teams differ from reality.
-function alignedOutcome(state: MatchState, fx: any, res: any, pA: string | null, pB: string | null): { A: RowOutcome; B: RowOutcome } | null {
-  if (state === 'upcoming' || !fx || !pA || !pB) return null;
-  const decided = state === 'decided';
-  const aA = fx.teamA, aB = fx.teamB;
-  const sa = decided ? res?.scoreA : fx.scoreA;
-  const sb = decided ? res?.scoreB : fx.scoreB;
-  const winner = decided ? res?.winner : null;
-  if (aA === pA && aB === pB) return { A: { score: sa ?? null, won: winner === aA, decided }, B: { score: sb ?? null, won: winner === aB, decided } };
-  if (aA === pB && aB === pA) return { A: { score: sb ?? null, won: winner === aB, decided }, B: { score: sa ?? null, won: winner === aA, decided } };
-  return null;
-}
-
-// Decided/live result strip. DECIDED shows the real match with manner + score in
-// GOLD (both themes), score in "2+1" extra-time form via formatCompletedMatch().
-function ActualResultLine({ state, fx, res }: { state: MatchState; fx: any; res: any }) {
-  if (!fx && state === 'upcoming') return null;
-  if (state === 'decided') {
-    const f = formatCompletedMatch({ manner: res?.manner, scoreA: res?.scoreA, scoreB: res?.scoreB, ftA: res?.ftA, ftB: res?.ftB, penA: res?.penA, penB: res?.penB });
-    const teamA = fx?.teamA, teamB = fx?.teamB, winner = res?.winner;
-    return (
-      <div style={{ marginTop: 6, padding: '6px 8px', borderRadius: 8, background: 'var(--goldSoft)', fontSize: 11.5, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-        <span className="bb-decided" style={{ fontSize: 9.5, letterSpacing: '.05em', textTransform: 'uppercase' }}>{f.statusLabel}</span>
-        {teamA && <span style={{ fontWeight: winner === teamA ? 800 : 600 }}>{teamA}</span>}
-        <span className="tabular bb-decided">{f.scoreA}–{f.scoreB}</span>
-        {teamB && <span style={{ fontWeight: winner === teamB ? 800 : 600 }}>{teamB}</span>}
-        {f.pens && <span className="bb-decided" style={{ fontSize: 10 }}>pens {f.pens}</span>}
-      </div>
-    );
-  }
-  // live
-  return (
-    <div style={{ marginTop: 6, padding: '6px 8px', borderRadius: 8, background: 'rgba(216,50,47,.08)', fontSize: 11.5, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--bad)', fontWeight: 800, fontSize: 10 }}><LiveDot color="var(--teal)" size={6} />LIVE</span>
-      {fx?.teamA && <span style={{ fontWeight: 700 }}>{fx.teamA}</span>}
-      <span className="tabular" style={{ fontWeight: 800 }}>{fx?.scoreA ?? 0}–{fx?.scoreB ?? 0}</span>
-      {fx?.teamB && <span style={{ fontWeight: 700 }}>{fx.teamB}</span>}
-    </div>
-  );
-}
-
-// ── Bracket geometry (from the shared knockout wiring) ──
-const ROUND_DEFS: { key: string; label: string; matches: number[] }[] = [
-  { key: 'R32', label: 'Round of 32', matches: R32_MATCHES },
-  { key: 'R16', label: 'Round of 16', matches: KO_MATCHES.filter((m) => ROUND_OF(m) === 'R16') },
-  { key: 'QF', label: 'Quarter-finals', matches: KO_MATCHES.filter((m) => ROUND_OF(m) === 'QF') },
-  { key: 'SF', label: 'Semi-finals', matches: KO_MATCHES.filter((m) => ROUND_OF(m) === 'SF') },
-  { key: 'THIRD', label: 'Third-place play-off', matches: KO_MATCHES.filter((m) => ROUND_OF(m) === 'THIRD') },
-  { key: 'FINAL', label: 'Final', matches: KO_MATCHES.filter((m) => ROUND_OF(m) === 'FINAL') },
+// ── stages (Rounds mode). 3rd-place folds into the Final stage. ──
+const R16_M = KO_MATCHES.filter((m) => ROUND_OF(m) === 'R16');
+const QF_M = KO_MATCHES.filter((m) => ROUND_OF(m) === 'QF');
+const SF_M = KO_MATCHES.filter((m) => ROUND_OF(m) === 'SF');
+const STAGES: { key: string; label: string; short: string; matches: number[]; sub: string }[] = [
+  { key: 'R32', label: 'Round of 32', short: 'R32', matches: R32_MATCHES, sub: 'Sets up your Round of 16 — no wrong answers' },
+  { key: 'R16', label: 'Round of 16', short: 'R16', matches: R16_M, sub: 'Tap a match to pick the winner & manner' },
+  { key: 'QF', label: 'Quarter-finals', short: 'QF', matches: QF_M, sub: 'Tap a match to pick the winner & manner' },
+  { key: 'SF', label: 'Semi-finals', short: 'SF', matches: SF_M, sub: 'Tap a match to pick the winner & manner' },
+  { key: 'FINAL', label: 'Final', short: 'Final', matches: [104, 103], sub: 'Crown your champion' },
 ];
 
-// Winner-feeder children of a knockout match (stops at R32, which has no feeders).
-function koChildren(m: number): number[] {
-  const d = MATCH_DEF[m]; const out: number[] = [];
-  if (d?.srcA?.type === 'W') out.push(d.srcA.from);
-  if (d?.srcB?.type === 'W') out.push(d.srcB.from);
-  return out;
-}
-// Levels from a root SF match down to its R32 feeders: [[SF],[QF..],[R16..],[R32..]].
-function levelsFrom(root: number): number[][] {
-  const levels: number[][] = []; let cur = [root];
-  while (cur.length) { levels.push(cur); cur = cur.flatMap(koChildren); }
-  return levels;
-}
-const LEFT_LEVELS = levelsFrom(101);   // half feeding Semi-final 101
-const RIGHT_LEVELS = levelsFrom(102);  // half feeding Semi-final 102
-
-// ── Results tab: read-only ACTUAL tournament (from synced base/results/fixtures
-// + daily scorer/assist tables). Basic render — the design pass styles this.
-function PlayerStatRow({ p, unit }: { p: any; unit: string }) {
+// ============================================================
+//  Pick sheet — deliberate winner + manner selection (money game)
+// ============================================================
+function PickSheet({ m, A, B, round, initialWinner, initialManner, onConfirm, onCancel }: {
+  m: number; A: string | null; B: string | null; round: string;
+  initialWinner: string | null; initialManner: Manner;
+  onConfirm: (winner: string, manner: Manner) => void; onCancel: () => void;
+}) {
+  const [w, setW] = useState<string | null>(initialWinner);
+  const [mn, setMn] = useState<Manner>(initialManner);
+  const isR32 = round === 'R32';
+  const teamBtn = (team: string | null) => {
+    if (!team) return null;
+    const sel = w === team;
+    return (
+      <button onClick={() => setW(team)} style={{
+        display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', cursor: 'pointer',
+        padding: '13px 14px', borderRadius: 13, fontSize: 15, fontWeight: sel ? 800 : 600, fontFamily: 'inherit',
+        border: `2px solid ${sel ? 'var(--green)' : 'var(--line)'}`, background: sel ? 'var(--greenSoft)' : 'var(--surface)', color: 'var(--ink)',
+      }}>
+        <Flag name={team} size={26} /><span style={{ flex: 1 }}>{team}</span>
+        {sel && <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="3"><path d="M5 13l4 4L19 7" /></svg>}
+      </button>
+    );
+  };
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0', borderTop: '1px solid var(--line)' }}>
-      <span className="tabular faint" style={{ width: 18 }}>{p.rank}</span>
+    <div className="bb-sheet-overlay" onClick={onCancel}>
+      <div className="bb-sheet" onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+          <strong style={{ fontSize: 16 }}>{RL[round]} · Match {m}</strong>
+          <button onClick={onCancel} aria-label="Close" style={{ width: 32, height: 32, borderRadius: 9, border: '1px solid var(--line)', background: 'var(--surface2)', color: 'var(--ink)', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
+        </div>
+        <div className="faint" style={{ fontSize: 12.5, marginBottom: 12 }}>Who goes through?</div>
+        <div style={{ display: 'grid', gap: 8 }}>{teamBtn(A)}{teamBtn(B)}</div>
+
+        {!isR32 && (
+          <div style={{ marginTop: 16 }}>
+            <div className="faint" style={{ fontSize: 12.5, marginBottom: 8 }}>How do they win? <span style={{ fontWeight: 600 }}>(tiebreaker bonus)</span></div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {(['FT', 'ET', 'PEN'] as Manner[]).map((k) => (
+                <button key={k} onClick={() => setMn(k)} style={{
+                  flex: 1, padding: '10px 6px', borderRadius: 11, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 13,
+                  border: `2px solid ${mn === k ? 'var(--gold)' : 'var(--line)'}`, background: mn === k ? 'var(--goldSoft)' : 'var(--surface)', color: 'var(--ink)',
+                }}>{MANNER_LABEL[k]}</button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
+          <button className="btn" style={{ flex: 1 }} onClick={onCancel}>Cancel</button>
+          <button className="btn btn-primary" style={{ flex: 2, opacity: w ? 1 : .5 }} disabled={!w} onClick={() => w && onConfirm(w, mn)}>Confirm pick</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+//  Results tab helpers
+// ============================================================
+function PlayerStatRow({ p }: { p: any }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 0', borderTop: '1px solid var(--line)' }}>
+      <span className="tabular faint" style={{ width: 20, textAlign: 'right', flex: '0 0 auto' }}>{p.rank}</span>
       {p.photo
-        ? <img src={p.photo} alt="" width={24} height={24} style={{ borderRadius: '50%', objectFit: 'cover' }} />
-        : <Flag name={p.flag || p.country} size={22} />}
-      <span style={{ flex: 1, fontWeight: 600 }}>{p.name}</span>
-      <span className="faint" style={{ fontSize: 12 }}>{p.country || p.team}</span>
-      <span className="tabular" style={{ fontWeight: 700 }}>{p.value} {unit}</span>
+        ? <img src={p.photo} alt="" width={30} height={30} style={{ borderRadius: '50%', objectFit: 'cover', flex: '0 0 auto', background: 'var(--surface2)' }} referrerPolicy="no-referrer" />
+        : <Flag name={p.flag || p.country} size={26} />}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: 700, fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+        <div className="faint" style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 5 }}><Flag name={p.flag || p.country} size={14} />{p.team || p.country}</div>
+      </div>
+      <span className="tabular" style={{ fontWeight: 800, fontSize: 18 }}>{p.value ?? 0}</span>
     </div>
   );
 }
 
-// Sportsbook-style finished match: manner + score in gold, ET score as "2+1".
+// Clean sportsbook line: "France 3–0 Sweden" · FT / AET / AET (P) + (pens x–y). Same baseline.
 function CompletedMatchRow({ fx }: { fx: any }) {
-  const f = formatCompletedMatch({ manner: fx.manner, scoreA: fx.scoreA, scoreB: fx.scoreB, ftA: fx.ftA, ftB: fx.ftB, penA: fx.penA, penB: fx.penB });
-  const roundLabel = RL[fx.round] || (fx.round === 'R32' ? 'Round of 32' : fx.round === 'GROUP' ? 'Group stage' : '');
+  const f = formatCompletedMatch({ manner: fx.manner, scoreA: fx.scoreA, scoreB: fx.scoreB, penA: fx.penA, penB: fx.penB });
+  const roundLabel = RL[fx.round] || (fx.round === 'GROUP' ? 'Group stage' : '');
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 0', borderTop: '1px solid var(--line)', fontSize: 13.5 }}>
-      <span style={{ width: 58, display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <span className="bb-decided" style={{ fontSize: 10.5, letterSpacing: '.04em' }}>{f.statusLabel}</span>
-        {roundLabel && <span className="faint" style={{ fontSize: 9 }}>{roundLabel}</span>}
+    <div style={{ display: 'grid', gridTemplateColumns: '64px 1fr auto 1fr 78px', alignItems: 'center', gap: 8, padding: '11px 0', borderTop: '1px solid var(--line)', fontSize: 13.5 }}>
+      <span className="bb-decided" style={{ fontSize: 11, letterSpacing: '.03em', lineHeight: 1.15 }}>
+        {f.statusLabel}{roundLabel && <span className="faint" style={{ display: 'block', fontSize: 9, fontWeight: 600 }}>{roundLabel}</span>}
       </span>
-      <span style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end', fontWeight: fx.winner === fx.teamA ? 800 : 600 }}>{fx.teamA}<Flag name={fx.teamA} size={20} /></span>
-      <span className="tabular bb-decided" style={{ minWidth: 58, textAlign: 'center', fontSize: 15 }}>{f.scoreA}–{f.scoreB}</span>
-      <span style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, fontWeight: fx.winner === fx.teamB ? 800 : 600 }}><Flag name={fx.teamB} size={20} />{fx.teamB}</span>
-      {f.pens && <span className="bb-decided" style={{ fontSize: 11, width: 54, textAlign: 'right' }}>pens {f.pens}</span>}
+      <span style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end', fontWeight: fx.winner === fx.teamA ? 800 : 600, minWidth: 0 }}>
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fx.teamA}</span><Flag name={fx.teamA} size={20} />
+      </span>
+      <span className="tabular bb-decided" style={{ minWidth: 52, textAlign: 'center', fontSize: 16 }}>{f.scoreA}–{f.scoreB}</span>
+      <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: fx.winner === fx.teamB ? 800 : 600, minWidth: 0 }}>
+        <Flag name={fx.teamB} size={20} /><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fx.teamB}</span>
+      </span>
+      <span className="bb-decided" style={{ fontSize: 11, textAlign: 'right' }}>{f.pens ? `pens ${f.pens}` : ''}</span>
     </div>
   );
 }
 
-type ResultsSub = 'groups' | 'scorers' | 'assists' | 'matches';
+type ResultsSub = 'matches' | 'groups' | 'scorers' | 'assists';
 function ResultsTab({ t }: { t: any }) {
   const [sub, setSub] = useState<ResultsSub>('matches');
   const completed = useMemo(() => (t?.fixtures || [])
@@ -161,14 +139,8 @@ function ResultsTab({ t }: { t: any }) {
 
   return (
     <div>
-      <SubTabs<ResultsSub>
-        active={sub} onChange={setSub}
-        tabs={[
-          { key: 'matches', label: 'Matches' },
-          { key: 'groups', label: 'Groups' },
-          { key: 'scorers', label: 'Top scorers' },
-          { key: 'assists', label: 'Top assists' },
-        ]} />
+      <SubTabs<ResultsSub> active={sub} onChange={setSub}
+        tabs={[{ key: 'matches', label: 'Matches' }, { key: 'groups', label: 'Groups' }, { key: 'scorers', label: 'Top scorers' }, { key: 'assists', label: 'Top assists' }]} />
 
       {sub === 'matches' && (
         <div className="card" style={{ padding: 16 }}>
@@ -202,42 +174,42 @@ function ResultsTab({ t }: { t: any }) {
         </div>
       )}
 
-      {sub === 'scorers' && (
+      {(sub === 'scorers' || sub === 'assists') && (
         <div className="card" style={{ padding: 16 }}>
-          <strong style={{ fontSize: 15 }}>⚽ Top scorers</strong>
-          {scorers.length ? scorers.slice(0, 20).map((p, i) => <PlayerStatRow key={i} p={p} unit="G" />) : <div className="faint" style={{ marginTop: 8 }}>No data yet.</div>}
-        </div>
-      )}
-
-      {sub === 'assists' && (
-        <div className="card" style={{ padding: 16 }}>
-          <strong style={{ fontSize: 15 }}>🅰️ Top assists</strong>
-          {assists.length ? assists.slice(0, 20).map((p, i) => <PlayerStatRow key={i} p={p} unit="A" />) : <div className="faint" style={{ marginTop: 8 }}>No data yet.</div>}
+          <strong style={{ fontSize: 15 }}>{sub === 'scorers' ? '⚽ Top scorers' : '🅰️ Top assists'}</strong>
+          {(sub === 'scorers' ? scorers : assists).length
+            ? (sub === 'scorers' ? scorers : assists).slice(0, 20).map((p, i) => <PlayerStatRow key={i} p={p} />)
+            : <div className="faint" style={{ marginTop: 8 }}>No data yet.</div>}
         </div>
       )}
     </div>
   );
 }
 
+// ============================================================
+//  Bracket
+// ============================================================
 export default function Bracket() {
   const { user } = useAuth();
   const nav = useNavigate();
   const isMobile = useIsMobile();
   const [t, setT] = useState<any>(null);
-  const [tab, setTab] = useState<'results' | 'ko'>('ko');
+  const [tab, setTab] = useState<'picks' | 'results' | 'cash'>('picks');
   const [view, setView] = useState<'rounds' | 'whole'>('rounds');
-  const [roundIdx, setRoundIdx] = useState(0);
+  const [stageIdx, setStageIdx] = useState(0);
+  const [sheet, setSheet] = useState<number | null>(null);
   const [scores, setScores] = useState<Scores>({});
   const [winners, setWinners] = useState<Record<number, string>>({});
-  const [manner, setManner] = useState<Record<number, 'FT' | 'ET' | 'PEN'>>({});
+  const [manner, setManner] = useState<Record<number, Manner>>({});
   const [scorePred, setScorePred] = useState<Record<number, { a: number | ''; b: number | '' }>>({});
-  const [expanded, setExpanded] = useState<Record<number, boolean>>({});
   const [saved, setSaved] = useState(true);
   const [loaded, setLoaded] = useState(false);
-  const [eligible, setEligible] = useState(true);   // grand-prize eligibility (from /entry)
-  const [freezeAck, setFreezeAck] = useState(false);  // user already accepted forfeiting this session
+  const [eligible, setEligible] = useState(true);
+  const [freezeAck, setFreezeAck] = useState(false);
   const timer = useRef<any>(null);
-  const touch = useRef<{ x: number; y: number } | null>(null);
+  const skipFirstSave = useRef(true);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const colRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -263,17 +235,26 @@ export default function Bracket() {
     })();
   }, [user]);
 
-  // Model Y: no global hard-lock. The bracket is editable; per-match cards lock
-  // themselves once that match kicks off (via matchStatus → 'upcoming' gating).
-  // Editing after the R16 kickoff is allowed but forfeits grand-prize eligibility
-  // (enforced server-side; the warning UI lands in the design pass).
   const frozen = !!t?.bracketFrozenForPrize;
-  const skipFirstSave = useRef(true);
   const predForShared = useMemo(() => { const o: any = {}; for (const g of Object.keys(scores)) o[g] = scores[g].map((s) => ({ sa: s.sa, sb: s.sb })); return o; }, [scores]);
   const r32 = useMemo(() => t ? resolveR32(t.base || {}, t.remaining || {}, predForShared) : {}, [t, predForShared]);
-  const participants = useMemo(() => resolveBracketParticipants(r32 as any, winners), [r32, winners]);
 
-  // Per-match live status, derived from the synced truth (results[] + fixtures[]).
+  // R32 AUTO-CORRECT: once an R32 match is FINAL, the real winner (not the player's
+  // guess) flows into the Round of 16. Reality overwrites a wrong early guess.
+  const effectiveWinners = useMemo(() => {
+    const w: Record<number, string> = { ...winners };
+    for (const m of R32_MATCHES) { const res = t?.results?.[m]; if (res?.winner) w[m] = res.winner; }
+    return w;
+  }, [winners, t]);
+  const participants = useMemo(() => resolveBracketParticipants(r32 as any, effectiveWinners), [r32, effectiveWinners]);
+
+  // Actual (real-results-only) participants — drives the cash "current round" set.
+  const actualParticipants = useMemo(() => {
+    const realR32: any = {};
+    for (const m of R32_MATCHES) realR32[m] = { A: t?.r32?.[m]?.A?.team ?? null, B: t?.r32?.[m]?.B?.team ?? null };
+    return resolveActualParticipants(realR32, t?.results || {});
+  }, [t]);
+
   const fixturesByMatch = useMemo(() => {
     const map: Record<number, any> = {};
     for (const f of (t?.fixtures || [])) if (f?.matchNumber != null) map[f.matchNumber] = f;
@@ -287,10 +268,9 @@ export default function Bracket() {
     return { state: 'upcoming', res: null, fx };
   }, [t, fixturesByMatch]);
 
+  // autosave
   useEffect(() => {
     if (!loaded || !user) return;
-    // Skip the save that the initial load's setState would otherwise trigger — a
-    // no-op write must never forfeit grand-prize eligibility once frozen.
     if (skipFirstSave.current) { skipFirstSave.current = false; return; }
     setSaved(false); clearTimeout(timer.current);
     timer.current = setTimeout(async () => {
@@ -311,146 +291,144 @@ export default function Bracket() {
   if (!t) return <div className="muted">Loading bracket…</div>;
   if (!user) { nav('/'); return null; }
 
-  // Two-step soft-freeze guard: any mutating edit after R16 kickoff prompts once.
-  // Confirm → optimistically drop eligibility (server flips it authoritatively on save);
-  // cancel → abort the edit. No prompt when open, already ineligible, or already acked.
+  // ── freeze guard (editing always allowed; after R16 it forfeits grand prize) ──
   async function guardEdit(): Promise<boolean> {
     if (!frozen || !eligible || freezeAck) return true;
     const ok = await confirmFreezeEdit();
     if (ok) { setFreezeAck(true); setEligible(false); }
     return ok;
   }
-  const pick = async (m: number, team: string | null) => { if (!team) return; if (!(await guardEdit())) return; setWinners((w) => ({ ...w, [m]: team })); };
-  const setScoreCell = async (m: number, side: 'a' | 'b', raw: string) => {
+  async function applyPick(m: number, w: string, mn: Manner) {
+    setSheet(null);
+    if (!(await guardEdit())) return;
+    setWinners((prev) => ({ ...prev, [m]: w }));
+    if (ROUND_OF(m) !== 'R32') setManner((prev) => ({ ...prev, [m]: mn }));
+  }
+  async function setCashCell(m: number, side: 'a' | 'b', raw: string) {
     if (!(await guardEdit())) return;
     const v = raw === '' ? '' : Math.max(0, +raw);
     setScorePred((s) => ({ ...s, [m]: { a: side === 'a' ? v : (s[m]?.a ?? ''), b: side === 'b' ? v : (s[m]?.b ?? '') } }));
-  };
-  const setMannerCell = async (m: number, mn: 'FT' | 'ET' | 'PEN') => { if (!(await guardEdit())) return; setManner((x) => ({ ...x, [m]: mn })); };
-  const openExtras = async (m: number) => { if (!(await guardEdit())) return; setExpanded((x) => ({ ...x, [m]: true })); };
+  }
 
   const partOf = (m: number): { A: string | null; B: string | null } =>
     (ROUND_OF(m) === 'R32' ? r32[m] : participants[m]) || { A: null, B: null };
 
-  // One match card — reused by both view modes (compact = tighter for the map).
-  function renderMatchCard(m: number, compact = false) {
-    const p = partOf(m); const round = ROUND_OF(m);
-    const st = matchStatus(m);
-    const oc = alignedOutcome(st.state, st.fx, st.res, p.A, p.B);
-    const interactive = st.state === 'upcoming';
-    const isR32 = round === 'R32';
+  // ── one bracket card (used by Rounds + Whole tree) — ONE coloring rule ──
+  function renderCard(m: number, tree = false) {
+    const p = partOf(m); const round = ROUND_OF(m); const isR32 = round === 'R32';
+    const st = matchStatus(m); const decided = st.state === 'decided';
+    // rawPick = the player's stored pick (may reference a team that didn't qualify).
+    // validPick = only if it's still one of THIS match's real participants — a pick
+    // invalidated by an R32 auto-correct reads as "no pick" so the player re-picks.
+    const rawPick = winners[m] || null;
+    const validPick = rawPick && (rawPick === p.A || rawPick === p.B) ? rawPick : null;
+    const actualWinner = decided ? st.res?.winner : null;
+    const correct = decided && rawPick ? rawPick === actualWinner : null;
+    const canPick = st.state === 'upcoming' && !!p.A && !!p.B;
+    const tint = correct === true ? ' bb-correct' : correct === false ? ' bb-wrong' : '';
+    const r32cls = isR32 && !decided ? ' bb-r32tile' : '';
+    const res = st.res;
+
+    const fx = st.fx;
+    // score is keyed to the ACTUAL fixture orientation (teamA/teamB), matched by name.
+    const scoreFor = (team: string | null): number | null => {
+      if (!team || !fx) return null;
+      if (decided) return team === fx.teamA ? (res?.scoreA ?? null) : team === fx.teamB ? (res?.scoreB ?? null) : null;
+      if (st.state === 'live') return team === fx.teamA ? (fx.scoreA ?? null) : team === fx.teamB ? (fx.scoreB ?? null) : null;
+      return null;
+    };
+    const slot = (team: string | null) => {
+      const isPick = !!validPick && team === validPick;
+      const isActual = decided && !!team && team === actualWinner;
+      const dim = decided && !!team && team !== actualWinner;
+      const score = scoreFor(team);
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: tree ? '4px 6px' : '7px 8px', borderRadius: 8,
+          background: isPick && !decided ? 'var(--greenSoft)' : 'transparent', opacity: dim ? .5 : 1, fontWeight: (isActual || isPick) ? 800 : 600, fontSize: tree ? 12.5 : 14 }}>
+          <Flag name={team} size={tree ? 18 : 22} />
+          <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: dim ? 'line-through' : 'none' }}>{team || '—'}</span>
+          {score != null && <span className="tabular" style={{ fontWeight: 800 }}>{score}</span>}
+          {isPick && !decided && <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="3"><path d="M5 13l4 4L19 7" /></svg>}
+        </div>
+      );
+    };
+
+    const f = decided ? formatCompletedMatch({ manner: res?.manner, scoreA: res?.scoreA, scoreB: res?.scoreB, penA: res?.penA, penB: res?.penB }) : null;
+
     return (
-      <div key={m} className="card" style={{ padding: compact ? 7 : 10 }}>
+      <div key={m} className={`card${r32cls}${tint}`} onClick={canPick ? () => setSheet(m) : undefined}
+        style={{ padding: tree ? 7 : 10, cursor: canPick ? 'pointer' : 'default' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3, gap: 6 }}>
-          <span className="faint" style={{ fontSize: 10, fontWeight: 700 }}>{compact ? `M${m}` : `${RL[round] || 'R32'} · M${m}`}</span>
+          <span className="faint" style={{ fontSize: 10, fontWeight: 700 }}>{tree ? `M${m}` : `${RL[round]} · M${m}`}</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            {st.state === 'live' ? <StatusChip kind="live" /> : <StatusBadge state={st.state} />}
-            {!compact && (isR32
-              ? <span className="pill" style={{ fontSize: 9 }}>Bonus</span>
-              : <span className="pill pill-gold" style={{ fontSize: 9 }}>+{ROUND_MULTIPLIER[round] * 100}</span>)}
+            {st.state === 'live' && <StatusChip kind="live" />}
+            {decided && f && <span className="bb-decided" style={{ fontSize: 9.5, letterSpacing: '.04em' }}>{f.statusLabel}{f.pens ? ` (pens ${f.pens})` : ''}</span>}
           </span>
         </div>
-        <TeamRow name={p.A} onClick={() => pick(m, p.A)} selected={winners[m] === p.A && !!p.A} interactive={interactive} outcome={oc?.A} />
-        <TeamRow name={p.B} onClick={() => pick(m, p.B)} selected={winners[m] === p.B && !!p.B} interactive={interactive} outcome={oc?.B} />
-        {st.state !== 'upcoming' && !oc && <ActualResultLine state={st.state} fx={st.fx} res={st.res} />}
-        {!compact && !isR32 && st.state === 'upcoming' && winners[m] && (p.A || p.B) && (expanded[m] ? (
-          <div style={{ display: 'grid', gap: 6, marginTop: 4, padding: 8, background: 'var(--surface2)', borderRadius: 10 }}>
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-              <span style={{ fontSize: 11 }}>🎯 Score</span>
-              <input className="input tabular" style={{ width: 36, padding: 5, textAlign: 'center' }} value={scorePred[m]?.a ?? ''} onChange={(e) => setScoreCell(m, 'a', e.target.value)} />
-              <span className="faint">–</span>
-              <input className="input tabular" style={{ width: 36, padding: 5, textAlign: 'center' }} value={scorePred[m]?.b ?? ''} onChange={(e) => setScoreCell(m, 'b', e.target.value)} />
-              <span className="pill pill-gold" style={{ fontSize: 9 }}>100৳</span>
-            </div>
-            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-              <span style={{ fontSize: 11 }}>⚖️</span>
-              {(['FT', 'ET', 'PEN'] as const).map((mn) => <button key={mn} className="btn" onClick={() => setMannerCell(m, mn)} style={{ padding: '3px 7px', fontSize: 11, borderColor: manner[m] === mn ? 'var(--gold)' : undefined }}>{mn}</button>)}
-            </div>
+        {slot(p.A)}
+        {slot(p.B)}
+        {!decided && validPick && st.state === 'upcoming' && (
+          <div className="faint" style={{ fontSize: 10.5, fontWeight: 700, marginTop: 3, paddingLeft: 2 }}>
+            ✓ {validPick}{!isR32 ? ` · ${MANNER_SHORT[manner[m] || 'FT']}` : ''}{canPick && !tree ? ' · tap to change' : ''}
           </div>
-        ) : (
-          <button onClick={() => openExtras(m)} style={{ background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', color: 'var(--green)', fontSize: 11, padding: '4px 0', fontWeight: 600 }}>
-            🎯 Predict score → 100৳ · ⚖️ manner → bonus
-          </button>
-        ))}
+        )}
+        {!decided && !validPick && canPick && (
+          <div style={{ fontSize: 10.5, fontWeight: 700, marginTop: 3, paddingLeft: 2, color: 'var(--green)' }}>Tap to pick →</div>
+        )}
       </div>
     );
   }
 
-  // ROUNDS VIEW — one round at a time; swipe (mobile) or arrows (desktop).
-  const rd = ROUND_DEFS[roundIdx];
-  const go = (dir: -1 | 1) => setRoundIdx((i) => Math.min(ROUND_DEFS.length - 1, Math.max(0, i + dir)));
-  const onTouchStart = (e: React.TouchEvent) => { touch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; };
-  const onTouchEnd = (e: React.TouchEvent) => {
-    if (!touch.current) return;
-    const dx = e.changedTouches[0].clientX - touch.current.x;
-    const dy = e.changedTouches[0].clientY - touch.current.y;
-    if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.4) go(dx < 0 ? 1 : -1);
-    touch.current = null;
+  // ── ROUNDS (dual-axis): sticky stage tabs + horizontal-snap stage columns ──
+  const scrollToStage = (i: number) => {
+    const el = colRefs.current[i];
+    if (el) el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    setStageIdx(i);
   };
-  const arrowBtn = (dir: -1 | 1, disabled: boolean) => (
-    <button onClick={() => go(dir)} disabled={disabled} aria-label={dir < 0 ? 'Previous round' : 'Next round'}
-      style={{ width: 38, height: 38, borderRadius: 11, border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--ink)', cursor: disabled ? 'default' : 'pointer', opacity: disabled ? .35 : 1, flex: '0 0 auto', fontSize: 18, lineHeight: 1 }}>
-      {dir < 0 ? '‹' : '›'}
-    </button>
-  );
+  const onScroll = () => {
+    const sc = scrollRef.current; if (!sc) return;
+    const mid = sc.scrollLeft + sc.clientWidth / 2;
+    let best = 0, bestD = Infinity;
+    colRefs.current.forEach((el, i) => { if (!el) return; const c = el.offsetLeft + el.offsetWidth / 2; const d = Math.abs(c - mid); if (d < bestD) { bestD = d; best = i; } });
+    if (best !== stageIdx) setStageIdx(best);
+  };
+
   const RoundsView = (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-        {!isMobile && arrowBtn(-1, roundIdx === 0)}
-        <div style={{ flex: 1, textAlign: 'center' }}>
-          <div style={{ fontWeight: 800, fontSize: 17 }}>{rd.label}</div>
-          <div className="faint" style={{ fontSize: 11.5, fontWeight: 600 }}>
-            {rd.key === 'R32' ? 'Bonus round · tiebreaker points only' : `Round ${roundIdx + 1} of ${ROUND_DEFS.length}`}
-            {isMobile && ' · swipe ‹ ›'}
-          </div>
-        </div>
-        {!isMobile && arrowBtn(1, roundIdx === ROUND_DEFS.length - 1)}
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 5, marginBottom: 14 }}>
-        {ROUND_DEFS.map((r, i) => (
-          <button key={r.key} onClick={() => setRoundIdx(i)} aria-label={r.label}
-            style={{ width: i === roundIdx ? 22 : 8, height: 8, borderRadius: 999, border: 'none', cursor: 'pointer', background: i === roundIdx ? 'var(--green)' : 'var(--line)', transition: '.2s' }} />
+      <div className="bb-stagetabs">
+        {STAGES.map((s, i) => (
+          <button key={s.key} data-active={i === stageIdx} onClick={() => scrollToStage(i)}>{s.label}</button>
         ))}
       </div>
-      <div className="bb-round-track" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
-        style={{ display: 'grid', gridTemplateColumns: rd.matches.length === 1 ? 'minmax(0,340px)' : 'repeat(auto-fill,minmax(230px,1fr))', gap: 12, justifyContent: rd.matches.length <= 2 ? 'center' : undefined }}>
-        {rd.matches.map((m) => renderMatchCard(m, false))}
+      <div className="faint" style={{ fontSize: 12, fontWeight: 600, margin: '2px 2px 8px', textAlign: 'center' }}>
+        {STAGES[stageIdx].sub}{isMobile ? ' · swipe ← → for rounds' : ''}
+      </div>
+      <div className="bb-stage-wrap">
+        <div className="bb-edge l"><span>‹</span></div>
+        <div className="bb-edge r"><span>›</span></div>
+        <div className="bb-stage-scroll" ref={scrollRef} onScroll={onScroll}>
+          {STAGES.map((s, i) => (
+            <div key={s.key} className="bb-stage-col" data-si={i} ref={(el) => { colRefs.current[i] = el; }}>
+              {!isMobile && <div style={{ fontWeight: 800, fontSize: 14, textAlign: 'center', padding: '2px 0 4px' }}>{s.label}</div>}
+              {s.matches.map((m) => renderCard(m, false))}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
 
-  // WHOLE BRACKET — two halves converging on a centered Final.
-  const mapCol = (matches: number[], compact = true) => (
-    <div className={`bb-map-col${compact ? ' compact' : ''}`}>{matches.map((m) => renderMatchCard(m, compact))}</div>
-  );
-  const champion = winners[104] || null;
-  const WholeView = (
-    <div className="bb-map-scroll">
-      <div className="bb-map">
-        {/* left half: R32 → R16 → QF → SF */}
-        {[...LEFT_LEVELS].reverse().map((lvl, i) => <div key={'L' + i}>{mapCol(lvl)}</div>)}
-        {/* center: Final + 3rd place */}
-        <div className="bb-map-center">
-          <div className="faint" style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.08em' }}>FINAL</div>
-          <div style={{ width: 178 }}>{renderMatchCard(104, false)}</div>
-          <div style={{ textAlign: 'center', padding: '8px 10px', borderRadius: 12, background: 'var(--goldSoft)', border: '1px solid var(--goldLine)' }}>
-            <div className="faint" style={{ fontSize: 9, fontWeight: 800, letterSpacing: '.06em' }}>YOUR CHAMPION</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center', marginTop: 4 }}>
-              <Flag name={champion} size={22} /><strong style={{ fontSize: 15 }}>{champion || '—'}</strong>
-            </div>
-          </div>
-          <div className="faint" style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.08em', marginTop: 4 }}>3RD PLACE</div>
-          <div style={{ width: 178 }}>{renderMatchCard(103, false)}</div>
-        </div>
-        {/* right half: SF → QF → R16 → R32 */}
-        {RIGHT_LEVELS.map((lvl, i) => <div key={'R' + i}>{mapCol(lvl)}</div>)}
-      </div>
-    </div>
-  );
+  // ── WHOLE BRACKET — real geometry (R16→Final), SVG connectors ──
+  const WholeView = <WholeBracket renderNode={(m: number) => renderCard(m, true)} champion={winners[104] || null} isMobile={isMobile} />;
+
+  // ── CASH: current-round upcoming matches (real teams known, not started) ──
+  const cashMatches = ALL_MATCHES.filter((m) => { const ap = actualParticipants[m]; return ap?.A && ap?.B && matchStatus(m).state === 'upcoming'; });
+
+  const sheetMatch = sheet != null ? { m: sheet, p: partOf(sheet), round: ROUND_OF(sheet) } : null;
 
   return (
     <div>
-      <PageHeader title="Bracket" subtitle="Fill the knockout tree — results update live" lockAt={t.lockAt}
+      <PageHeader title="Bracket" subtitle="Pick every winner — results update live"
         right={<div className="card" style={{ padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="3"><path d="M5 13l4 4L19 7" /></svg><span style={{ fontWeight: 600, fontSize: 14 }}>{saved ? 'Saved' : 'Saving…'}</span>
         </div>} />
@@ -462,17 +440,18 @@ export default function Bracket() {
           {eligible ? <StatusChip kind="r16live" /> : <StatusChip kind="prizelocked" />}
           <span style={{ flex: 1, minWidth: 180 }}>
             {eligible
-              ? 'The Round of 16 has kicked off — your bracket is set. Editing now forfeits grand-prize eligibility.'
-              : 'You edited after the freeze — no longer eligible for the grand prize. Your picks still score points & cash.'}
+              ? 'The Round of 16 has kicked off. You can still edit freely — but editing now forfeits grand-prize eligibility.'
+              : 'You edited after the Round of 16 kicked off — no longer eligible for the grand prize. Your picks still score points & cash.'}
           </span>
         </div>
       )}
 
-      {/* My Picks / Results sub-tabs */}
+      {/* My Picks / Results / Correct score for cash */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-        <button className="btn" onClick={() => setTab('ko')} style={tab === 'ko' ? { background: 'var(--greenSoft)', color: 'var(--green)', borderColor: 'transparent' } : {}}>My Picks</button>
+        <button className="btn" onClick={() => setTab('picks')} style={tab === 'picks' ? { background: 'var(--greenSoft)', color: 'var(--green)', borderColor: 'transparent' } : {}}>My Picks</button>
         <button className="btn" onClick={() => setTab('results')} style={tab === 'results' ? { background: 'var(--greenSoft)', color: 'var(--green)', borderColor: 'transparent' } : {}}>Results</button>
-        {tab === 'ko' && (
+        <button className="btn" onClick={() => setTab('cash')} style={tab === 'cash' ? { background: 'var(--greenSoft)', color: 'var(--green)', borderColor: 'transparent' } : {}}>Score for cash</button>
+        {tab === 'picks' && (
           <div className="bb-viewtoggle" style={{ marginLeft: 'auto' }}>
             <button data-active={view === 'rounds'} onClick={() => setView('rounds')}>Rounds</button>
             <button data-active={view === 'whole'} onClick={() => setView('whole')}>Whole bracket</button>
@@ -480,10 +459,107 @@ export default function Bracket() {
         )}
       </div>
 
+      {tab === 'picks' && (view === 'rounds' ? RoundsView : WholeView)}
       {tab === 'results' && <ResultsTab t={t} />}
-      {tab === 'ko' && (view === 'rounds' ? RoundsView : WholeView)}
+      {tab === 'cash' && (
+        <div className="card" style={{ padding: 16 }}>
+          <strong style={{ fontSize: 15 }}>Correct score for cash 💵</strong>
+          <p className="muted" style={{ fontSize: 13, margin: '4px 0 12px' }}>
+            Predict the EXACT scoreline of the current round's upcoming matches — 100৳ each. Only matches whose teams are set and haven't kicked off appear here.
+          </p>
+          {cashMatches.length ? cashMatches.map((m) => {
+            const ap = actualParticipants[m];
+            return (
+              <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 0', borderTop: '1px solid var(--line)' }}>
+                <span className="faint" style={{ fontSize: 10, fontWeight: 700, width: 66 }}>{RL[ROUND_OF(m)]}</span>
+                <span style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end', fontWeight: 700, minWidth: 0 }}><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ap.A}</span><Flag name={ap.A} size={20} /></span>
+                <input className="input tabular" style={{ width: 40, padding: 6, textAlign: 'center' }} inputMode="numeric" value={scorePred[m]?.a ?? ''} onChange={(e) => setCashCell(m, 'a', e.target.value)} />
+                <span className="faint">–</span>
+                <input className="input tabular" style={{ width: 40, padding: 6, textAlign: 'center' }} inputMode="numeric" value={scorePred[m]?.b ?? ''} onChange={(e) => setCashCell(m, 'b', e.target.value)} />
+                <span style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, minWidth: 0 }}><Flag name={ap.B} size={20} /><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ap.B}</span></span>
+                <span className="pill pill-gold" style={{ fontSize: 9, flex: '0 0 auto' }}>100৳</span>
+              </div>
+            );
+          }) : <div className="faint">No current-round matches open right now — check back when the next round's teams are set.</div>}
+        </div>
+      )}
 
       <NextRoundStrip nextRound={t.nextRound} />
+
+      {sheetMatch && (
+        <PickSheet m={sheetMatch.m} A={sheetMatch.p.A} B={sheetMatch.p.B} round={sheetMatch.round}
+          initialWinner={winners[sheetMatch.m] || null} initialManner={manner[sheetMatch.m] || 'FT'}
+          onConfirm={(w, mn) => applyPick(sheetMatch.m, w, mn)} onCancel={() => setSheet(null)} />
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+//  Whole bracket — computed geometry + SVG elbow connectors
+// ============================================================
+const T_CARD_W = 158, T_CARD_H = 66, T_ROW = 96, T_COL = 198;
+const T_LEFT_R16 = [89, 90, 93, 94], T_RIGHT_R16 = [91, 92, 95, 96];
+
+function WholeBracket({ renderNode, champion, isMobile }: { renderNode: (m: number) => React.ReactNode; champion: string | null; isMobile: boolean }) {
+  const [zoom, setZoom] = useState(isMobile ? 0.6 : 0.9);
+
+  const { x, y, W, H, links } = useMemo(() => {
+    const y: Record<number, number> = {}; const x: Record<number, number> = {};
+    T_LEFT_R16.forEach((m, i) => { y[m] = i * T_ROW + T_ROW / 2; x[m] = 0; });
+    T_RIGHT_R16.forEach((m, i) => { y[m] = i * T_ROW + T_ROW / 2; x[m] = 6 * T_COL; });
+    y[97] = (y[89] + y[90]) / 2; y[98] = (y[93] + y[94]) / 2; x[97] = x[98] = T_COL;
+    y[99] = (y[91] + y[92]) / 2; y[100] = (y[95] + y[96]) / 2; x[99] = x[100] = 5 * T_COL;
+    y[101] = (y[97] + y[98]) / 2; x[101] = 2 * T_COL;
+    y[102] = (y[99] + y[100]) / 2; x[102] = 4 * T_COL;
+    y[104] = (y[101] + y[102]) / 2; x[104] = 3 * T_COL;
+    y[103] = Math.max(...T_LEFT_R16.map((m) => y[m])) + T_ROW; x[103] = 3 * T_COL; // 3rd place, centered below
+    const W = 6 * T_COL + T_CARD_W;
+    const H = Math.max(y[103], y[104]) + T_ROW;
+    const pairs: [number, number][] = [
+      [89, 97], [90, 97], [93, 98], [94, 98], [97, 101], [98, 101], [101, 104],
+      [91, 99], [92, 99], [95, 100], [96, 100], [99, 102], [100, 102], [102, 104],
+    ];
+    const links = pairs.map(([c, p]) => {
+      const cy = y[c], py = y[p];
+      if (x[p] > x[c]) { const x1 = x[c] + T_CARD_W, x2 = x[p], mx = (x1 + x2) / 2; return `M${x1} ${cy} H${mx} V${py} H${x2}`; }
+      const x1 = x[c], x2 = x[p] + T_CARD_W, mx = (x1 + x2) / 2; return `M${x1} ${cy} H${mx} V${py} H${x2}`;
+    });
+    return { x, y, W, H, links };
+  }, []);
+
+  const nodes = [...T_LEFT_R16, 97, 98, 101, 104, 103, 102, 99, 100, ...T_RIGHT_R16];
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+        <span className="faint" style={{ fontSize: 12, fontWeight: 600 }}>Round of 16 → Final</span>
+        <div style={{ marginLeft: 'auto', display: 'inline-flex', gap: 6 }}>
+          <button className="btn" style={{ padding: '4px 10px' }} onClick={() => setZoom((z) => Math.max(0.4, +(z - 0.15).toFixed(2)))}>−</button>
+          <button className="btn" style={{ padding: '4px 10px' }} onClick={() => setZoom((z) => Math.min(1.3, +(z + 0.15).toFixed(2)))}>+</button>
+        </div>
+      </div>
+      <div className="bb-tree-scroll" style={{ maxHeight: isMobile ? '68vh' : '76vh' }}>
+        <div style={{ width: W * zoom, height: H * zoom, position: 'relative' }}>
+          <div className="bb-tree" style={{ width: W, height: H, transform: `scale(${zoom})` }}>
+            <svg width={W} height={H} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+              {links.map((d, i) => <path key={i} d={d} fill="none" stroke="var(--line)" strokeWidth={2} />)}
+            </svg>
+            {nodes.map((m) => (
+              <div key={m} className="bb-tree-node" style={{ left: x[m], top: y[m] - T_CARD_H / 2, width: T_CARD_W }}>{renderNode(m)}</div>
+            ))}
+            {/* champion plate under the Final */}
+            <div className="bb-tree-node" style={{ left: x[104] - 6, top: y[104] + T_CARD_H, width: T_CARD_W + 12 }}>
+              <div style={{ textAlign: 'center', padding: '8px 8px', borderRadius: 12, background: 'var(--goldSoft)', border: '1px solid var(--goldLine)' }}>
+                <div className="faint" style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: '.06em' }}>YOUR CHAMPION</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center', marginTop: 3 }}>
+                  <Flag name={champion} size={20} /><strong style={{ fontSize: 14 }}>{champion || '—'}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

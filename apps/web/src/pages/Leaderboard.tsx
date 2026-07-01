@@ -14,14 +14,13 @@ export default function Leaderboard() {
   const [rows, setRows] = useState<any[]>([]);
   const [cash, setCash] = useState<any[]>([]);
   const [eligibleOnly, setEligibleOnly] = useState(false);
-  const [t, setT] = useState<any>(null);
 
-  useEffect(() => { api.get('/api/tournament').then(setT).catch(() => {}); api.get('/api/cash-leaderboard').then((r) => setCash(r.rows || [])).catch(() => {}); }, []);
+  useEffect(() => { api.get('/api/cash-leaderboard').then((r) => setCash(r.rows || [])).catch(() => {}); }, []);
   useEffect(() => { api.get('/api/leaderboard' + (eligibleOnly ? '?eligible=1' : '')).then((r) => setRows(r.rows || [])); }, [eligibleOnly]);
 
   return (
     <div>
-      <PageHeader title="Leaderboard" subtitle="Top predictors — updates after every match" lockAt={t?.lockAt} />
+      <PageHeader title="Leaderboard" subtitle="Top predictors — updates after every match" />
       {user && !user.verified && (
         <div className="card" style={{ padding: 12, borderColor: 'var(--gold)', marginBottom: 14 }}>⚠️ You're playing, but not yet prize-eligible. <a href="#" onClick={(e) => { e.preventDefault(); location.hash = ''; }} style={{ color: 'var(--green)' }}>Verify your ID →</a></div>
       )}

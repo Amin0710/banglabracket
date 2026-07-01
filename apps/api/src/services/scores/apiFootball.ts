@@ -178,7 +178,12 @@ function toNormFixture(x: any): NormFixture {
 // One row of /players/topscorers or /players/topassists.
 function toPlayerStat(x: any, i: number, kind: 'goals' | 'assists'): NormPlayerStat {
   const st = x.statistics?.[0] || {};
-  const value = kind === 'goals' ? (st.goals?.total ?? 0) : (st.assists?.total ?? 0);
+  // API-Football exposes BOTH goals and assists under `statistics[].goals`:
+  //   goals.total  = goals scored,  goals.assists = assists.
+  // (There is no top-level `statistics[].assists` object — reading it always gave 0.)
+  const value = kind === 'goals'
+    ? (st.goals?.total ?? 0)
+    : (st.goals?.assists ?? st.assists?.total ?? 0);
   return {
     rank: i + 1,
     name: x.player?.name || 'Unknown',

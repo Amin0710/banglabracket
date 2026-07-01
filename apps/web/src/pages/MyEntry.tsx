@@ -48,7 +48,7 @@ export default function MyEntry() {
 
   return (
     <div>
-      <PageHeader title="My Entry" subtitle="Your picks and points, projected live" lockAt={t?.lockAt}
+      <PageHeader title="My Entry" subtitle="Your picks and points, projected live"
         right={data.grandPrizeEligible === false ? <NotEligibleBadge /> : undefined} />
       {!user.verified && (
         <div className="card" style={{ padding: 14, borderColor: 'var(--gold)', marginBottom: 16, display: 'flex', gap: 8, alignItems: 'center' }}>
