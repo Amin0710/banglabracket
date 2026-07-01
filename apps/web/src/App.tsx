@@ -120,10 +120,11 @@ function Sidebar({ onSignIn }: { onSignIn: () => void }) {
 }
 
 function BottomNav() {
-  const { user } = useAuth();
   const loc = useLocation();
   const nav = useNavigate();
-  const items = PLAY_NAV.concat(NAV.filter((n) => n.admin && user?.role === 'admin'));
+  // Mobile bottom nav is EXACTLY 4: Bracket · My Entry · Leaderboard · Verify.
+  // Admin ("Match console") stays on the desktop sidebar + its route, never here.
+  const items = PLAY_NAV;
   return (
     <nav className="bb-bottomnav" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'var(--surface)', borderTop: '1px solid var(--line)', zIndex: 50, padding: '6px 4px', justifyContent: 'space-around' }}>
       {items.map((i) => {

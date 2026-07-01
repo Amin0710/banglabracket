@@ -53,17 +53,17 @@ const ROUND_LISTS: number[][] = [
 ];
 const ROUND_COUNTS = ROUND_LISTS.map((l) => l.length);
 
-// RE-BASED geometry: every round is laid out on the SAME fixed pitch, top-anchored
-// (each round looks exactly like R32 does). Advancing "re-bases" the next round to
-// that same layout; the pan slides the previous round off to the left. Connectors
-// still join true feeder pairs (MATCH_DEF) with clean elbows, drawn against the
-// fixed-pitch positions of whichever round is in view.
-function computeGeom(CARD_W: number, COLW: number, PITCH: number) {
+// ONE-ROUND-PER-PAGE geometry. Each round is a page `stride` wide, laid out on the
+// SAME fixed pitch, top-anchored (every round looks exactly like R32 does). `stride`
+// is sized so that when a round is focused it fills the view and only the NEXT round
+// peeks ~10% at the right edge; everything else is panned off-screen. Connectors join
+// true feeder pairs (MATCH_DEF) with clean elbows against the focused round's positions.
+function computeGeom(CARD_W: number, stride: number, PITCH: number, leftInset: number) {
   const y: Record<number, number> = {}; const x: Record<number, number> = {}; const col: Record<number, number> = {};
-  ROUND_LISTS.forEach((list, c) => list.forEach((m, i) => { y[m] = i * PITCH + PITCH / 2; x[m] = c * COLW; col[m] = c; }));
-  const W = 4 * COLW + CARD_W;
-  // links tagged with the FEEDER's round column, so the view can show only the
-  // connectors flowing out of the currently-focused (base) round.
+  ROUND_LISTS.forEach((list, c) => list.forEach((m, i) => { y[m] = i * PITCH + PITCH / 2; x[m] = c * stride + leftInset; col[m] = c; }));
+  const W = (ROUND_LISTS.length - 1) * stride + leftInset + CARD_W;
+  // links tagged with the FEEDER's round column, so the view shows only the connectors
+  // flowing out of the currently-focused (base) round into its peeking next round.
   const links: { d: string; col: number }[] = [];
   for (const m of ALL_MATCHES) for (const k of koChildren(m)) {
     const x1 = x[k] + CARD_W, x2 = x[m], mx = (x1 + x2) / 2;
@@ -468,8 +468,9 @@ export default function Bracket() {
       return <div key={team || 'x'} style={baseStyle}>{inner}</div>;
     };
 
-    // shortened top-of-card manner tag: PEN → "(pens x–y)" only, ET → "AET", FT → "FT".
-    const cardTag = decided && f ? (f.pen ? (f.pens ? `(pens ${f.pens})` : '(pens)') : f.statusLabel) : '';
+    // short top-of-card manner tag (team rows already show the "1 (3)" pen score):
+    // PEN → "PEN", ET → "AET", normal → "FT". No score repeated in the tag.
+    const cardTag = decided && f ? (f.pen ? 'PEN' : f.statusLabel) : '';
     const openInline = mode === 'rounds' && !isR32 && !isMobile && canPick;
     const cardOnClick = canPick
       ? (mode === 'tree' ? () => setSheet(m)
@@ -511,22 +512,25 @@ export default function Bracket() {
     );
   }
 
-  // ── ROUNDS geometry: fixed-pitch, re-based per round (see computeGeom) ──
+  // ── ROUNDS geometry: one round per page + ~10% peek of the next (see computeGeom) ──
   const CARD_W = isMobile ? 158 : 178;
-  const COLW = CARD_W + (isMobile ? 40 : 54);
   const PITCH = isMobile ? 138 : 146;    // > card height (2-line footer) so cards never overlap
   const NODE_H = 118;                     // ≈ card height, so connectors meet card mid-edge
-  const geom = computeGeom(CARD_W, COLW, PITCH);
-  // canvas height tracks the tallest round in view (focused + next) — no dead space.
-  const canvasH = Math.max(ROUND_COUNTS[stageIdx], ROUND_COUNTS[Math.min(stageIdx + 1, ROUND_COUNTS.length - 1)]) * PITCH + 12;
-  // connectors: only those flowing OUT of the focused (base) round into the next.
+  const PEEK = Math.round(CARD_W * 0.12); // ~12% (flags/sliver) of the next round shows at the right
+  // Keep the round in a readable band (capped on wide desktops) and CENTER it, so a
+  // single round doesn't strand at the far-left with long connectors across dead space.
+  const vw = wrapW || 360;
+  const bandW = Math.min(vw, 560);
+  const bandLeft = Math.max(0, (vw - bandW) / 2);
+  // one round = one page; stride sized so the next round peeks PEEK px at the band's right edge.
+  const stride = Math.max(CARD_W + 60, bandW - PEEK);
+  const geom = computeGeom(CARD_W, stride, PITCH, bandLeft);
+  // canvas height = the FOCUSED round's own spacing (independent of other rounds).
+  const canvasH = ROUND_COUNTS[stageIdx] * PITCH + 12;
+  // connectors: only those flowing OUT of the focused round into its peeking next round.
   const visLinks = geom.links.filter((l) => l.col === stageIdx);
-
-  // pan so the focused round column sits at the left inset; clamp like a scroll.
-  const inset = 10;
-  const rawPan = stageIdx * COLW - inset;
-  const maxPan = Math.max(0, geom.W - wrapW);
-  const translateX = -Math.min(maxPan, Math.max(0, rawPan));
+  // page pan: focused round to the left inset, one full page per round (no scroll clamp).
+  const translateX = -(stageIdx * stride);
 
   const go = (dir: -1 | 1) => setStageIdx((i) => Math.min(STAGES.length - 1, Math.max(0, i + dir)));
   const onTouchStart = (e: React.TouchEvent) => { touch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; };
@@ -539,12 +543,22 @@ export default function Bracket() {
     touch.current = null;
   };
 
+  // WEB round nav: exactly one ‹ (left) + one › (right) flanking the stage tabs.
+  const arrowBtn = (dir: -1 | 1) => (
+    <button className="btn" aria-label={dir < 0 ? 'Previous round' : 'Next round'} onClick={() => go(dir)}
+      disabled={dir < 0 ? stageIdx === 0 : stageIdx === STAGES.length - 1}
+      style={{ flex: '0 0 auto', padding: '7px 13px', fontSize: 16, lineHeight: 1 }}>{dir < 0 ? '‹' : '›'}</button>
+  );
   const RoundsView = (
     <div>
-      <div className="bb-stagetabs">
-        {STAGES.map((s, i) => (
-          <button key={s.key} data-active={i === stageIdx} onClick={() => setStageIdx(i)}>{s.label}</button>
-        ))}
+      <div style={{ position: 'sticky', top: 0, zIndex: 20, background: 'var(--bg)', display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 4 }}>
+        {!isMobile && arrowBtn(-1)}
+        <div className="bb-stagetabs" style={{ position: 'static', flex: 1, margin: 0, padding: '4px 0' }}>
+          {STAGES.map((s, i) => (
+            <button key={s.key} data-active={i === stageIdx} onClick={() => setStageIdx(i)}>{s.label}</button>
+          ))}
+        </div>
+        {!isMobile && arrowBtn(1)}
       </div>
       <div className="faint" style={{ fontSize: 12, fontWeight: 600, margin: '2px 2px 8px', textAlign: 'center' }}>
         {STAGES[stageIdx].sub}{isMobile ? ' · swipe ← → for rounds' : ''}
@@ -556,14 +570,8 @@ export default function Bracket() {
         </div>
       )}
       <div style={{ position: 'relative' }}>
-        {!isMobile && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', position: 'absolute', top: -42, right: 0, gap: 6 }}>
-            <button className="btn" style={{ padding: '4px 12px' }} onClick={() => go(-1)} disabled={stageIdx === 0}>‹</button>
-            <button className="btn" style={{ padding: '4px 12px' }} onClick={() => go(1)} disabled={stageIdx === STAGES.length - 1}>›</button>
-          </div>
-        )}
-        <div className="bb-edge l"><span>‹</span></div>
-        <div className="bb-edge r"><span>›</span></div>
+        {/* edge swipe cues are a MOBILE-only affordance — never render on web */}
+        {isMobile && <><div className="bb-edge l"><span>‹</span></div><div className="bb-edge r"><span>›</span></div></>}
         <div className="bb-rounds-wrap" ref={wrapRef} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
           <div className="bb-rounds-canvas" style={{ width: geom.W, height: canvasH, transform: `translateX(${translateX}px)` }}>
             <svg width={geom.W} height={canvasH} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
