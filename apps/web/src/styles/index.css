@@ -191,17 +191,29 @@ h1, h2, h3, .display { font-family: 'Baloo Da 2', system-ui, sans-serif; }
   .bb-mobileheader { display: flex !important; }
 }
 
+/* Clearance below every page so the last element is fully scrollable above the
+   fixed bottom nav (nav ≈ 60px) + the iOS home-indicator safe area. Kept in a var
+   so both mobile breakpoints reserve the SAME bottom padding and the `padding`
+   shorthand at ≤560px can't wipe it out (padding-bottom is re-declared after it). */
+:root { --bb-nav-clear: calc(80px + env(safe-area-inset-bottom)); }
+
 /* ===== mobile-first polish (≤900px) ===== */
 @media (max-width: 900px) {
   .bb-bottomnav { padding-bottom: calc(6px + env(safe-area-inset-bottom)); box-shadow: 0 -2px 16px rgba(0,0,0,.06); }
   .bb-bottomnav button { min-height: 48px; }            /* touch targets */
-  main { padding: 14px !important; padding-bottom: 92px !important; }
+  main {
+    padding: 14px !important;
+    padding-bottom: var(--bb-nav-clear) !important;     /* clear the fixed bottom nav */
+  }
   .card { border-radius: 14px; }
   /* stack any inline two-column rows */
   h1 { font-size: 24px !important; }
 }
 @media (max-width: 560px) {
   /* full-bleed feel: tighter gutters, larger tap rows */
-  main { padding: 12px !important; }
+  main {
+    padding: 12px !important;
+    padding-bottom: var(--bb-nav-clear) !important;     /* shorthand above resets bottom — restore the nav clearance */
+  }
   .pill { font-size: 10px; padding: 3px 8px; }
 }

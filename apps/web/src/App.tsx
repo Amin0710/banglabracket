@@ -126,7 +126,7 @@ function BottomNav() {
   // Admin ("Match console") stays on the desktop sidebar + its route, never here.
   const items = PLAY_NAV;
   return (
-    <nav className="bb-bottomnav" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'var(--surface)', borderTop: '1px solid var(--line)', zIndex: 50, padding: '6px 4px', justifyContent: 'space-around' }}>
+    <nav className="bb-bottomnav" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'var(--surface)', borderTop: '1px solid var(--line)', zIndex: 50, padding: '6px 4px', paddingBottom: 'calc(6px + env(safe-area-inset-bottom))', justifyContent: 'space-around' }}>
       {items.map((i) => {
         const active = loc.pathname === i.to;
         return (

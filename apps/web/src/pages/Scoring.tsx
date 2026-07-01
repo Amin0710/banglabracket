@@ -30,7 +30,7 @@ function Table({ title, accent, children }: { title: string; accent: string; chi
 
 export default function Scoring() {
   return (
-    <div style={{ maxWidth: 860, margin: '0 auto', padding: '0 4px 48px' }}>
+    <div style={{ maxWidth: 860, margin: '0 auto', padding: '0 4px' }}>
       <PageHeader title="Scoring" subtitle="How points are awarded — and how the leaderboard is decided" />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: 16, marginBottom: 24 }}>

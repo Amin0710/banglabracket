@@ -38,7 +38,7 @@ export default function Verify() {
 	}
 
 	return (
-		<div style={{ paddingBottom: 40 }}>
+		<div>
 			<PageHeader title="Verify ID" subtitle="Play now, verify later — only winners need it" />
 
 			{/* What's required to be prize-eligible */}

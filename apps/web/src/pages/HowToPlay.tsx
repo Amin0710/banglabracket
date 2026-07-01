@@ -16,7 +16,7 @@ function GameCard({ tag, tagColor, title, children }: { tag: string; tagColor: s
 export default function HowToPlay() {
 	const nav = useNavigate();
 	return (
-		<div style={{ paddingBottom: 48 }}>
+		<div>
 			<PageHeader title="How to play" subtitle="Two games, one tournament" />
 
 			<div className="card" style={{ padding: 18, marginBottom: 16, background: "var(--greenSoft)", borderColor: "transparent" }}>
