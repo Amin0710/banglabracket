@@ -2,11 +2,11 @@ import type React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  GROUP_KEYS, R32_MATCHES, KO_MATCHES, ALL_MATCHES, ROUND_OF,
+  GROUP_KEYS, R32_MATCHES, KO_MATCHES, ALL_MATCHES, ROUND_OF, MATCH_DEF,
   resolveR32, resolveBracketParticipants, resolveActualParticipants, rankGroup, formatCompletedMatch,
 } from '@banglabracket/shared';
 import { api } from '../lib/api';
-import { useAuth } from '../context/Providers';
+import { useAuth, useTheme } from '../context/Providers';
 import { confirmFreezeEdit } from '../lib/feedback';
 import { PageHeader, Flag, NextMatchBanner, NextRoundStrip, StatusChip, SubTabs, useIsMobile } from '../components/ui';
 
@@ -19,70 +19,122 @@ const MANNER_SHORT: Record<Manner, string> = { FT: 'FT', ET: 'AET', PEN: 'PENS' 
 type MatchState = 'upcoming' | 'live' | 'decided';
 
 // ── stages (Rounds mode). 3rd-place folds into the Final stage. ──
-const R16_M = KO_MATCHES.filter((m) => ROUND_OF(m) === 'R16');
-const QF_M = KO_MATCHES.filter((m) => ROUND_OF(m) === 'QF');
-const SF_M = KO_MATCHES.filter((m) => ROUND_OF(m) === 'SF');
-const STAGES: { key: string; label: string; short: string; matches: number[]; sub: string }[] = [
-  { key: 'R32', label: 'Round of 32', short: 'R32', matches: R32_MATCHES, sub: 'Sets up your Round of 16 — no wrong answers' },
-  { key: 'R16', label: 'Round of 16', short: 'R16', matches: R16_M, sub: 'Tap a match to pick the winner & manner' },
-  { key: 'QF', label: 'Quarter-finals', short: 'QF', matches: QF_M, sub: 'Tap a match to pick the winner & manner' },
-  { key: 'SF', label: 'Semi-finals', short: 'SF', matches: SF_M, sub: 'Tap a match to pick the winner & manner' },
-  { key: 'FINAL', label: 'Final', short: 'Final', matches: [104, 103], sub: 'Crown your champion' },
+const STAGES: { key: string; label: string; matches: number[]; sub: string }[] = [
+  { key: 'R32', label: 'Round of 32', matches: R32_MATCHES, sub: 'Tap a team to send it through — sets up your Round of 16' },
+  { key: 'R16', label: 'Round of 16', matches: KO_MATCHES.filter((m) => ROUND_OF(m) === 'R16'), sub: 'Tap a match to pick the winner & manner' },
+  { key: 'QF', label: 'Quarter-finals', matches: KO_MATCHES.filter((m) => ROUND_OF(m) === 'QF'), sub: 'Tap a match to pick the winner & manner' },
+  { key: 'SF', label: 'Semi-finals', matches: KO_MATCHES.filter((m) => ROUND_OF(m) === 'SF'), sub: 'Tap a match to pick the winner & manner' },
+  { key: 'FINAL', label: 'Final', matches: [104, 103], sub: 'Crown your champion' },
 ];
+const ROUND_COL: Record<string, number> = { R32: 0, R16: 1, QF: 2, SF: 3, THIRD: 4, FINAL: 4 };
+
+// True winner-feeders of a knockout match, from the shared MATCH_DEF wiring.
+function koChildren(m: number): number[] {
+  const d = MATCH_DEF[m]; const out: number[] = [];
+  if (d?.srcA?.type === 'W') out.push(d.srcA.from);
+  if (d?.srcB?.type === 'W') out.push(d.srcB.from);
+  return out;
+}
+// DFS leaf order from the Final → R32 matches top-to-bottom so each child's two
+// feeders are adjacent (a proper, centered tournament bracket).
+const R32_ORDER: number[] = (() => {
+  const out: number[] = [];
+  (function go(m: number) { const k = koChildren(m); if (!k.length) { out.push(m); return; } k.forEach(go); })(104);
+  return out;
+})();
+
+// Standard centered bracket geometry (matches the reference image): each child
+// sits at the midpoint of its two feeders' y; clean elbow connectors.
+function computeGeom(CARD_W: number, COLW: number, PITCH: number, NODE_H: number) {
+  const y: Record<number, number> = {}; const x: Record<number, number> = {};
+  R32_ORDER.forEach((m, i) => { y[m] = i * PITCH + PITCH / 2; });
+  const cy = (m: number): number => {
+    if (y[m] != null) return y[m];
+    const kids = koChildren(m);
+    return (y[m] = kids.reduce((s, k) => s + cy(k), 0) / kids.length);
+  };
+  cy(104);
+  const maxLeaf = Math.max(...R32_ORDER.map((m) => y[m]));
+  y[103] = maxLeaf + PITCH * 0.55;                         // 3rd place, below the final
+  for (const m of ALL_MATCHES) x[m] = ROUND_COL[ROUND_OF(m)] * COLW;
+  const W = 4 * COLW + CARD_W;
+  const H = y[103] + NODE_H;
+  const links: string[] = [];
+  for (const m of ALL_MATCHES) for (const k of koChildren(m)) {
+    const x1 = x[k] + CARD_W, x2 = x[m], mx = (x1 + x2) / 2;
+    links.push(`M${x1} ${y[k]} H${mx} V${y[m]} H${x2}`);   // out → across → in
+  }
+  return { x, y, W, H, links };
+}
+
+function currentStageIdx(t: any): number {
+  const fx: any[] = t?.fixtures || [];
+  const live = fx.find((f) => f?.status === 'live');
+  const next = fx.filter((f) => f?.status === 'scheduled').sort((a, b) => +new Date(a.kickoff) - +new Date(b.kickoff))[0];
+  const tag = (live || next)?.round;
+  return tag && ROUND_COL[tag] != null ? ROUND_COL[tag] : 0;
+}
 
 // ============================================================
-//  Pick sheet — deliberate winner + manner selection (money game)
+//  Pick choices (winner + manner) — shared by the mobile sheet + desktop inline expander
 // ============================================================
-function PickSheet({ m, A, B, round, initialWinner, initialManner, onConfirm, onCancel }: {
-  m: number; A: string | null; B: string | null; round: string;
-  initialWinner: string | null; initialManner: Manner;
-  onConfirm: (winner: string, manner: Manner) => void; onCancel: () => void;
+function PickBody({ A, B, initialWinner, initialManner, onConfirm, compact }: {
+  A: string | null; B: string | null; initialWinner: string | null; initialManner: Manner;
+  onConfirm: (winner: string, manner: Manner) => void; compact?: boolean;
 }) {
+  const { dark } = useTheme();
   const [w, setW] = useState<string | null>(initialWinner);
   const [mn, setMn] = useState<Manner>(initialManner);
-  const isR32 = round === 'R32';
   const teamBtn = (team: string | null) => {
     if (!team) return null;
     const sel = w === team;
     return (
       <button onClick={() => setW(team)} style={{
-        display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', cursor: 'pointer',
-        padding: '13px 14px', borderRadius: 13, fontSize: 15, fontWeight: sel ? 800 : 600, fontFamily: 'inherit',
+        display: 'flex', alignItems: 'center', gap: 9, width: '100%', textAlign: 'left', cursor: 'pointer',
+        padding: compact ? '9px 10px' : '13px 14px', borderRadius: 12, fontSize: compact ? 13 : 15, fontWeight: sel ? 800 : 600, fontFamily: 'inherit',
         border: `2px solid ${sel ? 'var(--green)' : 'var(--line)'}`, background: sel ? 'var(--greenSoft)' : 'var(--surface)', color: 'var(--ink)',
       }}>
-        <Flag name={team} size={26} /><span style={{ flex: 1 }}>{team}</span>
-        {sel && <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="3"><path d="M5 13l4 4L19 7" /></svg>}
+        <Flag name={team} size={compact ? 20 : 26} /><span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{team}</span>
+        {sel && <svg width={compact ? 15 : 18} height={compact ? 15 : 18} viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="3"><path d="M5 13l4 4L19 7" /></svg>}
       </button>
     );
   };
   return (
-    <div className="bb-sheet-overlay" onClick={onCancel}>
+    <div>
+      <div className="faint" style={{ fontSize: 12, marginBottom: 7 }}>Who goes through?</div>
+      <div style={{ display: 'grid', gap: 7 }}>{teamBtn(A)}{teamBtn(B)}</div>
+      <div className="faint" style={{ fontSize: 12, margin: '13px 0 7px' }}>How do they win? <span style={{ fontWeight: 600 }}>(tiebreaker)</span></div>
+      <div style={{ display: 'flex', gap: 6 }}>
+        {(['FT', 'ET', 'PEN'] as Manner[]).map((k) => (
+          <button key={k} onClick={() => setMn(k)} style={{
+            flex: 1, padding: compact ? '8px 4px' : '10px 6px', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: compact ? 11.5 : 13,
+            border: `2px solid ${mn === k ? 'var(--gold)' : 'var(--line)'}`, background: mn === k ? 'var(--goldSoft)' : 'var(--surface)', color: 'var(--ink)',
+          }}>{compact ? MANNER_SHORT[k] : MANNER_LABEL[k]}</button>
+        ))}
+      </div>
+      <button onClick={() => w && onConfirm(w, mn)} disabled={!w} style={{
+        width: '100%', marginTop: 14, minHeight: compact ? 40 : 50, borderRadius: 12, border: 'none', cursor: w ? 'pointer' : 'default',
+        fontFamily: 'inherit', fontWeight: 800, fontSize: compact ? 14 : 15, opacity: w ? 1 : .5,
+        background: dark ? 'var(--gold)' : 'var(--green)', color: dark ? '#1a1405' : '#fff',
+      }}>Confirm pick</button>
+    </div>
+  );
+}
+
+// Mobile bottom sheet: X (top-left), no cancel button, single confirm inside PickBody.
+function PickSheet({ m, A, B, round, initialWinner, initialManner, onConfirm, onClose }: {
+  m: number; A: string | null; B: string | null; round: string;
+  initialWinner: string | null; initialManner: Manner;
+  onConfirm: (winner: string, manner: Manner) => void; onClose: () => void;
+}) {
+  return (
+    <div className="bb-sheet-overlay" onClick={onClose}>
       <div className="bb-sheet" onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <button onClick={onClose} aria-label="Close" style={{ width: 32, height: 32, borderRadius: 9, border: '1px solid var(--line)', background: 'var(--surface2)', color: 'var(--ink)', cursor: 'pointer', fontSize: 18, lineHeight: 1, flex: '0 0 auto' }}>×</button>
           <strong style={{ fontSize: 16 }}>{RL[round]} · Match {m}</strong>
-          <button onClick={onCancel} aria-label="Close" style={{ width: 32, height: 32, borderRadius: 9, border: '1px solid var(--line)', background: 'var(--surface2)', color: 'var(--ink)', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
         </div>
-        <div className="faint" style={{ fontSize: 12.5, marginBottom: 12 }}>Who goes through?</div>
-        <div style={{ display: 'grid', gap: 8 }}>{teamBtn(A)}{teamBtn(B)}</div>
-
-        {!isR32 && (
-          <div style={{ marginTop: 16 }}>
-            <div className="faint" style={{ fontSize: 12.5, marginBottom: 8 }}>How do they win? <span style={{ fontWeight: 600 }}>(tiebreaker bonus)</span></div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {(['FT', 'ET', 'PEN'] as Manner[]).map((k) => (
-                <button key={k} onClick={() => setMn(k)} style={{
-                  flex: 1, padding: '10px 6px', borderRadius: 11, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 13,
-                  border: `2px solid ${mn === k ? 'var(--gold)' : 'var(--line)'}`, background: mn === k ? 'var(--goldSoft)' : 'var(--surface)', color: 'var(--ink)',
-                }}>{MANNER_LABEL[k]}</button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
-          <button className="btn" style={{ flex: 1 }} onClick={onCancel}>Cancel</button>
-          <button className="btn btn-primary" style={{ flex: 2, opacity: w ? 1 : .5 }} disabled={!w} onClick={() => w && onConfirm(w, mn)}>Confirm pick</button>
-        </div>
+        <PickBody A={A} B={B} initialWinner={initialWinner} initialManner={initialManner} onConfirm={onConfirm} />
       </div>
     </div>
   );
@@ -198,6 +250,7 @@ export default function Bracket() {
   const [view, setView] = useState<'rounds' | 'whole'>('rounds');
   const [stageIdx, setStageIdx] = useState(0);
   const [sheet, setSheet] = useState<number | null>(null);
+  const [expandedMatch, setExpandedMatch] = useState<number | null>(null);
   const [scores, setScores] = useState<Scores>({});
   const [winners, setWinners] = useState<Record<number, string>>({});
   const [manner, setManner] = useState<Record<number, Manner>>({});
@@ -206,10 +259,13 @@ export default function Bracket() {
   const [loaded, setLoaded] = useState(false);
   const [eligible, setEligible] = useState(true);
   const [freezeAck, setFreezeAck] = useState(false);
+  const [showR32Hint, setShowR32Hint] = useState(true);
+  const [wrapW, setWrapW] = useState(0);
   const timer = useRef<any>(null);
   const skipFirstSave = useRef(true);
-  const scrollRef = useRef<HTMLDivElement | null>(null);
-  const colRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const didInitStage = useRef(false);
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+  const touch = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -235,6 +291,20 @@ export default function Bracket() {
     })();
   }, [user]);
 
+  // #9: after login, land on the current live/next round and centre it.
+  useEffect(() => {
+    if (!t || didInitStage.current) return;
+    didInitStage.current = true;
+    setStageIdx(currentStageIdx(t));
+  }, [t]);
+
+  // measure the pan viewport (for clamped translate)
+  useEffect(() => {
+    const on = () => setWrapW(wrapRef.current?.clientWidth || 0);
+    on(); window.addEventListener('resize', on);
+    return () => window.removeEventListener('resize', on);
+  }, [t, tab, view]);
+
   const frozen = !!t?.bracketFrozenForPrize;
   const predForShared = useMemo(() => { const o: any = {}; for (const g of Object.keys(scores)) o[g] = scores[g].map((s) => ({ sa: s.sa, sb: s.sb })); return o; }, [scores]);
   const r32 = useMemo(() => t ? resolveR32(t.base || {}, t.remaining || {}, predForShared) : {}, [t, predForShared]);
@@ -248,7 +318,6 @@ export default function Bracket() {
   }, [winners, t]);
   const participants = useMemo(() => resolveBracketParticipants(r32 as any, effectiveWinners), [r32, effectiveWinners]);
 
-  // Actual (real-results-only) participants — drives the cash "current round" set.
   const actualParticipants = useMemo(() => {
     const realR32: any = {};
     for (const m of R32_MATCHES) realR32[m] = { A: t?.r32?.[m]?.A?.team ?? null, B: t?.r32?.[m]?.B?.team ?? null };
@@ -268,7 +337,6 @@ export default function Bracket() {
     return { state: 'upcoming', res: null, fx };
   }, [t, fixturesByMatch]);
 
-  // autosave
   useEffect(() => {
     if (!loaded || !user) return;
     if (skipFirstSave.current) { skipFirstSave.current = false; return; }
@@ -299,14 +367,12 @@ export default function Bracket() {
     return ok;
   }
   async function applyPick(m: number, w: string, mn: Manner) {
-    setSheet(null);
+    setSheet(null); setExpandedMatch(null);
     if (!(await guardEdit())) return;
     setWinners((prev) => ({ ...prev, [m]: w }));
     if (ROUND_OF(m) !== 'R32') setManner((prev) => ({ ...prev, [m]: mn }));
   }
   function setCashCell(m: number, side: 'a' | 'b', raw: string) {
-    // The exact-score cash game is independent of the bracket freeze — NO freeze
-    // warning here, and the server keeps grand-prize eligibility on a cash-only save.
     const v = raw === '' ? '' : Math.max(0, +raw);
     setScorePred((s) => ({ ...s, [m]: { a: side === 'a' ? v : (s[m]?.a ?? ''), b: side === 'b' ? v : (s[m]?.b ?? '') } }));
   }
@@ -314,24 +380,23 @@ export default function Bracket() {
   const partOf = (m: number): { A: string | null; B: string | null } =>
     (ROUND_OF(m) === 'R32' ? r32[m] : participants[m]) || { A: null, B: null };
 
-  // ── one bracket card (used by Rounds + Whole tree) — ONE coloring rule ──
-  function renderCard(m: number, tree = false) {
+  // ── one bracket card — ONE global correct/wrong coloring rule ──
+  // mode 'rounds': R32 = single-tap-to-pick; R16→Final = sheet (mobile) / inline (desktop).
+  // mode 'tree'  : whole-bracket map — unchanged (tap opens the sheet).
+  function renderCard(m: number, mode: 'rounds' | 'tree') {
     const p = partOf(m); const round = ROUND_OF(m); const isR32 = round === 'R32';
     const st = matchStatus(m); const decided = st.state === 'decided';
-    // rawPick = the player's stored pick (may reference a team that didn't qualify).
-    // validPick = only if it's still one of THIS match's real participants — a pick
-    // invalidated by an R32 auto-correct reads as "no pick" so the player re-picks.
     const rawPick = winners[m] || null;
     const validPick = rawPick && (rawPick === p.A || rawPick === p.B) ? rawPick : null;
     const actualWinner = decided ? st.res?.winner : null;
     const correct = decided && rawPick ? rawPick === actualWinner : null;
-    const canPick = st.state === 'upcoming' && !!p.A && !!p.B;
+    // #6: a LIVE match is still pickable — only a DECIDED match locks the bracket pick.
+    const canPick = !decided && !!p.A && !!p.B;
     const tint = correct === true ? ' bb-correct' : correct === false ? ' bb-wrong' : '';
     const r32cls = isR32 && !decided ? ' bb-r32tile' : '';
-    const res = st.res;
+    const res = st.res; const fx = st.fx;
+    const pick32 = mode === 'rounds' && isR32 && canPick;
 
-    const fx = st.fx;
-    // score is keyed to the ACTUAL fixture orientation (teamA/teamB), matched by name.
     const scoreFor = (team: string | null): number | null => {
       if (!team || !fx) return null;
       if (decided) return team === fx.teamA ? (res?.scoreA ?? null) : team === fx.teamB ? (res?.scoreB ?? null) : null;
@@ -341,26 +406,38 @@ export default function Bracket() {
     const slot = (team: string | null) => {
       const isPick = !!validPick && team === validPick;
       const isActual = decided && !!team && team === actualWinner;
-      const dim = decided && !!team && team !== actualWinner;
+      const dim = decided && !!team && team !== actualWinner;   // loser dimmed (no strikethrough — matches reference)
       const score = scoreFor(team);
-      return (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: tree ? '4px 6px' : '7px 8px', borderRadius: 8,
-          background: isPick && !decided ? 'var(--greenSoft)' : 'transparent', opacity: dim ? .5 : 1, fontWeight: (isActual || isPick) ? 800 : 600, fontSize: tree ? 12.5 : 14 }}>
-          <Flag name={team} size={tree ? 18 : 22} />
-          <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: dim ? 'line-through' : 'none' }}>{team || '—'}</span>
-          {score != null && <span className="tabular" style={{ fontWeight: 800 }}>{score}</span>}
-          {isPick && !decided && <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="3"><path d="M5 13l4 4L19 7" /></svg>}
-        </div>
+      const inner = (<>
+        <Flag name={team} size={20} />
+        <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{team || '—'}</span>
+        {score != null && <span className="tabular" style={{ fontWeight: 800 }}>{score}</span>}
+        {isPick && !decided && <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="3"><path d="M5 13l4 4L19 7" /></svg>}
+      </>);
+      const baseStyle: React.CSSProperties = {
+        display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px', borderRadius: 8, fontSize: 13,
+        background: isPick && !decided ? 'var(--greenSoft)' : 'transparent', opacity: dim ? .5 : 1, fontWeight: (isActual || isPick) ? 800 : 600,
+      };
+      if (pick32 && team) return (
+        <button key={team} onClick={(e) => { e.stopPropagation(); applyPick(m, team, 'FT'); }}
+          style={{ ...baseStyle, width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--ink)' }}>{inner}</button>
       );
+      return <div key={team || 'x'} style={baseStyle}>{inner}</div>;
     };
 
     const f = decided ? formatCompletedMatch({ manner: res?.manner, scoreA: res?.scoreA, scoreB: res?.scoreB, penA: res?.penA, penB: res?.penB }) : null;
+    const openInline = mode === 'rounds' && !isR32 && !isMobile && canPick;
+    const cardOnClick = canPick
+      ? (mode === 'tree' ? () => setSheet(m)
+        : isR32 ? undefined
+          : isMobile ? () => setSheet(m) : () => setExpandedMatch((e) => (e === m ? null : m)))
+      : undefined;
 
     return (
-      <div key={m} className={`card${r32cls}${tint}`} onClick={canPick ? () => setSheet(m) : undefined}
-        style={{ padding: tree ? 7 : 10, cursor: canPick ? 'pointer' : 'default' }}>
+      <div key={m} className={`card${r32cls}${tint}`} onClick={cardOnClick}
+        style={{ padding: 9, cursor: cardOnClick ? 'pointer' : 'default' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3, gap: 6 }}>
-          <span className="faint" style={{ fontSize: 10, fontWeight: 700 }}>{tree ? `M${m}` : `${RL[round]} · M${m}`}</span>
+          <span className="faint" style={{ fontSize: 10, fontWeight: 700 }}>{mode === 'tree' ? `M${m}` : `${RL[round]} · M${m}`}</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             {st.state === 'live' && <StatusChip kind="live" />}
             {decided && f && <span className="bb-decided" style={{ fontSize: 9.5, letterSpacing: '.04em' }}>{f.statusLabel}{f.pens ? ` (pens ${f.pens})` : ''}</span>}
@@ -368,62 +445,98 @@ export default function Bracket() {
         </div>
         {slot(p.A)}
         {slot(p.B)}
-        {!decided && validPick && st.state === 'upcoming' && (
+        {!decided && validPick && (
           <div className="faint" style={{ fontSize: 10.5, fontWeight: 700, marginTop: 3, paddingLeft: 2 }}>
-            ✓ {validPick}{!isR32 ? ` · ${MANNER_SHORT[manner[m] || 'FT']}` : ''}{canPick && !tree ? ' · tap to change' : ''}
+            ✓ {validPick}{!isR32 ? ` · ${MANNER_SHORT[manner[m] || 'FT']}` : ''}{cardOnClick ? ' · tap to change' : ''}
           </div>
         )}
         {!decided && !validPick && canPick && (
-          <div style={{ fontSize: 10.5, fontWeight: 700, marginTop: 3, paddingLeft: 2, color: 'var(--green)' }}>Tap to pick →</div>
+          <div style={{ fontSize: 10.5, fontWeight: 700, marginTop: 3, paddingLeft: 2, color: 'var(--green)' }}>{pick32 ? 'Tap a team →' : 'Tap to pick →'}</div>
+        )}
+        {openInline && expandedMatch === m && (
+          <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--line)' }} onClick={(e) => e.stopPropagation()}>
+            <PickBody compact A={p.A} B={p.B} initialWinner={validPick} initialManner={manner[m] || 'FT'} onConfirm={(w, mn) => applyPick(m, w, mn)} />
+          </div>
         )}
       </div>
     );
   }
 
-  // ── ROUNDS (dual-axis): sticky stage tabs + horizontal-snap stage columns ──
-  const scrollToStage = (i: number) => {
-    const el = colRefs.current[i];
-    if (el) el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-    setStageIdx(i);
-  };
-  const onScroll = () => {
-    const sc = scrollRef.current; if (!sc) return;
-    const mid = sc.scrollLeft + sc.clientWidth / 2;
-    let best = 0, bestD = Infinity;
-    colRefs.current.forEach((el, i) => { if (!el) return; const c = el.offsetLeft + el.offsetWidth / 2; const d = Math.abs(c - mid); if (d < bestD) { bestD = d; best = i; } });
-    if (best !== stageIdx) setStageIdx(best);
+  // ── ROUNDS geometry: standard centered bracket (matches reference image) ──
+  const CARD_W = isMobile ? 158 : 178;
+  const COLW = CARD_W + (isMobile ? 40 : 54);
+  const PITCH = isMobile ? 124 : 132;    // > card height so cards never overlap
+  const NODE_H = 104;                     // ≈ card height, so connectors meet card mid-edge
+  const geom = computeGeom(CARD_W, COLW, PITCH, NODE_H);
+
+  // pan so the focused round column sits at the left inset; clamp like a scroll.
+  const inset = 10;
+  const rawPan = stageIdx * COLW - inset;
+  const maxPan = Math.max(0, geom.W - wrapW);
+  const translateX = -Math.min(maxPan, Math.max(0, rawPan));
+
+  const go = (dir: -1 | 1) => setStageIdx((i) => Math.min(STAGES.length - 1, Math.max(0, i + dir)));
+  const onTouchStart = (e: React.TouchEvent) => { touch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (!touch.current) return;
+    const dx = e.changedTouches[0].clientX - touch.current.x;
+    const dy = e.changedTouches[0].clientY - touch.current.y;
+    // one round per swipe, velocity-independent — a fast flick never skips two rounds.
+    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.3) go(dx < 0 ? 1 : -1);
+    touch.current = null;
   };
 
   const RoundsView = (
     <div>
       <div className="bb-stagetabs">
         {STAGES.map((s, i) => (
-          <button key={s.key} data-active={i === stageIdx} onClick={() => scrollToStage(i)}>{s.label}</button>
+          <button key={s.key} data-active={i === stageIdx} onClick={() => setStageIdx(i)}>{s.label}</button>
         ))}
       </div>
       <div className="faint" style={{ fontSize: 12, fontWeight: 600, margin: '2px 2px 8px', textAlign: 'center' }}>
         {STAGES[stageIdx].sub}{isMobile ? ' · swipe ← → for rounds' : ''}
       </div>
-      <div className="bb-stage-wrap">
+      {stageIdx === 0 && showR32Hint && (
+        <div className="card bb-r32tile" style={{ padding: '10px 12px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 10, fontSize: 12.5 }}>
+          <span style={{ flex: 1 }}>Complete your <strong>Round of 32</strong> picks first — they set up your Round of 16.</span>
+          <button onClick={() => setShowR32Hint(false)} aria-label="Dismiss" style={{ border: 'none', background: 'transparent', color: 'var(--muted)', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>×</button>
+        </div>
+      )}
+      <div style={{ position: 'relative' }}>
+        {!isMobile && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', position: 'absolute', top: -42, right: 0, gap: 6 }}>
+            <button className="btn" style={{ padding: '4px 12px' }} onClick={() => go(-1)} disabled={stageIdx === 0}>‹</button>
+            <button className="btn" style={{ padding: '4px 12px' }} onClick={() => go(1)} disabled={stageIdx === STAGES.length - 1}>›</button>
+          </div>
+        )}
         <div className="bb-edge l"><span>‹</span></div>
         <div className="bb-edge r"><span>›</span></div>
-        <div className="bb-stage-scroll" ref={scrollRef} onScroll={onScroll}>
-          {STAGES.map((s, i) => (
-            <div key={s.key} className="bb-stage-col" data-si={i} ref={(el) => { colRefs.current[i] = el; }}>
-              {!isMobile && <div style={{ fontWeight: 800, fontSize: 14, textAlign: 'center', padding: '2px 0 4px' }}>{s.label}</div>}
-              {s.matches.map((m) => renderCard(m, false))}
-            </div>
-          ))}
+        <div className="bb-rounds-wrap" ref={wrapRef} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+          <div className="bb-rounds-canvas" style={{ width: geom.W, height: geom.H, transform: `translateX(${translateX}px)` }}>
+            <svg width={geom.W} height={geom.H} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+              {geom.links.map((d, i) => <path key={i} d={d} fill="none" stroke="var(--line)" strokeWidth={2} />)}
+            </svg>
+            {ALL_MATCHES.map((m) => (
+              <div key={m} className="bb-node" style={{ left: geom.x[m], top: geom.y[m] - NODE_H / 2, width: CARD_W, zIndex: expandedMatch === m ? 10 : 2 }}>
+                {renderCard(m, 'rounds')}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
   );
 
-  // ── WHOLE BRACKET — real geometry (R16→Final), SVG connectors ──
-  const WholeView = <WholeBracket renderNode={(m: number) => renderCard(m, true)} champion={winners[104] || null} isMobile={isMobile} />;
+  const WholeView = <WholeBracket renderNode={(m: number) => renderCard(m, 'tree')} champion={winners[104] || null} isMobile={isMobile} />;
 
-  // ── CASH: current-round upcoming matches (real teams known, not started) ──
-  const cashMatches = ALL_MATCHES.filter((m) => { const ap = actualParticipants[m]; return ap?.A && ap?.B && matchStatus(m).state === 'upcoming'; });
+  // ── CASH: current-round matches with real teams that HAVEN'T kicked off yet ──
+  const now = Date.now();
+  const cashMatches = ALL_MATCHES.filter((m) => {
+    const ap = actualParticipants[m]; if (!ap?.A || !ap?.B) return false;
+    if (matchStatus(m).state !== 'upcoming') return false;      // exclude decided + live
+    const k = fixturesByMatch[m]?.kickoff;                       // #7: kickoff must be in the future
+    return !!k && new Date(k).getTime() > now;
+  });
 
   const sheetMatch = sheet != null ? { m: sheet, p: partOf(sheet), round: ROUND_OF(sheet) } : null;
 
@@ -447,7 +560,6 @@ export default function Bracket() {
         </div>
       )}
 
-      {/* My Picks / Results / Correct score for cash */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center', flexWrap: 'wrap' }}>
         <button className="btn" onClick={() => setTab('picks')} style={tab === 'picks' ? { background: 'var(--greenSoft)', color: 'var(--green)', borderColor: 'transparent' } : {}}>My Picks</button>
         <button className="btn" onClick={() => setTab('results')} style={tab === 'results' ? { background: 'var(--greenSoft)', color: 'var(--green)', borderColor: 'transparent' } : {}}>Results</button>
@@ -489,15 +601,16 @@ export default function Bracket() {
 
       {sheetMatch && (
         <PickSheet m={sheetMatch.m} A={sheetMatch.p.A} B={sheetMatch.p.B} round={sheetMatch.round}
-          initialWinner={winners[sheetMatch.m] || null} initialManner={manner[sheetMatch.m] || 'FT'}
-          onConfirm={(w, mn) => applyPick(sheetMatch.m, w, mn)} onCancel={() => setSheet(null)} />
+          initialWinner={winners[sheetMatch.m] && (winners[sheetMatch.m] === sheetMatch.p.A || winners[sheetMatch.m] === sheetMatch.p.B) ? winners[sheetMatch.m] : null}
+          initialManner={manner[sheetMatch.m] || 'FT'}
+          onConfirm={(w, mn) => applyPick(sheetMatch.m, w, mn)} onClose={() => setSheet(null)} />
       )}
     </div>
   );
 }
 
 // ============================================================
-//  Whole bracket — computed geometry + SVG elbow connectors
+//  Whole bracket — computed geometry + SVG elbow connectors (R16→Final) — UNCHANGED
 // ============================================================
 const T_CARD_W = 158, T_CARD_H = 66, T_ROW = 96, T_COL = 198;
 const T_LEFT_R16 = [89, 90, 93, 94], T_RIGHT_R16 = [91, 92, 95, 96];
@@ -514,7 +627,7 @@ function WholeBracket({ renderNode, champion, isMobile }: { renderNode: (m: numb
     y[101] = (y[97] + y[98]) / 2; x[101] = 2 * T_COL;
     y[102] = (y[99] + y[100]) / 2; x[102] = 4 * T_COL;
     y[104] = (y[101] + y[102]) / 2; x[104] = 3 * T_COL;
-    y[103] = Math.max(...T_LEFT_R16.map((m) => y[m])) + T_ROW; x[103] = 3 * T_COL; // 3rd place, centered below
+    y[103] = Math.max(...T_LEFT_R16.map((m) => y[m])) + T_ROW; x[103] = 3 * T_COL;
     const W = 6 * T_COL + T_CARD_W;
     const H = Math.max(y[103], y[104]) + T_ROW;
     const pairs: [number, number][] = [
@@ -549,7 +662,6 @@ function WholeBracket({ renderNode, champion, isMobile }: { renderNode: (m: numb
             {nodes.map((m) => (
               <div key={m} className="bb-tree-node" style={{ left: x[m], top: y[m] - T_CARD_H / 2, width: T_CARD_W }}>{renderNode(m)}</div>
             ))}
-            {/* champion plate under the Final */}
             <div className="bb-tree-node" style={{ left: x[104] - 6, top: y[104] + T_CARD_H, width: T_CARD_W + 12 }}>
               <div style={{ textAlign: 'center', padding: '8px 8px', borderRadius: 12, background: 'var(--goldSoft)', border: '1px solid var(--goldLine)' }}>
                 <div className="faint" style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: '.06em' }}>YOUR CHAMPION</div>

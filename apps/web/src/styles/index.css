@@ -132,28 +132,15 @@ h1, h2, h3, .display { font-family: 'Baloo Da 2', system-ui, sans-serif; }
 }
 .bb-stagetabs button[data-active="true"] { background: var(--green); color: #fff; border-color: var(--green); }
 
-/* ===== bracket: dual-axis rounds canvas (horizontal snap between stages) ===== */
-.bb-stage-wrap { position: relative; }
-.bb-stage-scroll {
-  display: flex; gap: 14px; overflow-x: auto; max-height: 72vh;
-  scroll-snap-type: x mandatory; scroll-behavior: smooth; -webkit-overflow-scrolling: touch;
-  padding: 2px 2px 10px; scrollbar-width: none;
-}
-.bb-stage-scroll::-webkit-scrollbar { display: none; }
-.bb-stage-col {
-  flex: 0 0 min(88vw, 340px); scroll-snap-align: center; display: flex; flex-direction: column; gap: 10px;
-  overflow-y: auto; overflow-x: hidden; padding: 2px; scrollbar-width: none;
-}
-.bb-stage-col::-webkit-scrollbar { display: none; }
-@media (min-width: 901px) {
-  .bb-stage-col { flex-basis: 300px; scroll-snap-align: start; }
-  /* progressive scaling: later rounds get tighter columns, narrowing toward the champion */
-  .bb-stage-col[data-si="2"] { flex-basis: 280px; }
-  .bb-stage-col[data-si="3"] { flex-basis: 260px; }
-  .bb-stage-col[data-si="4"] { flex-basis: 240px; }
-}
-/* edge cues: gentle fades + arrow chips telling the user it scrolls sideways */
-.bb-edge { position: absolute; top: 0; bottom: 10px; width: 34px; pointer-events: none; z-index: 5; display: flex; align-items: center; }
+/* ===== bracket: rounds canvas (real geometry, transform-panned per round) =====
+   The page scrolls as ONE surface vertically; horizontal round changes are driven
+   by a transform (NOT a scroll container), so touching a card never traps scroll.
+   overflow-x: clip hides off-round columns without creating a vertical scroll box. */
+.bb-rounds-wrap { position: relative; overflow-x: clip; }
+.bb-rounds-canvas { position: relative; will-change: transform; transition: transform .45s cubic-bezier(.22,.61,.36,1); }
+.bb-node { position: absolute; }
+/* edge cues: gentle fades + arrow chips telling the user it swipes sideways */
+.bb-edge { position: absolute; top: 40px; height: 46px; width: 30px; pointer-events: none; z-index: 6; display: flex; align-items: center; }
 .bb-edge.l { left: 0; background: linear-gradient(90deg, var(--bg), transparent); justify-content: flex-start; }
 .bb-edge.r { right: 0; background: linear-gradient(270deg, var(--bg), transparent); justify-content: flex-end; }
 .bb-edge span { color: var(--faint); font-size: 22px; font-weight: 800; }
