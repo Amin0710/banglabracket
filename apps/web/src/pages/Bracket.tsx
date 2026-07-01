@@ -580,11 +580,15 @@ export default function Bracket() {
   };
 
   // WEB round nav: exactly one ‹ (left) + one › (right) flanking the stage tabs.
-  const arrowBtn = (dir: -1 | 1) => (
-    <button className="btn" aria-label={dir < 0 ? 'Previous round' : 'Next round'} onClick={() => go(dir)}
-      disabled={dir < 0 ? stageIdx === 0 : stageIdx === STAGES.length - 1}
-      style={{ flex: '0 0 auto', padding: '7px 13px', fontSize: 16, lineHeight: 1 }}>{dir < 0 ? '‹' : '›'}</button>
-  );
+  // Clearly greyed out + non-interactive at the ends (no dead arrow on the Final).
+  const arrowBtn = (dir: -1 | 1) => {
+    const disabled = dir < 0 ? stageIdx === 0 : stageIdx === STAGES.length - 1;
+    return (
+      <button className="btn" aria-label={dir < 0 ? 'Previous round' : 'Next round'} onClick={() => go(dir)}
+        disabled={disabled}
+        style={{ flex: '0 0 auto', padding: '7px 13px', fontSize: 16, lineHeight: 1, opacity: disabled ? .28 : 1, cursor: disabled ? 'default' : 'pointer', pointerEvents: disabled ? 'none' : 'auto' }}>{dir < 0 ? '‹' : '›'}</button>
+    );
+  };
   const RoundsView = (
     <div>
       <div style={{ position: 'sticky', top: 0, zIndex: 20, background: 'var(--bg)', display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 4 }}>
@@ -639,7 +643,7 @@ export default function Bracket() {
   const sheetMatch = sheet != null ? { m: sheet, p: partOf(sheet), round: ROUND_OF(sheet) } : null;
 
   return (
-    <div>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
       <PageHeader title="Bracket" subtitle="Pick every winner — results update live"
         right={<div className="card" style={{ padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="3"><path d="M5 13l4 4L19 7" /></svg><span style={{ fontWeight: 600, fontSize: 14 }}>{saved ? 'Saved' : 'Saving…'}</span>
@@ -670,6 +674,9 @@ export default function Bracket() {
         )}
       </div>
 
+      {/* grower: fills the remaining viewport height so short rounds don't leave the
+          "next round" strip floating high — it sits at a consistent bottom position */}
+      <div style={{ flex: 1, minHeight: 0 }}>
       {tab === 'picks' && (view === 'rounds' ? RoundsView : WholeView)}
       {tab === 'results' && <ResultsTab t={t} />}
       {tab === 'cash' && (
@@ -694,6 +701,7 @@ export default function Bracket() {
           }) : <div className="faint">No current-round matches open right now — check back when the next round's teams are set.</div>}
         </div>
       )}
+      </div>
 
       <NextRoundStrip nextRound={t.nextRound} />
 
