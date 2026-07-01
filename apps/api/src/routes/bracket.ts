@@ -114,11 +114,13 @@ bracketRouter.put('/entry', requireAuth, validate(predictionSchema), async (req:
     if (!nextSp[m]) delete scorePredAt[m];
   }
 
-  // ---- soft-freeze: forfeit grand-prize on the first real post-freeze edit ----
+  // ---- soft-freeze: forfeit grand-prize ONLY on a post-freeze BRACKET edit ----
+  // The exact-score cash game (scorePredictions) is per-match and independent of the
+  // bracket freeze, so a save that only touches cash scores keeps eligibility intact.
   const frozen = bracketFrozenForPrize(t);
-  const changed = canonPred(prevPred) !== canonPred(prediction);
+  const bracketChanged = bracketCanon(prevPred) !== bracketCanon(prediction);
   const set: any = { prediction, bonusEligibleAt: new Date(), scorePredAt };
-  if (frozen && changed) {
+  if (frozen && bracketChanged) {
     set.grandPrizeEligible = false;
     if (!existing || existing.grandPrizeEligible !== false) set.grandPrizeForfeitedAt = new Date();
   }
@@ -137,8 +139,11 @@ bracketRouter.put('/entry', requireAuth, validate(predictionSchema), async (req:
   });
 });
 
-// Stable JSON of the score-bearing prediction fields, for change detection.
-function canonPred(p: any): string {
+// Stable JSON of the BRACKET portion of a prediction — knockout winners + manner
+// (+ group predictions that feed the R32 slots). Deliberately EXCLUDES
+// scorePredictions (the exact-score cash game), so a cash-only save never counts
+// as a bracket edit and never forfeits grand-prize eligibility.
+function bracketCanon(p: any): string {
   const stable = (v: any): any => {
     if (Array.isArray(v)) return v.map(stable);
     if (v && typeof v === 'object') {
@@ -152,7 +157,6 @@ function canonPred(p: any): string {
     groups: p?.groups || {},
     winners: p?.winners || {},
     manner: p?.manner || {},
-    scorePredictions: p?.scorePredictions || {},
   }));
 }
 

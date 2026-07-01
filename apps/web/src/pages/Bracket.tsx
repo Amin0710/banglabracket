@@ -304,8 +304,9 @@ export default function Bracket() {
     setWinners((prev) => ({ ...prev, [m]: w }));
     if (ROUND_OF(m) !== 'R32') setManner((prev) => ({ ...prev, [m]: mn }));
   }
-  async function setCashCell(m: number, side: 'a' | 'b', raw: string) {
-    if (!(await guardEdit())) return;
+  function setCashCell(m: number, side: 'a' | 'b', raw: string) {
+    // The exact-score cash game is independent of the bracket freeze — NO freeze
+    // warning here, and the server keeps grand-prize eligibility on a cash-only save.
     const v = raw === '' ? '' : Math.max(0, +raw);
     setScorePred((s) => ({ ...s, [m]: { a: side === 'a' ? v : (s[m]?.a ?? ''), b: side === 'b' ? v : (s[m]?.b ?? '') } }));
   }
