@@ -21,8 +21,22 @@ export interface NormFixture {
   awayName: string;
   scoreA: number | null;    // home goals on the pitch (FT incl. extra time)
   scoreB: number | null;    // away goals
+  ftA: number | null;       // home goals after 90' (regulation), if reported
+  ftB: number | null;       // away goals after 90'
+  penA: number | null;      // home penalty shoot-out tally, if any
+  penB: number | null;      // away penalty shoot-out tally
   winnerName: string | null;// provider spelling of the winner, or null if not final/drawn
   manner: FixtureManner | null; // FT | ET | PEN, derived from which score is populated
+}
+
+// A single row of a top-scorers / top-assists table.
+export interface NormPlayerStat {
+  rank: number;             // 1-based position in the table
+  name: string;             // player full name
+  team: string;             // PROVIDER spelling of club/nation — normalize before display
+  country: string;          // nationality (drives the flag)
+  photo: string | null;     // headshot URL (optional)
+  value: number;            // goals (scorers) or assists (assists)
 }
 
 export interface NormStanding {
@@ -48,6 +62,7 @@ export interface ProviderMeta {
 
 export interface FixturesResult { meta: ProviderMeta; fixtures: NormFixture[]; }
 export interface StandingsResult { meta: ProviderMeta; standings: NormStanding[]; }
+export interface PlayerStatsResult { meta: ProviderMeta; players: NormPlayerStat[]; }
 
 export interface ScoreProvider {
   readonly name: string;
@@ -57,4 +72,8 @@ export interface ScoreProvider {
   fetchFixtures(): Promise<FixturesResult>;
   /** Group standings for the configured league/season. */
   fetchStandings(): Promise<StandingsResult>;
+  /** Tournament top scorers (one call). */
+  fetchTopScorers(): Promise<PlayerStatsResult>;
+  /** Tournament top assists (one call). */
+  fetchTopAssists(): Promise<PlayerStatsResult>;
 }

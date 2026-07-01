@@ -7,8 +7,8 @@
 
 import { env } from '../../config/env.js';
 import type {
-  ScoreProvider, FixturesResult, StandingsResult, ProviderMeta,
-  NormFixture, NormStanding, FixtureStatus, FixtureManner,
+  ScoreProvider, FixturesResult, StandingsResult, PlayerStatsResult, ProviderMeta,
+  NormFixture, NormStanding, NormPlayerStat, FixtureStatus, FixtureManner,
 } from './provider.js';
 
 const BASE = 'https://v3.football.api-sports.io';
@@ -91,6 +91,18 @@ export class ApiFootballProvider implements ScoreProvider {
     return { meta: this.meta(), fixtures };
   }
 
+  async fetchTopScorers(): Promise<PlayerStatsResult> {
+    const league = await this.discoverLeagueId();
+    const json = await this.get<Array<any>>(`/players/topscorers?league=${league}&season=${this.season}`);
+    return { meta: this.meta(), players: json.response.map((x, i) => toPlayerStat(x, i, 'goals')) };
+  }
+
+  async fetchTopAssists(): Promise<PlayerStatsResult> {
+    const league = await this.discoverLeagueId();
+    const json = await this.get<Array<any>>(`/players/topassists?league=${league}&season=${this.season}`);
+    return { meta: this.meta(), players: json.response.map((x, i) => toPlayerStat(x, i, 'assists')) };
+  }
+
   async fetchStandings(): Promise<StandingsResult> {
     const league = await this.discoverLeagueId();
     const json = await this.get<Array<any>>(`/standings?league=${league}&season=${this.season}`);
@@ -142,6 +154,8 @@ function toNormFixture(x: any): NormFixture {
     if (home?.winner === true) winnerName = home?.name;
     else if (away?.winner === true) winnerName = away?.name;
   }
+  const ft = x.score?.fulltime || {};
+  const pen = x.score?.penalty || {};
   return {
     providerId: x.fixture?.id,
     round: x.league?.round || '',
@@ -152,7 +166,25 @@ function toNormFixture(x: any): NormFixture {
     awayName: away?.name,
     scoreA: x.goals?.home ?? null,
     scoreB: x.goals?.away ?? null,
+    ftA: ft.home ?? null,
+    ftB: ft.away ?? null,
+    penA: pen.home ?? null,
+    penB: pen.away ?? null,
     winnerName,
     manner: finished ? deriveManner(x.score) : null,
+  };
+}
+
+// One row of /players/topscorers or /players/topassists.
+function toPlayerStat(x: any, i: number, kind: 'goals' | 'assists'): NormPlayerStat {
+  const st = x.statistics?.[0] || {};
+  const value = kind === 'goals' ? (st.goals?.total ?? 0) : (st.assists?.total ?? 0);
+  return {
+    rank: i + 1,
+    name: x.player?.name || 'Unknown',
+    team: st.team?.name || '',
+    country: x.player?.nationality || '',
+    photo: x.player?.photo ?? null,
+    value: value ?? 0,
   };
 }

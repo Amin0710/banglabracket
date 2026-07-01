@@ -17,7 +17,8 @@ import { Tournament } from '../../models/index.js';
 import { env } from '../../config/env.js';
 import { normalizeTeamName, abbrFor } from './teamMap.js';
 import { ApiFootballProvider } from './apiFootball.js';
-import type { ScoreProvider, NormFixture, NormStanding } from './provider.js';
+import { deriveSchedule } from './schedule.js';
+import type { ScoreProvider, NormFixture, NormStanding, NormPlayerStat } from './provider.js';
 
 // Approx gap between a fixture's kickoff and its result becoming official.
 // Used for confirmedAt when back-filling matches that finished before this
@@ -47,6 +48,8 @@ export interface SyncOptions {
   dryRun?: boolean;
   /** Refetch standings to rebuild base/remaining. Default true. */
   includeStandings?: boolean;
+  /** Refetch top scorers/assists. Defaults to the value of includeStandings (daily). */
+  includePlayers?: boolean;
   provider?: ScoreProvider;
 }
 
@@ -55,6 +58,8 @@ export interface SyncReport {
   source: string;
   rateRemaining: number | null;
   anyLive: boolean;
+  /** ISO kickoff of the earliest not-yet-started fixture (drives the event-driven poller). */
+  nextKickoffAt: string | null;
   groupsDecided: number;
   r32SlotsFilled: number;
   resultsCount: number;
@@ -68,6 +73,8 @@ interface CanonFixture extends NormFixture { round_tag: RoundTag; homeCanon: str
 export async function runSync(opts: SyncOptions = {}): Promise<SyncReport> {
   const dryRun = !!opts.dryRun;
   const includeStandings = opts.includeStandings !== false;
+  // Player stats are a daily refresh: default to the standings cadence.
+  const includePlayers = opts.includePlayers ?? includeStandings;
   const provider = opts.provider || new ApiFootballProvider();
 
   const doc = await Tournament.findOne({ key: env.tournamentKey }).lean();
@@ -76,6 +83,9 @@ export async function runSync(opts: SyncOptions = {}): Promise<SyncReport> {
   // ---- fetch ----
   const fx = await provider.fetchFixtures();
   const std = includeStandings ? (await provider.fetchStandings()).standings : null;
+  // Top scorers / assists — one call each, only on the daily refresh.
+  const topScorers = includePlayers ? normalizePlayers((await provider.fetchTopScorers()).players) : null;
+  const topAssists = includePlayers ? normalizePlayers((await provider.fetchTopAssists()).players) : null;
 
   // ---- normalize fixtures to canonical names + round tags ----
   const fixtures: CanonFixture[] = fx.fixtures.map((f) => ({
@@ -125,6 +135,10 @@ export async function runSync(opts: SyncOptions = {}): Promise<SyncReport> {
     teamB: f.awayCanon,
     scoreA: f.scoreA,
     scoreB: f.scoreB,
+    ftA: f.ftA,
+    ftB: f.ftB,
+    penA: f.penA,
+    penB: f.penB,
     winner: f.winnerCanon,
     manner: f.manner,
   }));
@@ -144,6 +158,7 @@ export async function runSync(opts: SyncOptions = {}): Promise<SyncReport> {
     source: provider.name,
     rateRemaining: fx.meta.rateRemaining,
     anyLive: fixtures.some((f) => f.status === 'live'),
+    nextKickoffAt: deriveSchedule(storedFixtures as any).nextMatch?.kickoff || null,
     groupsDecided,
     r32SlotsFilled: slotsFilled,
     resultsCount: Object.keys(results).length,
@@ -160,12 +175,28 @@ export async function runSync(opts: SyncOptions = {}): Promise<SyncReport> {
 
   const set: any = { r32, results, fixtures: storedFixtures, sync };
   if (std) { set.base = base; set.remaining = remaining; }
+  if (topScorers) set.topScorers = topScorers;
+  if (topAssists) set.topAssists = topAssists;
   await Tournament.updateOne({ key: env.tournamentKey }, { $set: set });
   console.log(`  ✓ Sync written to '${env.tournamentKey}'.`);
   return report;
 }
 
 // ---------------- helpers ----------------
+
+// Normalize a top-scorers/assists table for storage: canonical country (so the
+// flag resolves) + the fields the UI needs (name, photo, value). Photo optional.
+function normalizePlayers(players: NormPlayerStat[]) {
+  return players.map((p) => ({
+    rank: p.rank,
+    name: p.name,
+    team: normalizeTeamName(p.team || p.country),
+    country: normalizeTeamName(p.country),
+    flag: normalizeTeamName(p.country), // canonical nation name; client derives the flag image
+    photo: p.photo,
+    value: p.value,
+  }));
+}
 
 function buildBase(std: NormStanding[]): Record<string, TeamRow[]> {
   const base: Record<string, TeamRow[]> = {};
@@ -352,6 +383,10 @@ function assignAndBuildResults(
       manner: f.manner,
       scoreA: f.scoreA,
       scoreB: f.scoreB,
+      ftA: f.ftA,
+      ftB: f.ftB,
+      penA: f.penA,
+      penB: f.penB,
       confirmedAt,
     };
   }

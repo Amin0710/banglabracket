@@ -57,6 +57,17 @@ export const KO_MATCHES = ALL_MATCHES.filter((m) => MATCH_DEF[m].round !== 'R32'
 
 export const ROUND_OF = (m: number): Round => MATCH_DEF[m].round;
 
+// A bracket is "complete" once a winner is picked for EVERY knockout match from
+// the Round of 32 through the Final (matches 73–104): R32 + R16 + QF + SF +
+// 3rd-place + Final. R32 still earns no main bracket points (tiebreaker credit
+// only — unchanged in the scoring engine); it is simply required for the bracket
+// to count as fully filled. Used to decide the post-login landing page
+// (complete → My Entry, incomplete → Bracket).
+export function isBracketComplete(winners?: Record<number, TeamId> | null): boolean {
+  if (!winners) return false;
+  return ALL_MATCHES.every((m) => !!winners[m]);
+}
+
 // Round multipliers (main points = BASE_POINTS * multiplier). R32 = 0 (bonus only).
 export const ROUND_MULTIPLIER: Record<Round, number> = {
   R32: 0, R16: 1, QF: 2, SF: 3, THIRD: 4, FINAL: 5,

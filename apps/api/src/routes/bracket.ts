@@ -1,8 +1,12 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { isBracketComplete } from '@banglabracket/shared';
 import { env } from '../config/env.js';
 import { Entry, User } from '../models/index.js';
-import { getTournament, isLocked, scoreOne, invalidateLeaderboard, getUserCash } from '../services/tournament.js';
+import {
+  getTournament, isLocked, scoreOne, invalidateLeaderboard, getUserCash,
+  bracketFrozenForPrize, r16KickoffAt, matchKickoffMap,
+} from '../services/tournament.js';
 import { requireAuth, validate, type AuthedRequest } from '../middleware/index.js';
 import { publicUser } from './auth.js';
 import { deriveSchedule } from '../services/scores/schedule.js';
@@ -17,7 +21,11 @@ bracketRouter.get('/tournament', async (_req, res) => {
   res.json({
     key: t.key, name: t.name, tagline: t.tagline, lockAt: t.lockAt, locked: isLocked(t),
     base: t.base, remaining: t.remaining, r32: t.r32, results: t.results,
+    // fixtures + player tables power the read-only Results tab and per-match live status
+    fixtures: t.fixtures || [], topScorers: (t as any).topScorers || [], topAssists: (t as any).topAssists || [],
     nextMatch: schedule.nextMatch, nextRound: schedule.nextRound,
+    // soft-freeze (Model Y): R16 kickoff is the grand-prize freeze trigger
+    bracketFrozenForPrize: bracketFrozenForPrize(t), r16KickoffAt: r16KickoffAt(t),
     syncedAt: (t.sync as any)?.lastSyncAt || null,
   });
 });
@@ -46,24 +54,53 @@ bracketRouter.get('/entry', requireAuth, async (req: AuthedRequest, res) => {
   let score = null;
   if (entry) score = scoreOne(entry.prediction as any, t, entry.bonusEligibleAt ? new Date(entry.bonusEligibleAt).toISOString() : undefined);
   const cash = await getUserCash(String(req.userId));
+  const winners = (entry?.prediction as any)?.winners || null;
   res.json({
-    entry: entry ? { prediction: entry.prediction, rePicked: entry.rePicked, updatedAt: entry.updatedAt } : null,
+    entry: entry ? {
+      prediction: entry.prediction, rePicked: entry.rePicked, updatedAt: entry.updatedAt,
+      grandPrizeEligible: entry.grandPrizeEligible !== false, // default true
+    } : null,
     locked: isLocked(t), score, cash,
+    // soft-freeze + completeness state the client needs (warning UI is a later pass)
+    bracketFrozenForPrize: bracketFrozenForPrize(t),
+    grandPrizeEligible: entry ? entry.grandPrizeEligible !== false : true,
+    bracketComplete: isBracketComplete(winners),
   });
 });
 
-// Save / autosave the bracket. Rejected once locked (server-side time check).
+// Save / autosave the bracket.
+//
+// Model Y soft-freeze: there is NO global hard-lock anymore. The bracket is
+// freely editable; once the Round-of-16 has kicked off (bracketFrozenForPrize),
+// a save that actually changes the bracket forfeits grand-prize eligibility.
+//
+// Per-match games are independent of the bracket freeze: each match's pick locks
+// at THAT match's own kickoff (server-authoritative); future matches stay open.
 bracketRouter.put('/entry', requireAuth, validate(predictionSchema), async (req: AuthedRequest, res) => {
   const t = await getTournament();
-  if (isLocked(t)) return res.status(423).json({ error: 'locked' });
-
   const prediction = req.body;
 
-  // Server-authoritative FCFS timestamps for the cash side-game:
-  // only (re)stamp a match when its exact-score pick actually changes. The client
-  // cannot forge an earlier time — we never trust a client-supplied timestamp.
   const existing = await Entry.findOne({ userId: req.userId, tournamentKey: env.tournamentKey }).lean();
-  const prevSp = (existing?.prediction as any)?.scorePredictions || {};
+  const prevPred = (existing?.prediction as any) || {};
+
+  // ---- per-match kickoff lock: keep the stored pick for any match already started ----
+  const kickoff = matchKickoffMap(t);
+  const now = Date.now();
+  const matchLocked = (m: number) => kickoff[m] != null && now >= kickoff[m];
+  const mergeByMatch = (prev: Record<string, any> = {}, incoming: Record<string, any> = {}) => {
+    const out: Record<string, any> = {};
+    for (const m of Object.keys(prev)) if (matchLocked(+m)) out[m] = prev[m];        // frozen → keep stored
+    for (const m of Object.keys(incoming)) if (!matchLocked(+m)) out[m] = incoming[m]; // open → accept client
+    return out;
+  };
+  prediction.winners = mergeByMatch(prevPred.winners, prediction.winners);
+  prediction.manner = mergeByMatch(prevPred.manner, prediction.manner);
+  prediction.scorePredictions = mergeByMatch(prevPred.scorePredictions, prediction.scorePredictions);
+
+  // ---- server-authoritative FCFS timestamps for the cash side-game ----
+  // Only (re)stamp a match when its exact-score pick actually changes. The client
+  // cannot forge an earlier time — we never trust a client-supplied timestamp.
+  const prevSp = prevPred.scorePredictions || {};
   const prevAt: Record<string, string> = (existing as any)?.scorePredAt || {};
   const nextSp = prediction.scorePredictions || {};
   const nowIso = new Date().toISOString();
@@ -77,14 +114,47 @@ bracketRouter.put('/entry', requireAuth, validate(predictionSchema), async (req:
     if (!nextSp[m]) delete scorePredAt[m];
   }
 
+  // ---- soft-freeze: forfeit grand-prize on the first real post-freeze edit ----
+  const frozen = bracketFrozenForPrize(t);
+  const changed = canonPred(prevPred) !== canonPred(prediction);
+  const set: any = { prediction, bonusEligibleAt: new Date(), scorePredAt };
+  if (frozen && changed) {
+    set.grandPrizeEligible = false;
+    if (!existing || existing.grandPrizeEligible !== false) set.grandPrizeForfeitedAt = new Date();
+  }
+
   const entry = await Entry.findOneAndUpdate(
     { userId: req.userId, tournamentKey: env.tournamentKey },
-    { $set: { prediction, bonusEligibleAt: new Date(), scorePredAt }, $setOnInsert: { tournamentKey: env.tournamentKey, userId: req.userId } },
+    { $set: set, $setOnInsert: { tournamentKey: env.tournamentKey, userId: req.userId } },
     { upsert: true, new: true },
   );
   invalidateLeaderboard();
-  res.json({ ok: true, updatedAt: entry.updatedAt });
+  res.json({
+    ok: true, updatedAt: entry.updatedAt,
+    grandPrizeEligible: entry.grandPrizeEligible !== false,
+    bracketFrozenForPrize: frozen,
+    bracketComplete: isBracketComplete(prediction.winners),
+  });
 });
+
+// Stable JSON of the score-bearing prediction fields, for change detection.
+function canonPred(p: any): string {
+  const stable = (v: any): any => {
+    if (Array.isArray(v)) return v.map(stable);
+    if (v && typeof v === 'object') {
+      const o: any = {};
+      for (const k of Object.keys(v).sort()) o[k] = stable(v[k]);
+      return o;
+    }
+    return v;
+  };
+  return JSON.stringify(stable({
+    groups: p?.groups || {},
+    winners: p?.winners || {},
+    manner: p?.manner || {},
+    scorePredictions: p?.scorePredictions || {},
+  }));
+}
 
 // Free full re-pick (only after a team busts). Clears predictions AND zeroes bonus.
 bracketRouter.post('/entry/repick', requireAuth, async (req: AuthedRequest, res) => {

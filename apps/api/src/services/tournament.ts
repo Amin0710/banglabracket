@@ -26,6 +26,40 @@ export function isLocked(t: any): boolean {
   return Date.now() >= new Date(t.lockAt).getTime();
 }
 
+// ---- Soft-freeze (Model Y) ----
+// The grand-prize freeze trigger is the kickoff of the FIRST Round-of-16 fixture,
+// derived from the synced fixtures[]. (R16 is the first points-bearing round, so
+// the whole bracket stays freely editable right up to it.)
+export function r16KickoffAt(t: any): string | null {
+  const fixtures: any[] = Array.isArray(t?.fixtures) ? t.fixtures : [];
+  const kicks = fixtures
+    .filter((f) => f?.round === 'R16' && f?.kickoff)
+    .map((f) => +new Date(f.kickoff))
+    .filter((n) => Number.isFinite(n))
+    .sort((a, b) => a - b);
+  return kicks.length ? new Date(kicks[0]).toISOString() : null;
+}
+
+// Has the Round-of-16 kicked off? Once true, bracket edits forfeit grand-prize
+// eligibility. Returns false while the trigger is unknown (no R16 fixtures yet).
+export function bracketFrozenForPrize(t: any): boolean {
+  const at = r16KickoffAt(t);
+  return at != null && Date.now() >= new Date(at).getTime();
+}
+
+// Kickoff time per match number (from fixtures[]), for per-match cash locking.
+export function matchKickoffMap(t: any): Record<number, number> {
+  const out: Record<number, number> = {};
+  const fixtures: any[] = Array.isArray(t?.fixtures) ? t.fixtures : [];
+  for (const f of fixtures) {
+    if (f?.matchNumber != null && f?.kickoff) {
+      const ms = +new Date(f.kickoff);
+      if (Number.isFinite(ms)) out[Number(f.matchNumber)] = ms;
+    }
+  }
+  return out;
+}
+
 export function scoreOne(prediction: BracketPrediction, t: any, bonusEligibleAt?: string): EntryScore {
   return scoreEntry(prediction, buildContext(t), bonusEligibleAt);
 }

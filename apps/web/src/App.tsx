@@ -143,8 +143,10 @@ export default function App() {
 
   async function redirectAfterLogin() {
     try {
+      // Complete bracket (all knockout winners picked through the Final) → My Entry;
+      // incomplete (or no entry) → Bracket to keep filling it in.
       const d = await api.get('/api/entry');
-      nav(d?.entry ? '/entry' : '/bracket');
+      nav(d?.entry && d?.bracketComplete ? '/entry' : '/bracket');
     } catch {
       nav('/bracket');
     }

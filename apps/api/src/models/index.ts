@@ -51,6 +51,13 @@ const entrySchema = new Schema({
   rePicked: { type: Boolean, default: false }, // used the free R32 re-pick (zeroes bonus)
   bonusEligibleAt: { type: Date },             // timestamp used for early-bird comparison
   scorePredAt: { type: Schema.Types.Mixed, default: {} }, // server-set FCFS timestamps per match (cash game)
+
+  // Soft-freeze (Model Y): the bracket is freely editable until the Round-of-16
+  // kickoff. Editing AFTER that is still allowed, but forfeits grand-prize
+  // eligibility — set false (and stamped) by the server on the first post-freeze edit.
+  grandPrizeEligible: { type: Boolean, default: true },
+  grandPrizeForfeitedAt: { type: Date },       // when a post-freeze edit cleared eligibility
+
   lockedSnapshot: { type: Schema.Types.Mixed },// frozen at lock time (audit)
 }, { timestamps: true });
 
@@ -73,6 +80,10 @@ const tournamentSchema = new Schema({
   // countdowns; written by the sync job, read-only everywhere else.
   fixtures: { type: Schema.Types.Mixed, default: [] }, // NormFixture[] (+ matchNumber)
   sync: { type: Schema.Types.Mixed, default: {} },     // {lastSyncAt, lastLiveAt, source, rateRemaining}
+
+  // Daily player-stat tables for the Results tab (read-only; refreshed once/day).
+  topScorers: { type: Schema.Types.Mixed, default: [] }, // [{rank,name,team,country,flag,photo,value}]
+  topAssists: { type: Schema.Types.Mixed, default: [] },
 
   scoringConfig: { type: Schema.Types.Mixed },         // optional override of defaults
 }, { timestamps: true });
