@@ -36,35 +36,40 @@ function koChildren(m: number): number[] {
   return out;
 }
 // DFS leaf order from the Final → R32 matches top-to-bottom so each child's two
-// feeders are adjacent (a proper, centered tournament bracket).
+// feeders are ADJACENT (feeder pairs stack next to each other in the base layout).
 const R32_ORDER: number[] = (() => {
   const out: number[] = [];
   (function go(m: number) { const k = koChildren(m); if (!k.length) { out.push(m); return; } k.forEach(go); })(104);
   return out;
 })();
+// Per-round vertical order (bracket order). Each round is laid out on the SAME
+// fixed pitch, top-anchored — a "re-based" digital bracket, NOT a widening tree.
+const ROUND_LISTS: number[][] = [
+  R32_ORDER,
+  [89, 90, 93, 94, 91, 92, 95, 96],
+  [97, 98, 99, 100],
+  [101, 102],
+  [104, 103],
+];
+const ROUND_COUNTS = ROUND_LISTS.map((l) => l.length);
 
-// Standard centered bracket geometry (matches the reference image): each child
-// sits at the midpoint of its two feeders' y; clean elbow connectors.
-function computeGeom(CARD_W: number, COLW: number, PITCH: number, NODE_H: number) {
-  const y: Record<number, number> = {}; const x: Record<number, number> = {};
-  R32_ORDER.forEach((m, i) => { y[m] = i * PITCH + PITCH / 2; });
-  const cy = (m: number): number => {
-    if (y[m] != null) return y[m];
-    const kids = koChildren(m);
-    return (y[m] = kids.reduce((s, k) => s + cy(k), 0) / kids.length);
-  };
-  cy(104);
-  const maxLeaf = Math.max(...R32_ORDER.map((m) => y[m]));
-  y[103] = maxLeaf + PITCH * 0.55;                         // 3rd place, below the final
-  for (const m of ALL_MATCHES) x[m] = ROUND_COL[ROUND_OF(m)] * COLW;
+// RE-BASED geometry: every round is laid out on the SAME fixed pitch, top-anchored
+// (each round looks exactly like R32 does). Advancing "re-bases" the next round to
+// that same layout; the pan slides the previous round off to the left. Connectors
+// still join true feeder pairs (MATCH_DEF) with clean elbows, drawn against the
+// fixed-pitch positions of whichever round is in view.
+function computeGeom(CARD_W: number, COLW: number, PITCH: number) {
+  const y: Record<number, number> = {}; const x: Record<number, number> = {}; const col: Record<number, number> = {};
+  ROUND_LISTS.forEach((list, c) => list.forEach((m, i) => { y[m] = i * PITCH + PITCH / 2; x[m] = c * COLW; col[m] = c; }));
   const W = 4 * COLW + CARD_W;
-  const H = y[103] + NODE_H;
-  const links: string[] = [];
+  // links tagged with the FEEDER's round column, so the view can show only the
+  // connectors flowing out of the currently-focused (base) round.
+  const links: { d: string; col: number }[] = [];
   for (const m of ALL_MATCHES) for (const k of koChildren(m)) {
     const x1 = x[k] + CARD_W, x2 = x[m], mx = (x1 + x2) / 2;
-    links.push(`M${x1} ${y[k]} H${mx} V${y[m]} H${x2}`);   // out → across → in
+    links.push({ d: `M${x1} ${y[k]} H${mx} V${y[m]} H${x2}`, col: col[k] });
   }
-  return { x, y, W, H, links };
+  return { x, y, col, W, links };
 }
 
 function currentStageIdx(t: any): number {
@@ -298,6 +303,17 @@ export default function Bracket() {
     setStageIdx(currentStageIdx(t));
   }, [t]);
 
+  // #2: auto-advance to the next round once the front round is fully decided.
+  // Marked per stage so a user who swipes BACK to a finished round isn't shoved forward again.
+  const autoAdvanced = useRef<Set<number>>(new Set());
+  useEffect(() => {
+    if (!loaded || stageIdx >= STAGES.length - 1 || autoAdvanced.current.has(stageIdx)) return;
+    const cur = STAGES[stageIdx].matches.filter((m) => ROUND_OF(m) !== 'THIRD');
+    const res = t?.results || {};
+    const allDone = cur.length > 0 && cur.every((m) => !!res[m]?.winner);
+    if (allDone) { autoAdvanced.current.add(stageIdx); setStageIdx((i) => Math.min(STAGES.length - 1, i + 1)); }
+  }, [stageIdx, t, loaded]);
+
   // measure the pan viewport (for clamped translate)
   useEffect(() => {
     const on = () => setWrapW(wrapRef.current?.clientWidth || 0);
@@ -309,14 +325,40 @@ export default function Bracket() {
   const predForShared = useMemo(() => { const o: any = {}; for (const g of Object.keys(scores)) o[g] = scores[g].map((s) => ({ sa: s.sa, sb: s.sb })); return o; }, [scores]);
   const r32 = useMemo(() => t ? resolveR32(t.base || {}, t.remaining || {}, predForShared) : {}, [t, predForShared]);
 
-  // R32 AUTO-CORRECT: once an R32 match is FINAL, the real winner (not the player's
+  const fixturesByMatch = useMemo(() => {
+    const map: Record<number, any> = {};
+    for (const f of (t?.fixtures || [])) if (f?.matchNumber != null) map[f.matchNumber] = f;
+    return map;
+  }, [t]);
+
+  // R32 slots used to resolve the tree. For a DECIDED R32 match we use the ACTUAL
+  // two teams that played (from the fixture), NOT the player's predicted slots —
+  // otherwise the real winner (esp. a real 3rd-placed team that differs from the
+  // predicted one) fails resolveBracketParticipants' participant check and never
+  // flows into R16. (Root cause of the "empty R16 slot" bug — see #3.)
+  const r32ForResolve = useMemo(() => {
+    const out: Record<number, { A: string | null; B: string | null }> = {};
+    for (const m of R32_MATCHES) {
+      const res = t?.results?.[m];
+      if (res?.winner) {
+        const fx = fixturesByMatch[m];
+        out[m] = {
+          A: fx?.teamA ?? t?.r32?.[m]?.A?.team ?? (r32 as any)[m]?.A ?? null,
+          B: fx?.teamB ?? t?.r32?.[m]?.B?.team ?? (r32 as any)[m]?.B ?? null,
+        };
+      } else out[m] = (r32 as any)[m] || { A: null, B: null };
+    }
+    return out;
+  }, [t, r32, fixturesByMatch]);
+
+  // R32 AUTO-CORRECT: once an R32 match is FINAL, its REAL winner (not the player's
   // guess) flows into the Round of 16. Reality overwrites a wrong early guess.
   const effectiveWinners = useMemo(() => {
     const w: Record<number, string> = { ...winners };
     for (const m of R32_MATCHES) { const res = t?.results?.[m]; if (res?.winner) w[m] = res.winner; }
     return w;
   }, [winners, t]);
-  const participants = useMemo(() => resolveBracketParticipants(r32 as any, effectiveWinners), [r32, effectiveWinners]);
+  const participants = useMemo(() => resolveBracketParticipants(r32ForResolve as any, effectiveWinners), [r32ForResolve, effectiveWinners]);
 
   const actualParticipants = useMemo(() => {
     const realR32: any = {};
@@ -324,11 +366,6 @@ export default function Bracket() {
     return resolveActualParticipants(realR32, t?.results || {});
   }, [t]);
 
-  const fixturesByMatch = useMemo(() => {
-    const map: Record<number, any> = {};
-    for (const f of (t?.fixtures || [])) if (f?.matchNumber != null) map[f.matchNumber] = f;
-    return map;
-  }, [t]);
   const matchStatus = useMemo(() => (m: number): { state: MatchState; res: any; fx: any } => {
     const res = t?.results?.[m];
     if (res && res.winner) return { state: 'decided', res, fx: fixturesByMatch[m] };
@@ -378,7 +415,7 @@ export default function Bracket() {
   }
 
   const partOf = (m: number): { A: string | null; B: string | null } =>
-    (ROUND_OF(m) === 'R32' ? r32[m] : participants[m]) || { A: null, B: null };
+    (ROUND_OF(m) === 'R32' ? r32ForResolve[m] : participants[m]) || { A: null, B: null };
 
   // ── one bracket card — ONE global correct/wrong coloring rule ──
   // mode 'rounds': R32 = single-tap-to-pick; R16→Final = sheet (mobile) / inline (desktop).
@@ -403,15 +440,21 @@ export default function Bracket() {
       if (st.state === 'live') return team === fx.teamA ? (fx.scoreA ?? null) : team === fx.teamB ? (fx.scoreB ?? null) : null;
       return null;
     };
+    const f = decided ? formatCompletedMatch({ manner: res?.manner, scoreA: res?.scoreA, scoreB: res?.scoreB, penA: res?.penA, penB: res?.penB }) : null;
+    // penalty tally per team (regulation score already comes from scoreFor) → "1 (3)"
+    const penFor = (team: string | null): number | null => {
+      if (!team || !fx || !f?.pen) return null;
+      return team === fx.teamA ? (res?.penA ?? null) : team === fx.teamB ? (res?.penB ?? null) : null;
+    };
     const slot = (team: string | null) => {
       const isPick = !!validPick && team === validPick;
       const isActual = decided && !!team && team === actualWinner;
-      const dim = decided && !!team && team !== actualWinner;   // loser dimmed (no strikethrough — matches reference)
-      const score = scoreFor(team);
+      const dim = decided && !!team && team !== actualWinner;   // loser dimmed (no strikethrough)
+      const score = scoreFor(team); const pen = penFor(team);
       const inner = (<>
         <Flag name={team} size={20} />
         <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{team || '—'}</span>
-        {score != null && <span className="tabular" style={{ fontWeight: 800 }}>{score}</span>}
+        {score != null && <span className="tabular" style={{ fontWeight: 800 }}>{score}{pen != null ? ` (${pen})` : ''}</span>}
         {isPick && !decided && <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="3"><path d="M5 13l4 4L19 7" /></svg>}
       </>);
       const baseStyle: React.CSSProperties = {
@@ -425,13 +468,21 @@ export default function Bracket() {
       return <div key={team || 'x'} style={baseStyle}>{inner}</div>;
     };
 
-    const f = decided ? formatCompletedMatch({ manner: res?.manner, scoreA: res?.scoreA, scoreB: res?.scoreB, penA: res?.penA, penB: res?.penB }) : null;
+    // shortened top-of-card manner tag: PEN → "(pens x–y)" only, ET → "AET", FT → "FT".
+    const cardTag = decided && f ? (f.pen ? (f.pens ? `(pens ${f.pens})` : '(pens)') : f.statusLabel) : '';
     const openInline = mode === 'rounds' && !isR32 && !isMobile && canPick;
     const cardOnClick = canPick
       ? (mode === 'tree' ? () => setSheet(m)
         : isR32 ? undefined
           : isMobile ? () => setSheet(m) : () => setExpandedMatch((e) => (e === m ? null : m)))
       : undefined;
+
+    // ONE consistent 2-line footer template for EVERY card.
+    let l1: string, l2: string;
+    if (decided) { l1 = rawPick ? `Your pick: ${rawPick}` : 'No pick made'; l2 = rawPick ? (correct ? 'Correct ✓' : 'Missed ✗') : 'Result final'; }
+    else if (validPick) { l1 = `✓ ${validPick}`; l2 = isR32 ? 'Tap a team to change' : `${MANNER_LABEL[manner[m] || 'FT']} · tap to change`; }
+    else if (canPick) { l1 = isR32 ? 'Pick a team' : 'Pick a winner'; l2 = isR32 ? 'Sets up your Round of 16' : 'Winner + manner'; }
+    else { l1 = 'Teams not set'; l2 = 'Waiting on the previous round'; }
 
     return (
       <div key={m} className={`card${r32cls}${tint}`} onClick={cardOnClick}
@@ -440,18 +491,16 @@ export default function Bracket() {
           <span className="faint" style={{ fontSize: 10, fontWeight: 700 }}>{mode === 'tree' ? `M${m}` : `${RL[round]} · M${m}`}</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             {st.state === 'live' && <StatusChip kind="live" />}
-            {decided && f && <span className="bb-decided" style={{ fontSize: 9.5, letterSpacing: '.04em' }}>{f.statusLabel}{f.pens ? ` (pens ${f.pens})` : ''}</span>}
+            {cardTag && <span className="bb-decided" style={{ fontSize: 9.5, letterSpacing: '.04em' }}>{cardTag}</span>}
           </span>
         </div>
         {slot(p.A)}
         {slot(p.B)}
-        {!decided && validPick && (
-          <div className="faint" style={{ fontSize: 10.5, fontWeight: 700, marginTop: 3, paddingLeft: 2 }}>
-            ✓ {validPick}{!isR32 ? ` · ${MANNER_SHORT[manner[m] || 'FT']}` : ''}{cardOnClick ? ' · tap to change' : ''}
+        {mode === 'rounds' && (
+          <div style={{ marginTop: 4 }}>
+            <div style={{ fontSize: 10.5, fontWeight: 700, color: !decided && validPick ? 'var(--green)' : 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l1}</div>
+            <div className="faint" style={{ fontSize: 9.5, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l2}</div>
           </div>
-        )}
-        {!decided && !validPick && canPick && (
-          <div style={{ fontSize: 10.5, fontWeight: 700, marginTop: 3, paddingLeft: 2, color: 'var(--green)' }}>{pick32 ? 'Tap a team →' : 'Tap to pick →'}</div>
         )}
         {openInline && expandedMatch === m && (
           <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--line)' }} onClick={(e) => e.stopPropagation()}>
@@ -462,12 +511,16 @@ export default function Bracket() {
     );
   }
 
-  // ── ROUNDS geometry: standard centered bracket (matches reference image) ──
+  // ── ROUNDS geometry: fixed-pitch, re-based per round (see computeGeom) ──
   const CARD_W = isMobile ? 158 : 178;
   const COLW = CARD_W + (isMobile ? 40 : 54);
-  const PITCH = isMobile ? 124 : 132;    // > card height so cards never overlap
-  const NODE_H = 104;                     // ≈ card height, so connectors meet card mid-edge
-  const geom = computeGeom(CARD_W, COLW, PITCH, NODE_H);
+  const PITCH = isMobile ? 138 : 146;    // > card height (2-line footer) so cards never overlap
+  const NODE_H = 118;                     // ≈ card height, so connectors meet card mid-edge
+  const geom = computeGeom(CARD_W, COLW, PITCH);
+  // canvas height tracks the tallest round in view (focused + next) — no dead space.
+  const canvasH = Math.max(ROUND_COUNTS[stageIdx], ROUND_COUNTS[Math.min(stageIdx + 1, ROUND_COUNTS.length - 1)]) * PITCH + 12;
+  // connectors: only those flowing OUT of the focused (base) round into the next.
+  const visLinks = geom.links.filter((l) => l.col === stageIdx);
 
   // pan so the focused round column sits at the left inset; clamp like a scroll.
   const inset = 10;
@@ -512,9 +565,9 @@ export default function Bracket() {
         <div className="bb-edge l"><span>‹</span></div>
         <div className="bb-edge r"><span>›</span></div>
         <div className="bb-rounds-wrap" ref={wrapRef} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-          <div className="bb-rounds-canvas" style={{ width: geom.W, height: geom.H, transform: `translateX(${translateX}px)` }}>
-            <svg width={geom.W} height={geom.H} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-              {geom.links.map((d, i) => <path key={i} d={d} fill="none" stroke="var(--line)" strokeWidth={2} />)}
+          <div className="bb-rounds-canvas" style={{ width: geom.W, height: canvasH, transform: `translateX(${translateX}px)` }}>
+            <svg width={geom.W} height={canvasH} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+              {visLinks.map((l, i) => <path key={i} d={l.d} fill="none" stroke="var(--line)" strokeWidth={2} />)}
             </svg>
             {ALL_MATCHES.map((m) => (
               <div key={m} className="bb-node" style={{ left: geom.x[m], top: geom.y[m] - NODE_H / 2, width: CARD_W, zIndex: expandedMatch === m ? 10 : 2 }}>
