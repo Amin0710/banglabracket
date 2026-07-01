@@ -72,6 +72,7 @@ apiRouter.put('/me/profile', requireAuth, validate(z.object({
 apiRouter.put('/me/id', requireAuth, validate(z.object({
   idType: z.enum(['nid', 'passport', 'birth_certificate']),
   idNumber: z.string().min(3).max(40),
+  idName: z.string().max(80).optional(),   // name as printed on the ID (reserved with the number)
   dob: z.string().max(20).optional(),
 })), async (req: AuthedRequest, res) => {
   const u = await User.findById(req.userId);
@@ -79,7 +80,7 @@ apiRouter.put('/me/id', requireAuth, validate(z.object({
   const idHmac = hmac(req.body.idType + ':' + req.body.idNumber);
   const taken = await User.findOne({ nidHmac: idHmac, _id: { $ne: u._id } }).lean();
   if (taken) return res.status(409).json({ error: 'id_already_used' });
-  u.nidEnc = encryptField(JSON.stringify({ type: req.body.idType, number: req.body.idNumber }));
+  u.nidEnc = encryptField(JSON.stringify({ type: req.body.idType, number: req.body.idNumber, name: req.body.idName || undefined }));
   u.nidHmac = idHmac;
   if (req.body.dob) u.dobEnc = encryptField(req.body.dob);
   await u.save();

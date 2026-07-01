@@ -3,7 +3,6 @@ import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-
 import { useAuth, type User } from './context/Providers';
 import { LogoMark, Wordmark, ThemeToggle, SubTabs } from './components/ui';
 import { api } from './lib/api';
-import { showLegal } from './lib/feedback';
 import LoginModal from './pages/SignIn';
 import OnboardModal from './pages/Onboard';
 import Bracket from './pages/Bracket';
@@ -34,11 +33,6 @@ function VerifyHub() {
   const [sub, setSub] = useState<V>('verify');
   return (
     <div>
-      <div className="bb-legal-row">
-        <button onClick={() => showLegal('terms')}>Terms</button>
-        <button onClick={() => showLegal('privacy')}>Privacy</button>
-        <button onClick={() => showLegal('deletion')}>Data deletion</button>
-      </div>
       <SubTabs<V> mobileOnly active={sub} onChange={setSub}
         tabs={[{ key: 'verify', label: 'Verify' }, { key: 'howtoplay', label: 'How to play' }, { key: 'scoring', label: 'Scoring' }, { key: 'prizes', label: 'Prizes' }]} />
       {sub === 'howtoplay' ? <HowToPlay /> : sub === 'scoring' ? <Scoring /> : sub === 'prizes' ? <Prizes /> : <Verify />}

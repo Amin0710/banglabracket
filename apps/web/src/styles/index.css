@@ -172,6 +172,11 @@ h1, h2, h3, .display { font-family: 'Baloo Da 2', system-ui, sans-serif; }
 @keyframes bbSheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 @keyframes bbSheetIn { from { transform: scale(.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
+/* ===== verify page helpers ===== */
+.bb-legal-link { background: none; border: none; padding: 0; color: var(--muted); font-size: 13px; text-decoration: underline; cursor: pointer; font-family: inherit; }
+.bb-legal-link:hover { color: var(--green); }
+.bb-verify-num { flex: 0 0 auto; width: 22px; height: 22px; border-radius: 999px; background: var(--gold); color: #1a1405; font-weight: 800; font-size: 12px; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+
 /* ===== info sub-nav (mobile Verify hub) ===== */
 @media (min-width: 901px) { .bb-legal-row { display: none; } }
 .bb-legal-row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
