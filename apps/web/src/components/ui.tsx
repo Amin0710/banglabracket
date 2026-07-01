@@ -118,6 +118,58 @@ export function Flag({ name, size = 24 }: { name?: string | null; size?: number 
     : <span className="flag" style={{ width: size, height: size * 0.66, background: 'var(--line)' }} />;
 }
 
+// Breakpoint hook — matches the CSS shell switch at 900px.
+export function useIsMobile(bp = 900): boolean {
+  const [m, setM] = useState(() => typeof window !== 'undefined' && window.innerWidth <= bp);
+  useEffect(() => {
+    const on = () => setM(window.innerWidth <= bp);
+    window.addEventListener('resize', on);
+    return () => window.removeEventListener('resize', on);
+  }, [bp]);
+  return m;
+}
+
+// Blinking teal LIVE dot (design token --teal).
+export function LiveDot({ size = 7, color = 'var(--teal)' }: { size?: number; color?: string }) {
+  return <span style={{ width: size, height: size, borderRadius: '50%', background: color, display: 'inline-block', animation: 'bbBlink 1.1s infinite' }} />;
+}
+
+// Soft-freeze status chips from the design.
+export function StatusChip({ kind }: { kind: 'r16live' | 'prizelocked' | 'bonuslocked' | 'live' }) {
+  const base: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 10.5, fontWeight: 800, letterSpacing: '.04em', padding: '4px 9px', borderRadius: 999, textTransform: 'uppercase' };
+  if (kind === 'r16live') return <span style={{ ...base, background: 'rgba(216,50,47,.12)', color: 'var(--bad)' }}><LiveDot color="var(--bad)" size={6} />R16 Live</span>;
+  if (kind === 'live') return <span style={{ ...base, background: 'rgba(216,50,47,.12)', color: 'var(--bad)' }}><LiveDot color="var(--teal)" size={6} />Live</span>;
+  if (kind === 'prizelocked') return <span style={{ ...base, background: 'var(--goldSoft)', color: 'var(--goldText)' }}>🔒 Prize locked out</span>;
+  return <span style={{ ...base, background: 'var(--surface2)', color: 'var(--faint)' }}>Bonus round · locked</span>;
+}
+
+// "Not eligible for grand prize" badge (My Entry, once grandPrizeEligible === false).
+export function NotEligibleBadge() {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, padding: '5px 11px', borderRadius: 999, background: 'var(--goldSoft)', color: 'var(--goldText)', border: '1px solid var(--goldLine)' }}>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
+      Not eligible for grand prize
+    </span>
+  );
+}
+
+// Segmented sub-tab bar. `mobileOnly` hides it on desktop (sidebar handles those routes).
+export function SubTabs<T extends string>({ tabs, active, onChange, mobileOnly }: {
+  tabs: { key: T; label: string }[]; active: T; onChange: (k: T) => void; mobileOnly?: boolean;
+}) {
+  return (
+    <div className={mobileOnly ? 'bb-subtabs bb-subtabs-mobileonly' : 'bb-subtabs'}>
+      {tabs.map((t) => (
+        <button key={t.key} onClick={() => onChange(t.key)}
+          style={{ flex: 1, whiteSpace: 'nowrap', padding: '8px 12px', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13.5, fontFamily: 'inherit',
+            background: active === t.key ? 'var(--surface)' : 'transparent', color: active === t.key ? 'var(--green)' : 'var(--muted)', boxShadow: active === t.key ? '0 2px 8px rgba(0,0,0,.08)' : 'none' }}>
+          {t.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function PageHeader({ title, subtitle, lockAt, right }: { title: string; subtitle?: string; lockAt?: string; right?: React.ReactNode }) {
   return (
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap', marginBottom: 20 }}>

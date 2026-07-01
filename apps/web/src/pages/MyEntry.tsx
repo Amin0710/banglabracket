@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { KO_MATCHES } from '@banglabracket/shared';
 import { api } from '../lib/api';
 import { useAuth } from '../context/Providers';
-import { PageHeader, Flag } from '../components/ui';
+import { PageHeader, Flag, NotEligibleBadge } from '../components/ui';
+import { ShareCard } from '../components/ShareCard';
 import { toast, confirmDialog } from '../lib/feedback';
 
 const RL: Record<string, string> = { R16: 'Round of 16', QF: 'Quarter-finals', SF: 'Semi-finals', THIRD: 'Third place', FINAL: 'Final' };
@@ -47,7 +48,8 @@ export default function MyEntry() {
 
   return (
     <div>
-      <PageHeader title="My Entry" subtitle="Your picks and points, projected live" lockAt={t?.lockAt} />
+      <PageHeader title="My Entry" subtitle="Your picks and points, projected live" lockAt={t?.lockAt}
+        right={data.grandPrizeEligible === false ? <NotEligibleBadge /> : undefined} />
       {!user.verified && (
         <div className="card" style={{ padding: 14, borderColor: 'var(--gold)', marginBottom: 16, display: 'flex', gap: 8, alignItems: 'center' }}>
           ⚠️ Verify your ID before the 3rd-place match to be eligible for prizes. <a onClick={() => nav('/verify')} style={{ color: 'var(--green)', cursor: 'pointer', fontWeight: 600 }}>Verify now →</a>
@@ -140,6 +142,14 @@ export default function MyEntry() {
         <span>Your verification code</span>
         <code className="pill pill-gold" style={{ fontSize: 15 }}>{user.verificationCode}</code>
       </div>
+
+      {/* Share card — available once the bracket is complete (all picks made). */}
+      {data.bracketComplete && t && (
+        <div style={{ marginTop: 18 }}>
+          <div className="faint" style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.08em', marginBottom: 8 }}>SHARE YOUR BRACKET</div>
+          <ShareCard prediction={data.entry.prediction} base={t.base} remaining={t.remaining} userName={user.name} />
+        </div>
+      )}
 
       {!data.entry.rePicked && (
         <button className="btn" onClick={repick} disabled={busy} style={{ marginTop: 16 }}>Start fresh — free re-pick (clears bonus points)</button>

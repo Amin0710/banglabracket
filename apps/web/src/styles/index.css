@@ -99,6 +99,39 @@ h1, h2, h3, .display { font-family: 'Baloo Da 2', system-ui, sans-serif; }
 
 @keyframes bbGlow { 0%, 100% { opacity: .45 } 50% { opacity: 1 } }
 
+/* ===== segmented sub-tabs ===== */
+.bb-subtabs {
+  display: flex; gap: 4px; padding: 4px; margin-bottom: 16px;
+  background: var(--surface2); border: 1px solid var(--line); border-radius: 13px;
+}
+@media (min-width: 901px) { .bb-subtabs-mobileonly { display: none; } }
+
+/* ===== bracket: view-mode toggle ===== */
+.bb-viewtoggle { display: inline-flex; gap: 3px; padding: 3px; background: var(--surface2); border: 1px solid var(--line); border-radius: 12px; }
+.bb-viewtoggle button {
+  border: none; cursor: pointer; font-family: inherit; font-weight: 700; font-size: 13px;
+  padding: 7px 14px; border-radius: 9px; background: transparent; color: var(--muted); transition: .15s;
+}
+.bb-viewtoggle button[data-active="true"] { background: var(--green); color: #fff; }
+
+/* ===== bracket: rounds view (one round; swipe on mobile) ===== */
+.bb-round-track { touch-action: pan-y; }
+
+/* ===== bracket: whole two-sided map (pan/scroll) ===== */
+.bb-map-scroll { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; padding-bottom: 8px; }
+.bb-map { display: flex; align-items: stretch; gap: 10px; min-width: max-content; padding: 4px; }
+.bb-map-col { display: flex; flex-direction: column; justify-content: space-around; gap: 8px; min-width: 150px; }
+.bb-map-col.compact { min-width: 132px; }
+.bb-map-center { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px; min-width: 168px; }
+
+/* decided score/manner shown in gold, both themes */
+.bb-decided { color: var(--goldText); font-weight: 800; }
+
+/* ===== info sub-nav (mobile Verify hub) ===== */
+@media (min-width: 901px) { .bb-legal-row { display: none; } }
+.bb-legal-row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
+.bb-legal-row button { background: none; border: none; padding: 0; color: var(--faint); font-size: 12px; text-decoration: underline; cursor: pointer; font-family: inherit; }
+
 /* responsive shell: sidebar on desktop, bottom-nav on mobile */
 .bb-bottomnav { display: none; }
 .bb-mobileheader { display: none; }

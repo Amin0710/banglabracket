@@ -126,6 +126,21 @@ export function showLegal(key: LegalKey) {
 	});
 }
 
+// Two-step soft-freeze (Model Y) warning: shown before an edit made AFTER the
+// R16 kickoff. Resolves true only if the user confirms forfeiting the grand prize;
+// "Keep editing" here means CANCEL the edit (keep current picks / eligibility).
+export function confirmFreezeEdit(): Promise<boolean> {
+	return confirmDialog({
+		title: 'Editing forfeits the grand prize',
+		message:
+			'The Round of 16 has kicked off. Editing your bracket now keeps your picks live, ' +
+			'but makes you <b>ineligible for the ৳1,00,000 grand prize</b>. This cannot be undone.',
+		confirmText: 'Edit anyway',
+		cancelText: 'Keep my picks',
+		danger: true,
+	});
+}
+
 // Promise-based confirm modal (replaces window.confirm).
 export function confirmDialog(opts: {
 	title?: string;

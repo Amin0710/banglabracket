@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth, type User } from './context/Providers';
-import { LogoMark, Wordmark, ThemeToggle } from './components/ui';
+import { LogoMark, Wordmark, ThemeToggle, SubTabs } from './components/ui';
 import { api } from './lib/api';
+import { showLegal } from './lib/feedback';
 import LoginModal from './pages/SignIn';
 import OnboardModal from './pages/Onboard';
 import Bracket from './pages/Bracket';
@@ -14,6 +15,36 @@ import Scoring from './pages/Scoring';
 import Prizes from './pages/Prizes';
 import Winners from './pages/Winners';
 import Admin from './pages/Admin';
+
+// ── Mobile hubs: bottom-nav entry points that expose their sibling INFO/secondary
+// pages as top sub-tabs. On desktop the sub-tabs hide (sidebar handles those routes).
+function LeaderboardHub() {
+  const [sub, setSub] = useState<'leaderboard' | 'winners'>('leaderboard');
+  return (
+    <div>
+      <SubTabs<'leaderboard' | 'winners'> mobileOnly active={sub} onChange={setSub}
+        tabs={[{ key: 'leaderboard', label: 'Leaderboard' }, { key: 'winners', label: 'Winners' }]} />
+      {sub === 'winners' ? <Winners /> : <Leaderboard />}
+    </div>
+  );
+}
+
+function VerifyHub() {
+  type V = 'verify' | 'howtoplay' | 'scoring' | 'prizes';
+  const [sub, setSub] = useState<V>('verify');
+  return (
+    <div>
+      <div className="bb-legal-row">
+        <button onClick={() => showLegal('terms')}>Terms</button>
+        <button onClick={() => showLegal('privacy')}>Privacy</button>
+        <button onClick={() => showLegal('deletion')}>Data deletion</button>
+      </div>
+      <SubTabs<V> mobileOnly active={sub} onChange={setSub}
+        tabs={[{ key: 'verify', label: 'Verify' }, { key: 'howtoplay', label: 'How to play' }, { key: 'scoring', label: 'Scoring' }, { key: 'prizes', label: 'Prizes' }]} />
+      {sub === 'howtoplay' ? <HowToPlay /> : sub === 'scoring' ? <Scoring /> : sub === 'prizes' ? <Prizes /> : <Verify />}
+    </div>
+  );
+}
 
 interface NavItem { to: string; label: string; icon: string; info?: boolean; admin?: boolean; }
 const NAV: NavItem[] = [
@@ -188,8 +219,8 @@ export default function App() {
               <Route path="/" element={null} />
               <Route path="/bracket" element={<Bracket />} />
               <Route path="/entry" element={<MyEntry />} />
-              <Route path="/leaderboard" element={<Leaderboard />} />
-              <Route path="/verify" element={<Verify />} />
+              <Route path="/leaderboard" element={<LeaderboardHub />} />
+              <Route path="/verify" element={<VerifyHub />} />
               <Route path="/howtoplay" element={<HowToPlay />} />
               <Route path="/scoring" element={<Scoring />} />
               <Route path="/prizes" element={<Prizes />} />
