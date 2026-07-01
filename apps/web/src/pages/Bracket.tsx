@@ -51,25 +51,42 @@ const ROUND_LISTS: number[][] = [
   [101, 102],
   [104, 103],
 ];
-const ROUND_COUNTS = ROUND_LISTS.map((l) => l.length);
+// ONE-ROUND-PER-PAGE geometry, focus-aware so it reads as a real bracket.
+//   • The FOCUSED round is top-anchored at fixed pitch (a clean column of feeders).
+//   • Every LATER round is vertically CENTERED between its two feeders (from
+//     MATCH_DEF), so two cards visibly merge into one — the classic bracket shape.
+//   • `stride` puts the next round's left edge ~PEEK px inside the band's right
+//     edge; the band clips everything past it, so only ONE round + a ~10% sliver show.
+//   • Elbow connectors are emitted ONLY for the focused round → its next round.
+function computeGeom(CARD_W: number, stride: number, PITCH: number, leftInset: number, focusCol: number) {
+  const y: Record<number, number> = {}; const x: Record<number, number> = {};
+  ROUND_LISTS.forEach((list, c) => list.forEach((m) => { x[m] = c * stride + leftInset; }));
 
-// ONE-ROUND-PER-PAGE geometry. Each round is a page `stride` wide, laid out on the
-// SAME fixed pitch, top-anchored (every round looks exactly like R32 does). `stride`
-// is sized so that when a round is focused it fills the view and only the NEXT round
-// peeks ~10% at the right edge; everything else is panned off-screen. Connectors join
-// true feeder pairs (MATCH_DEF) with clean elbows against the focused round's positions.
-function computeGeom(CARD_W: number, stride: number, PITCH: number, leftInset: number) {
-  const y: Record<number, number> = {}; const x: Record<number, number> = {}; const col: Record<number, number> = {};
-  ROUND_LISTS.forEach((list, c) => list.forEach((m, i) => { y[m] = i * PITCH + PITCH / 2; x[m] = c * stride + leftInset; col[m] = c; }));
-  const W = (ROUND_LISTS.length - 1) * stride + leftInset + CARD_W;
-  // links tagged with the FEEDER's round column, so the view shows only the connectors
-  // flowing out of the currently-focused (base) round into its peeking next round.
-  const links: { d: string; col: number }[] = [];
-  for (const m of ALL_MATCHES) for (const k of koChildren(m)) {
-    const x1 = x[k] + CARD_W, x2 = x[m], mx = (x1 + x2) / 2;
-    links.push({ d: `M${x1} ${y[k]} H${mx} V${y[m]} H${x2}`, col: col[k] });
+  // focused round: top-anchored, fixed pitch
+  ROUND_LISTS[focusCol].forEach((m, i) => { y[m] = i * PITCH + PITCH / 2; });
+  // rounds before focus (off-screen left, clipped): top-anchored too
+  for (let c = focusCol - 1; c >= 0; c--) ROUND_LISTS[c].forEach((m, i) => { y[m] = i * PITCH + PITCH / 2; });
+  // rounds after focus: each child centered between its two (already-placed) feeders
+  for (let c = focusCol + 1; c < ROUND_LISTS.length; c++) {
+    ROUND_LISTS[c].forEach((m, i) => {
+      const feeders = koChildren(m).filter((k) => y[k] != null);
+      y[m] = feeders.length ? feeders.reduce((s, k) => s + y[k], 0) / feeders.length
+        : (m === 103 && y[104] != null ? y[104] + PITCH * 1.4 : i * PITCH + PITCH / 2); // 3rd-place has no W-feeders
+    });
   }
-  return { x, y, col, W, links };
+
+  const W = (ROUND_LISTS.length - 1) * stride + leftInset + CARD_W;
+  // elbow connectors: for each child in the round AFTER focus, join both feeders
+  //   feeder right edge → out to mid-x → vertical to the (centered) child y → into child left edge.
+  const links: string[] = [];
+  for (const m of ROUND_LISTS[focusCol + 1] || []) {
+    for (const k of koChildren(m)) {
+      if (y[k] == null || x[k] == null) continue;
+      const x1 = x[k] + CARD_W, x2 = x[m], mx = (x1 + x2) / 2;
+      links.push(`M ${x1} ${y[k]} H ${mx} V ${y[m]} H ${x2}`);
+    }
+  }
+  return { x, y, W, links };
 }
 
 function currentStageIdx(t: any): number {
@@ -270,6 +287,7 @@ export default function Bracket() {
   const skipFirstSave = useRef(true);
   const didInitStage = useRef(false);
   const wrapRef = useRef<HTMLDivElement | null>(null);
+  const outerRef = useRef<HTMLDivElement | null>(null);   // full available width (for the centered band)
   const touch = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
@@ -316,7 +334,7 @@ export default function Bracket() {
 
   // measure the pan viewport (for clamped translate)
   useEffect(() => {
-    const on = () => setWrapW(wrapRef.current?.clientWidth || 0);
+    const on = () => setWrapW(outerRef.current?.clientWidth || 0);
     on(); window.addEventListener('resize', on);
     return () => window.removeEventListener('resize', on);
   }, [t, tab, view]);
@@ -529,19 +547,18 @@ export default function Bracket() {
   const PITCH = isMobile ? 138 : 146;    // > card height (2-line footer) so cards never overlap
   const NODE_H = 118;                     // ≈ card height, so connectors meet card mid-edge
   const PEEK = Math.round(CARD_W * 0.12); // ~12% (flags/sliver) of the next round shows at the right
-  // Keep the round in a readable band (capped on wide desktops) and CENTER it, so a
-  // single round doesn't strand at the far-left with long connectors across dead space.
+  const inset = 8;
+  // The BAND is the clipping window: one round + a ~10% peek, centered on wide screens.
+  // Capping it (and clipping to it) is what stops a second full round from showing.
   const vw = wrapW || 360;
   const bandW = Math.min(vw, 560);
-  const bandLeft = Math.max(0, (vw - bandW) / 2);
-  // one round = one page; stride sized so the next round peeks PEEK px at the band's right edge.
-  const stride = Math.max(CARD_W + 60, bandW - PEEK);
-  const geom = computeGeom(CARD_W, stride, PITCH, bandLeft);
-  // canvas height = the FOCUSED round's own spacing (independent of other rounds).
-  const canvasH = ROUND_COUNTS[stageIdx] * PITCH + 12;
-  // connectors: only those flowing OUT of the focused round into its peeking next round.
-  const visLinks = geom.links.filter((l) => l.col === stageIdx);
-  // page pan: focused round to the left inset, one full page per round (no scroll clamp).
+  // one round = one page; the next round's left edge sits PEEK px inside the band's right edge.
+  const stride = Math.max(CARD_W + 60, bandW - PEEK - inset);
+  const geom = computeGeom(CARD_W, stride, PITCH, inset, stageIdx);
+  // canvas height covers the focused round + its (centered) next round's extent.
+  const visNodes = [...ROUND_LISTS[stageIdx], ...(ROUND_LISTS[stageIdx + 1] || [])];
+  const canvasH = Math.max(...visNodes.map((m) => geom.y[m] ?? 0)) + NODE_H / 2 + 12;
+  // page pan: bring the focused round to the band's left inset, one full page per round.
   const translateX = -(stageIdx * stride);
 
   const go = (dir: -1 | 1) => setStageIdx((i) => Math.min(STAGES.length - 1, Math.max(0, i + dir)));
@@ -581,16 +598,17 @@ export default function Bracket() {
           <button onClick={() => setShowR32Hint(false)} aria-label="Dismiss" style={{ border: 'none', background: 'transparent', color: 'var(--muted)', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>×</button>
         </div>
       )}
-      <div style={{ position: 'relative' }}>
+      <div ref={outerRef} style={{ position: 'relative' }}>
         {/* edge swipe cues are a MOBILE-only affordance — never render on web */}
         {isMobile && <><div className="bb-edge l"><span>‹</span></div><div className="bb-edge r"><span>›</span></div></>}
-        <div className="bb-rounds-wrap" ref={wrapRef} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+        {/* the band is the clip window: width = one round + a ~10% peek, centered */}
+        <div className="bb-rounds-wrap" ref={wrapRef} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} style={{ width: bandW, margin: '0 auto' }}>
           <div className="bb-rounds-canvas" style={{ width: geom.W, height: canvasH, transform: `translateX(${translateX}px)` }}>
-            <svg width={geom.W} height={canvasH} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-              {visLinks.map((l, i) => <path key={i} d={l.d} fill="none" stroke="var(--line)" strokeWidth={2} />)}
+            <svg width={geom.W} height={canvasH} style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'visible' }}>
+              {geom.links.map((d, i) => <path key={i} d={d} fill="none" stroke="var(--faint)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />)}
             </svg>
             {ALL_MATCHES.map((m) => (
-              <div key={m} className="bb-node" style={{ left: geom.x[m], top: geom.y[m] - NODE_H / 2, width: CARD_W, zIndex: expandedMatch === m ? 10 : 2 }}>
+              <div key={m} className="bb-node" style={{ left: geom.x[m], top: (geom.y[m] ?? 0) - NODE_H / 2, width: CARD_W, zIndex: expandedMatch === m ? 10 : 2 }}>
                 {renderCard(m, 'rounds')}
               </div>
             ))}
