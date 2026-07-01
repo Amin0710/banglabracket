@@ -448,7 +448,10 @@ export default function Bracket() {
   // ── one bracket card — ONE global correct/wrong coloring rule ──
   // mode 'rounds': R32 = single-tap-to-pick; R16→Final = sheet (mobile) / inline (desktop).
   // mode 'tree'  : whole-bracket map — unchanged (tap opens the sheet).
-  function renderCard(m: number, mode: 'rounds' | 'tree') {
+  function renderCard(m: number, mode: 'rounds' | 'tree', focused = true) {
+    // preview = a non-focused round (the peeking next round). It shows the real
+    // matchup (teams or TBD) read-only; tapping it advances to that round.
+    const preview = mode === 'rounds' && !focused;
     const p = partOf(m); const round = ROUND_OF(m); const isR32 = round === 'R32';
     const st = matchStatus(m); const decided = st.state === 'decided';
     const rawPick = winners[m] || null;
@@ -456,7 +459,8 @@ export default function Bracket() {
     const actualWinner = decided ? st.res?.winner : null;
     const correct = decided && rawPick ? rawPick === actualWinner : null;
     // #6: a LIVE match is still pickable — only a DECIDED match locks the bracket pick.
-    const canPick = !decided && !!p.A && !!p.B;
+    // A preview (peek) card is never directly pickable — you advance to that round first.
+    const canPick = !decided && !!p.A && !!p.B && !preview;
     const tint = correct === true ? ' bb-correct' : correct === false ? ' bb-wrong' : '';
     const r32cls = isR32 && !decided ? ' bb-r32tile' : '';
     const res = st.res; const fx = st.fx;
@@ -483,7 +487,7 @@ export default function Bracket() {
       const score = scoreFor(team); const pen = penFor(team);
       const inner = (<>
         <Flag name={team} size={20} />
-        <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{team || '—'}</span>
+        <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: team ? undefined : 'var(--faint)' }}>{team || 'TBD'}</span>
         {score != null && <span className="tabular" style={{ fontWeight: 800 }}>{score}{pen != null ? ` (${pen})` : ''}</span>}
         {isPick && !decided && <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="3"><path d="M5 13l4 4L19 7" /></svg>}
       </>);
@@ -502,11 +506,13 @@ export default function Bracket() {
     // PEN → "PEN", ET → "AET", normal → "FT". No score repeated in the tag.
     const cardTag = decided && f ? (f.pen ? 'PEN' : f.statusLabel) : '';
     const openInline = mode === 'rounds' && !isR32 && !isMobile && canPick;
-    const cardOnClick = canPick
-      ? (mode === 'tree' ? () => setSheet(m)
-        : isR32 ? undefined
-          : isMobile ? () => setSheet(m) : () => setExpandedMatch((e) => (e === m ? null : m)))
-      : undefined;
+    const cardOnClick = preview
+      ? () => setStageIdx(ROUND_COL[round] ?? stageIdx)   // tap the peek → advance to that round
+      : canPick
+        ? (mode === 'tree' ? () => setSheet(m)
+          : isR32 ? undefined
+            : isMobile ? () => setSheet(m) : () => setExpandedMatch((e) => (e === m ? null : m)))
+        : undefined;
 
     // ONE consistent 2-line footer template for EVERY card.
     let l1: string, l2: string;
@@ -527,12 +533,13 @@ export default function Bracket() {
         </div>
         {slot(p.A, 'A')}
         {slot(p.B, 'B')}
-        {mode === 'rounds' && (
+        {mode === 'rounds' && !preview && (
           <div style={{ marginTop: 4 }}>
             <div style={{ fontSize: 10.5, fontWeight: 700, color: !decided && validPick ? 'var(--green)' : 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l1}</div>
             <div className="faint" style={{ fontSize: 9.5, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l2}</div>
           </div>
         )}
+        {preview && <div className="faint" style={{ fontSize: 9.5, fontWeight: 700, marginTop: 4, overflow: 'hidden', whiteSpace: 'nowrap' }}>Next round →</div>}
         {openInline && expandedMatch === m && (
           <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--line)' }} onClick={(e) => e.stopPropagation()}>
             <PickBody compact A={p.A} B={p.B} initialWinner={validPick} initialManner={manner[m] || 'FT'} onConfirm={(w, mn) => applyPick(m, w, mn)} />
@@ -542,23 +549,23 @@ export default function Bracket() {
     );
   }
 
-  // ── ROUNDS geometry: one round per page + ~10% peek of the next (see computeGeom) ──
+  // ── ROUNDS geometry: COMPACT one round + a tight peek of the next (see computeGeom) ──
   const CARD_W = isMobile ? 158 : 178;
   const PITCH = isMobile ? 138 : 146;    // > card height (2-line footer) so cards never overlap
   const NODE_H = 118;                     // ≈ card height, so connectors meet card mid-edge
-  const PEEK = Math.round(CARD_W * 0.12); // ~12% (flags/sliver) of the next round shows at the right
   const inset = 8;
-  // The BAND is the clipping window: one round + a ~10% peek, centered on wide screens.
-  // Capping it (and clipping to it) is what stops a second full round from showing.
+  const GAP = isMobile ? 44 : 60;         // SHORT horizontal elbow reach — cards sit close together
+  const peekW = isMobile ? 60 : 78;       // visible sliver of the next round (enough to show flags + names)
   const vw = wrapW || 360;
-  const bandW = Math.min(vw, 560);
-  // one round = one page; the next round's left edge sits PEEK px inside the band's right edge.
-  const stride = Math.max(CARD_W + 60, bandW - PEEK - inset);
+  // one round = one page; stride is just the focused card + the short elbow gap, so the
+  // next round sits RIGHT beside it (no large empty band). The band is the clip window.
+  const stride = CARD_W + GAP;
+  const bandW = Math.min(vw, inset + CARD_W + GAP + peekW);
   const geom = computeGeom(CARD_W, stride, PITCH, inset, stageIdx);
   // canvas height covers the focused round + its (centered) next round's extent.
   const visNodes = [...ROUND_LISTS[stageIdx], ...(ROUND_LISTS[stageIdx + 1] || [])];
   const canvasH = Math.max(...visNodes.map((m) => geom.y[m] ?? 0)) + NODE_H / 2 + 12;
-  // page pan: bring the focused round to the band's left inset, one full page per round.
+  // page pan: bring the focused round to the band's left inset, one page per round.
   const translateX = -(stageIdx * stride);
 
   const go = (dir: -1 | 1) => setStageIdx((i) => Math.min(STAGES.length - 1, Math.max(0, i + dir)));
@@ -598,18 +605,18 @@ export default function Bracket() {
           <button onClick={() => setShowR32Hint(false)} aria-label="Dismiss" style={{ border: 'none', background: 'transparent', color: 'var(--muted)', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>×</button>
         </div>
       )}
-      <div ref={outerRef} style={{ position: 'relative' }}>
+      <div ref={outerRef} style={{ position: 'relative' }} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         {/* edge swipe cues are a MOBILE-only affordance — never render on web */}
         {isMobile && <><div className="bb-edge l"><span>‹</span></div><div className="bb-edge r"><span>›</span></div></>}
-        {/* the band is the clip window: width = one round + a ~10% peek, centered */}
-        <div className="bb-rounds-wrap" ref={wrapRef} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} style={{ width: bandW, margin: '0 auto' }}>
+        {/* the band is the clip window: width = one round + a tight peek, centered */}
+        <div className="bb-rounds-wrap" ref={wrapRef} style={{ width: bandW, margin: '0 auto' }}>
           <div className="bb-rounds-canvas" style={{ width: geom.W, height: canvasH, transform: `translateX(${translateX}px)` }}>
             <svg width={geom.W} height={canvasH} style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'visible' }}>
               {geom.links.map((d, i) => <path key={i} d={d} fill="none" stroke="var(--faint)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />)}
             </svg>
             {ALL_MATCHES.map((m) => (
               <div key={m} className="bb-node" style={{ left: geom.x[m], top: (geom.y[m] ?? 0) - NODE_H / 2, width: CARD_W, zIndex: expandedMatch === m ? 10 : 2 }}>
-                {renderCard(m, 'rounds')}
+                {renderCard(m, 'rounds', ROUND_LISTS[stageIdx].includes(m))}
               </div>
             ))}
           </div>

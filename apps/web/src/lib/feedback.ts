@@ -59,12 +59,12 @@ const LEGAL_CONTENT = {
 		title: "Terms of Play",
 		html: `
       <p><b>Free to play.</b> BanglaBracket is a free prediction game for the 2026 World Cup. No entry fee, no purchase, no card required.</p>
-      <p><b>Eligibility.</b> Prizes are for Bangladeshi nationals (by nationality, not residence) aged 18+. You can play and win from anywhere in the world. Winners must verify their identity before prizes are paid.</p>
+      <p><b>Eligibility.</b> Prizes are for Bangladeshi nationals (by nationality, not residence) aged 13+. You can play and win from anywhere in the world. Winners must verify their identity before prizes are paid.</p>
       <p><b>Winners on the Wall &amp; social media.</b> If you appear on the leaderboard or win, your <b>display name and profile photo may be shown publicly</b> on the Winners Wall and shared by BanglaBracket on social media to announce results and winners. By playing, you consent to this use of your name and image for these purposes.</p>
       <p><b>Admin decisions.</b> All admin decisions are final. BanglaBracket may withhold or reallocate any prize — including paying the next eligible player — at its sole discretion and without explanation, including where cheating or multiple/fake accounts are suspected. We are not obligated to disclose our reasoning.</p>
       <p><b>Fair play.</b> One account per person. Multiple, fake, or automated accounts may be disqualified. You can edit your bracket any time. Once the Round of 16 kicks off, you can still edit, but doing so removes you from the grand-prize competition (you can keep playing). Each match locks for the cash game when that match kicks off.</p>
       <p><b>Prizes.</b> The grand prize is ৳1,00,000 for the top of the points leaderboard. Additional cash rewards are paid for exact knockout scorelines. Prize details may be updated before the Round of 16 kicks off; the current rules in-app govern.</p>
-      <p><b>Not affiliated</b> with FIFA or any official body. Play responsibly. 18+.</p>`,
+      <p><b>Not affiliated</b> with FIFA or any official body. Play responsibly. 13+.</p>`,
 	},
 	privacy: {
 		title: "Privacy Policy",
@@ -131,12 +131,12 @@ export function showLegal(key: LegalKey) {
 // "Keep editing" here means CANCEL the edit (keep current picks / eligibility).
 export function confirmFreezeEdit(): Promise<boolean> {
 	return confirmDialog({
-		title: 'Editing forfeits the grand prize',
+		title: "Editing forfeits the grand prize",
 		message:
-			'The Round of 16 has kicked off. Editing your bracket now keeps your picks live, ' +
-			'but makes you <b>ineligible for the ৳1,00,000 grand prize</b>. This cannot be undone.',
-		confirmText: 'Edit anyway',
-		cancelText: 'Keep my picks',
+			"The Round of 16 has kicked off. Editing your bracket now keeps your picks live, " +
+			"but makes you <b>ineligible for the ৳1,00,000 grand prize</b>. This cannot be undone.",
+		confirmText: "Edit anyway",
+		cancelText: "Keep my picks",
 		danger: true,
 	});
 }
