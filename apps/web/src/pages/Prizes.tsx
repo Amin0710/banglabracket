@@ -163,7 +163,7 @@ export default function Prizes() {
 						borderTop: "1px solid var(--line)",
 					}}>
 					Runner-up and third-place prizes (if offered) will be announced before
-					lock. The current confirmed prize is ৳1,00,000 for #1.
+					the Round of 16 kicks off. The current confirmed prize is ৳1,00,000 for #1.
 				</div>
 			</div>
 

@@ -414,8 +414,18 @@ export default function Bracket() {
     setScorePred((s) => ({ ...s, [m]: { a: side === 'a' ? v : (s[m]?.a ?? ''), b: side === 'b' ? v : (s[m]?.b ?? '') } }));
   }
 
-  const partOf = (m: number): { A: string | null; B: string | null } =>
-    (ROUND_OF(m) === 'R32' ? r32ForResolve[m] : participants[m]) || { A: null, B: null };
+  // A knockout match has EXACTLY two participants. Once it's live/decided we show
+  // the REAL fixture teams (never a stale predicted/empty slot); otherwise the two
+  // predicted feeders; otherwise two nulls (rendered as placeholders). Always {A,B}.
+  const partOf = (m: number): { A: string | null; B: string | null } => {
+    const base = (ROUND_OF(m) === 'R32' ? r32ForResolve[m] : participants[m]) || { A: null, B: null };
+    const s = matchStatus(m);
+    if (s.state === 'decided' || s.state === 'live') {
+      const fx = fixturesByMatch[m];
+      return { A: fx?.teamA ?? base.A ?? null, B: fx?.teamB ?? base.B ?? null };
+    }
+    return { A: base.A ?? null, B: base.B ?? null };
+  };
 
   // ── one bracket card — ONE global correct/wrong coloring rule ──
   // mode 'rounds': R32 = single-tap-to-pick; R16→Final = sheet (mobile) / inline (desktop).
@@ -446,7 +456,9 @@ export default function Bracket() {
       if (!team || !fx || !f?.pen) return null;
       return team === fx.teamA ? (res?.penA ?? null) : team === fx.teamB ? (res?.penB ?? null) : null;
     };
-    const slot = (team: string | null) => {
+    // slotKey is STABLE ('A'/'B') so React always reconciles exactly two rows in
+    // place — a resolving feeder replaces its slot rather than leaving a ghost row.
+    const slot = (team: string | null, slotKey: 'A' | 'B') => {
       const isPick = !!validPick && team === validPick;
       const isActual = decided && !!team && team === actualWinner;
       const dim = decided && !!team && team !== actualWinner;   // loser dimmed (no strikethrough)
@@ -462,10 +474,10 @@ export default function Bracket() {
         background: isPick && !decided ? 'var(--greenSoft)' : 'transparent', opacity: dim ? .5 : 1, fontWeight: (isActual || isPick) ? 800 : 600,
       };
       if (pick32 && team) return (
-        <button key={team} onClick={(e) => { e.stopPropagation(); applyPick(m, team, 'FT'); }}
+        <button key={slotKey} onClick={(e) => { e.stopPropagation(); applyPick(m, team, 'FT'); }}
           style={{ ...baseStyle, width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--ink)' }}>{inner}</button>
       );
-      return <div key={team || 'x'} style={baseStyle}>{inner}</div>;
+      return <div key={slotKey} style={baseStyle}>{inner}</div>;
     };
 
     // short top-of-card manner tag (team rows already show the "1 (3)" pen score):
@@ -495,8 +507,8 @@ export default function Bracket() {
             {cardTag && <span className="bb-decided" style={{ fontSize: 9.5, letterSpacing: '.04em' }}>{cardTag}</span>}
           </span>
         </div>
-        {slot(p.A)}
-        {slot(p.B)}
+        {slot(p.A, 'A')}
+        {slot(p.B, 'B')}
         {mode === 'rounds' && (
           <div style={{ marginTop: 4 }}>
             <div style={{ fontSize: 10.5, fontWeight: 700, color: !decided && validPick ? 'var(--green)' : 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l1}</div>

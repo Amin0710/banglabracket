@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { KO_MATCHES } from '@banglabracket/shared';
 import { api } from '../lib/api';
 import { useAuth } from '../context/Providers';
-import { PageHeader, Flag, NotEligibleBadge } from '../components/ui';
+import { PageHeader, Flag, NotEligibleBadge, useIsMobile } from '../components/ui';
 import { ShareCard } from '../components/ShareCard';
 import { toast, confirmDialog } from '../lib/feedback';
 
@@ -11,7 +11,8 @@ const RL: Record<string, string> = { R16: 'Round of 16', QF: 'Quarter-finals', S
 const MULT: Record<string, number> = { R16: 100, QF: 200, SF: 300, THIRD: 400, FINAL: 500 };
 
 export default function MyEntry() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const isMobile = useIsMobile();
   const nav = useNavigate();
   const [data, setData] = useState<any>(null);
   const [t, setT] = useState<any>(null);
@@ -48,6 +49,19 @@ export default function MyEntry() {
 
   return (
     <div>
+      {/* Mobile-only account area — desktop shows this in the sidebar (no sidebar on phone) */}
+      {isMobile && (
+        <div className="card" style={{ padding: 14, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ width: 42, height: 42, borderRadius: 12, background: 'var(--green)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 18, flex: '0 0 auto' }}>
+            {(user.name || user.email || 'Y')[0].toUpperCase()}
+          </span>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontWeight: 700, fontSize: 15, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.name || 'You'}</div>
+            <div className="faint" style={{ fontSize: 13 }}>{user.overseas ? 'Overseas' : (user.district || 'Bangladesh')} · {user.verified ? 'Verified' : 'Unverified'}</div>
+          </div>
+          <button className="btn" onClick={() => logout()} style={{ fontSize: 13, padding: '7px 14px', flex: '0 0 auto' }}>Sign out</button>
+        </div>
+      )}
       <PageHeader title="My Entry" subtitle="Your picks and points, projected live"
         right={data.grandPrizeEligible === false ? <NotEligibleBadge /> : undefined} />
       {!user.verified && (

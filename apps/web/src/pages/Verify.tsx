@@ -51,7 +51,7 @@ export default function Verify() {
 					</div>
 					<div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
 						<span className="bb-verify-num">2</span>
-						<div><strong>Reserve your ID details</strong> — submit your name + ID number in the app (no image). This locks your ID to your account.</div>
+						<div><strong>Reserve your ID details</strong> — submit your name + ID number in the app (no image). This reserves your ID to your account so nobody else can claim it.</div>
 					</div>
 				</div>
 				<p className="muted" style={{ fontSize: 14, marginTop: 14, marginBottom: 0, lineHeight: 1.6 }}>
@@ -128,12 +128,6 @@ export default function Verify() {
 				<div className="faint" style={{ fontSize: 12, marginBottom: 6 }}>Before you verify, review:</div>
 				<LegalLinks />
 			</div>
-
-			{/* Footer */}
-			<footer style={{ marginTop: 28, paddingTop: 16, borderTop: "1px solid var(--line)", display: "flex", flexDirection: "column", gap: 8, alignItems: "center" }}>
-				<LegalLinks align="center" />
-				<div className="faint" style={{ fontSize: 12 }}>BanglaBracket · Free to play · 18+ · Not affiliated with FIFA</div>
-			</footer>
 		</div>
 	);
 }

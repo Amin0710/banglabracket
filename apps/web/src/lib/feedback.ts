@@ -62,14 +62,14 @@ const LEGAL_CONTENT = {
       <p><b>Eligibility.</b> Prizes are for Bangladeshi nationals (by nationality, not residence) aged 18+. You can play and win from anywhere in the world. Winners must verify their identity before prizes are paid.</p>
       <p><b>Winners on the Wall &amp; social media.</b> If you appear on the leaderboard or win, your <b>display name and profile photo may be shown publicly</b> on the Winners Wall and shared by BanglaBracket on social media to announce results and winners. By playing, you consent to this use of your name and image for these purposes.</p>
       <p><b>Admin decisions.</b> All admin decisions are final. BanglaBracket may withhold or reallocate any prize — including paying the next eligible player — at its sole discretion and without explanation, including where cheating or multiple/fake accounts are suspected. We are not obligated to disclose our reasoning.</p>
-      <p><b>Fair play.</b> One account per person. Multiple, fake, or automated accounts may be disqualified. The bracket locks at the first Round-of-32 kick-off; picks are final after lock.</p>
-      <p><b>Prizes.</b> The grand prize is ৳1,00,000 for the top of the points leaderboard. Additional cash rewards are paid for exact knockout scorelines. Prize details may be updated before lock; the current rules in-app govern.</p>
+      <p><b>Fair play.</b> One account per person. Multiple, fake, or automated accounts may be disqualified. You can edit your bracket any time. Once the Round of 16 kicks off, you can still edit, but doing so removes you from the grand-prize competition (you can keep playing). Each match locks for the cash game when that match kicks off.</p>
+      <p><b>Prizes.</b> The grand prize is ৳1,00,000 for the top of the points leaderboard. Additional cash rewards are paid for exact knockout scorelines. Prize details may be updated before the Round of 16 kicks off; the current rules in-app govern.</p>
       <p><b>Not affiliated</b> with FIFA or any official body. Play responsibly. 18+.</p>`,
 	},
 	privacy: {
 		title: "Privacy Policy",
 		html: `
-      <p><b>What we collect.</b> Your name, email and/or phone, the bracket picks you make, and — only if you choose to verify — your nationality status. We don't store ID images in our database. If you email your ID to verify, it stays in that email only, and we delete it when and if you ask.</p>
+      <p><b>What we collect.</b> Your name, email and/or phone, the bracket picks you make, and — only if you choose to verify — your nationality status. If you reserve your ID, we store (encrypted) your <b>reserved ID number, date of birth, and reserved name</b> as printed on the ID. We don't store ID images in our database. If you email your ID to verify, it stays in that email only, and we delete it when and if you ask.</p>
       <p><b>How we use it.</b> Only to run the game: sign you in, score your bracket, rank the leaderboard, and contact winners. We do not sell your data.</p>
       <p><b>Public display.</b> Your display name and profile photo may appear publicly on the leaderboard and Winners Wall, and may be shared by BanglaBracket on social media if you rank highly or win (see Terms).</p>
       <p><b>Security.</b> Sensitive data is encrypted. Sessions use secure cookies.</p>
