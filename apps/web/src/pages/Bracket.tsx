@@ -823,14 +823,7 @@ export default function Bracket() {
         <div style={{ position: 'fixed', inset: 0, zIndex: 1300, background: 'rgba(8,16,11,.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: 16, overflow: 'auto' }}
           onClick={() => setSubmitAt(null)}>
           <div style={{ width: '100%', maxWidth: 440, margin: 'auto' }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-              <strong style={{ color: '#fff', fontSize: 16 }}>Bracket submitted ✓</strong>
-              <button onClick={() => setSubmitAt(null)} aria-label="Close" style={{ width: 32, height: 32, borderRadius: 9, border: '1px solid var(--line)', background: 'var(--surface2)', color: 'var(--ink)', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
-            </div>
-            <ShareCard prediction={{ winners }} base={t.base} remaining={t.remaining} userName={user.name} submittedAt={submitAt} />
-            <div style={{ textAlign: 'center', marginTop: 10 }}>
-              <button className="btn" onClick={() => setSubmitAt(null)} style={{ color: '#fff', borderColor: 'rgba(255,255,255,.35)', background: 'transparent' }}>Share later — close</button>
-            </div>
+            <ShareCard prediction={{ winners }} base={t.base} remaining={t.remaining} userName={user.name} submittedAt={submitAt} onClose={() => setSubmitAt(null)} />
           </div>
         </div>
       )}

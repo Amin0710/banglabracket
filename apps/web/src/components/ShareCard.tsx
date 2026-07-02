@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { resolveR32, resolveBracketParticipants } from "@banglabracket/shared";
-import { Flag } from "./ui";
+import { Flag, LogoMark } from "./ui";
 import { flagUrl } from "../lib/api";
 import { toast } from "../lib/feedback";
 
@@ -19,13 +19,14 @@ interface Props {
 	remaining: any;
 	userName?: string | null;
 	submittedAt?: Date | null;   // when set, shows/bakes a "Submitted …" timestamp
+	onClose?: () => void;        // when set, renders the submitted-header + close + "Share later" INSIDE the card
 }
 
 const goldText = "#231a05";
 const brandGreen = "#0b7a4b";
 const brandGold = "#ffcb45";
 
-export function ShareCard({ prediction, base, remaining, userName, submittedAt }: Props) {
+export function ShareCard({ prediction, base, remaining, userName, submittedAt, onClose }: Props) {
 	const [busy, setBusy] = useState(false);
 	const winners: Record<number, string> = prediction?.winners || {};
 	const stamp = submittedAt ? submittedAt.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : undefined;
@@ -90,6 +91,36 @@ export function ShareCard({ prediction, base, remaining, userName, submittedAt }
 
 	return (
 		<div className="card" style={{ padding: 0, overflow: "hidden" }}>
+			{onClose && (
+				<div
+					style={{
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "space-between",
+						gap: 10,
+						padding: "12px 14px",
+						borderBottom: "1px solid var(--line)",
+					}}>
+					<strong style={{ fontSize: 16 }}>Bracket submitted ✓</strong>
+					<button
+						onClick={onClose}
+						aria-label="Close"
+						style={{
+							width: 32,
+							height: 32,
+							borderRadius: 9,
+							border: "1px solid var(--line)",
+							background: "var(--surface2)",
+							color: "var(--ink)",
+							cursor: "pointer",
+							fontSize: 18,
+							lineHeight: 1,
+							flex: "0 0 auto",
+						}}>
+						×
+					</button>
+				</div>
+			)}
 			<div
 				style={{
 					padding: 20,
@@ -97,8 +128,17 @@ export function ShareCard({ prediction, base, remaining, userName, submittedAt }
 						"linear-gradient(160deg, var(--surface), var(--surface2))",
 					textAlign: "center",
 				}}>
-				<div className="display" style={{ fontWeight: 800, fontSize: 18 }}>
-					Bangla<span style={{ color: "var(--goldText)" }}>Bracket</span>
+				<div
+					style={{
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						gap: 9,
+					}}>
+					<LogoMark size={26} />
+					<div className="display" style={{ fontWeight: 800, fontSize: 18 }}>
+						Bangla<span style={{ color: "var(--goldText)" }}>Bracket</span>
+					</div>
 				</div>
 				<div
 					className="faint"
@@ -187,7 +227,34 @@ export function ShareCard({ prediction, base, remaining, userName, submittedAt }
 				)}
 			</div>
 
-			<div style={{ padding: 14, borderTop: "1px solid var(--line)" }}>
+			<div
+				style={{
+					padding: "12px 14px",
+					borderTop: "1px solid var(--line)",
+					textAlign: "center",
+					fontSize: 12.5,
+					lineHeight: 1.5,
+				}}>
+				<div>
+					<strong style={{ color: "var(--goldText)" }}>Win ৳1,00,000</strong>{" "}
+					· Free to play
+				</div>
+				<a
+					href="https://banglabracket.com/wc2026"
+					target="_blank"
+					rel="noopener noreferrer"
+					style={{ color: "var(--green)", fontWeight: 700 }}>
+					banglabracket.com/wc2026
+				</a>
+			</div>
+
+			<div
+				style={{
+					padding: 14,
+					borderTop: "1px solid var(--line)",
+					display: "grid",
+					gap: 8,
+				}}>
 				<button
 					className="btn btn-primary"
 					style={{ width: "100%", minHeight: 46, fontSize: 15 }}
@@ -199,6 +266,14 @@ export function ShareCard({ prediction, base, remaining, userName, submittedAt }
 							? "📤 Share my bracket (image)"
 							: "Pick a champion to share"}
 				</button>
+				{onClose && (
+					<button
+						className="btn"
+						style={{ width: "100%", minHeight: 42, fontSize: 14 }}
+						onClick={onClose}>
+						Share later — close
+					</button>
+				)}
 			</div>
 		</div>
 	);
