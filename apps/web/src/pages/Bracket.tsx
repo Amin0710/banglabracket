@@ -812,13 +812,26 @@ export default function Bracket() {
 }
 
 // ============================================================
-//  Whole bracket — computed geometry + SVG elbow connectors (R16→Final) — UNCHANGED
+//  Whole bracket — R16→Final tree, auto-scaled to FIT the container width
 // ============================================================
-const T_CARD_W = 142, T_CARD_H = 104, T_ROW = 128, T_COL = 176;
+// Natural (unscaled) geometry constants. The whole tree is then scaled by a single
+// transform so its width never exceeds the measured container — zero horizontal
+// scroll by construction, at any width. Row pitch is the minimum the centered-feeder
+// geometry allows (≈ card height) to avoid dead vertical space.
+const T_CARD_W = 142, T_CARD_H = 104, T_ROW = 110, T_COL = 158;
 const T_LEFT_R16 = [89, 90, 93, 94], T_RIGHT_R16 = [91, 92, 95, 96];
 
 function WholeBracket({ renderNode, champion, isMobile }: { renderNode: (m: number) => React.ReactNode; champion: string | null; isMobile: boolean }) {
-  const [zoom, setZoom] = useState(isMobile ? 0.6 : 0.9);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [cw, setCw] = useState(0);
+  useEffect(() => {
+    const on = () => setCw(scrollRef.current?.clientWidth || 0);
+    on();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(on) : null;
+    if (ro && scrollRef.current) ro.observe(scrollRef.current);
+    window.addEventListener('resize', on);
+    return () => { ro?.disconnect(); window.removeEventListener('resize', on); };
+  }, []);
 
   const { x, y, W, H, links } = useMemo(() => {
     const y: Record<number, number> = {}; const x: Record<number, number> = {};
@@ -846,18 +859,19 @@ function WholeBracket({ renderNode, champion, isMobile }: { renderNode: (m: numb
 
   const nodes = [...T_LEFT_R16, 97, 98, 101, 104, 103, 102, 99, 100, ...T_RIGHT_R16];
 
+  // Scale the ENTIRE tree so W·scale ≤ container width → never overflows horizontally.
+  const fitScale = cw > 0 ? Math.min(1, (cw - 2) / W) : (isMobile ? 0.32 : 0.85);
+
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
         <span className="faint" style={{ fontSize: 12, fontWeight: 600 }}>Round of 16 → Final</span>
-        <div style={{ marginLeft: 'auto', display: 'inline-flex', gap: 6 }}>
-          <button className="btn" style={{ padding: '4px 10px' }} onClick={() => setZoom((z) => Math.max(0.4, +(z - 0.15).toFixed(2)))}>−</button>
-          <button className="btn" style={{ padding: '4px 10px' }} onClick={() => setZoom((z) => Math.min(1.3, +(z + 0.15).toFixed(2)))}>+</button>
-        </div>
+        <span className="faint" style={{ marginLeft: 'auto', fontSize: 11 }}>Full tree · fits your screen</span>
       </div>
-      <div className="bb-tree-scroll" style={{ maxHeight: isMobile ? '68vh' : '76vh' }}>
-        <div style={{ width: W * zoom, height: H * zoom, position: 'relative' }}>
-          <div className="bb-tree" style={{ width: W, height: H, transform: `scale(${zoom})` }}>
+      {/* overflow-x hidden guarantees no side-scroll; the sizer matches the scaled tree exactly */}
+      <div className="bb-tree-scroll" ref={scrollRef} style={{ maxHeight: isMobile ? '68vh' : '76vh', overflowX: 'hidden' }}>
+        <div style={{ width: W * fitScale, height: H * fitScale, position: 'relative' }}>
+          <div className="bb-tree" style={{ width: W, height: H, transform: `scale(${fitScale})` }}>
             <svg width={W} height={H} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
               {links.map((d, i) => <path key={i} d={d} fill="none" stroke="var(--line)" strokeWidth={2} />)}
             </svg>
