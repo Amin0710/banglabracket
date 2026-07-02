@@ -17,31 +17,40 @@ export default function HowToPlay() {
 	const nav = useNavigate();
 	return (
 		<div>
-			<PageHeader title="How to play" subtitle="Two games, one tournament" />
+			<PageHeader title="How to play" subtitle="Three games, one tournament" />
 
 			<div className="card" style={{ padding: 18, marginBottom: 16, background: "var(--greenSoft)", borderColor: "transparent" }}>
 				<div style={{ fontSize: 15, lineHeight: 1.6 }}>
-					BanglaBracket has <strong>two separate games</strong>. Play one or both — they don't affect each other.
-				</div>
-				<div style={{ marginTop: 12 }}>
-					<button className="btn btn-primary" onClick={() => nav("/bracket")}>Open the bracket →</button>
+					BanglaBracket has <strong>three separate games</strong>. Play one, some, or all — they don't affect each other.
 				</div>
 			</div>
 
 			<GameCard tag="Game 1" tagColor="var(--gold)" title="The Bracket">
-				Send teams through every knockout round — Round of 32 → Round of 16 → Quarter-finals →
-				Semi-finals → Final. For each knockout match you pick <strong>who advances</strong> and the{" "}
-				<strong>manner</strong> they qualify: <strong>Full time</strong>, <strong>Extra time</strong>, or{" "}
-				<strong>Penalties</strong>.
+				{/* R32-structural note — TOP of Game 1, seen first on mobile + web */}
+				<div style={{ background: "var(--goldSoft)", border: "1px solid var(--goldLine)", borderRadius: 12, padding: "12px 14px", marginBottom: 14, color: "var(--ink)", fontSize: 14.5, lineHeight: 1.6 }}>
+					<strong>Round of 32 is structural</strong> — you pick it only to set up your Round of 16. No
+					punishment for early pickers: the real winners flow in and you can re-pick. R32 gives{" "}
+					<strong>no bracket points</strong>.
+				</div>
+
+				Send teams through every knockout round —{" "}
+				<strong>Round of 32 (only to continue the bracket) → Round of 16 → Quarter-finals → Semi-finals → Final</strong>.
+				For each knockout match you pick <strong>who advances</strong> and the <strong>manner</strong> they
+				qualify: <strong>Full time</strong>, <strong>Extra time</strong>, or <strong>Penalties</strong>.
 				<ul style={{ paddingLeft: 18, marginTop: 12, marginBottom: 0, lineHeight: 1.8 }}>
-					<li><strong>On mobile:</strong> tap a match to open a pop-up and choose the winner + manner, then confirm.</li>
-					<li><strong>On web:</strong> click a match to open an inline panel below the card with the same winner + manner choice.</li>
-					<li>
-						<strong>Round of 32 is structural.</strong> You pick R32 only to set up your Round of 16.
-						Guessed wrong? No problem — reality flows the real winners in and you can re-pick. R32 gives{" "}
-						<strong>no bracket points</strong>.
-					</li>
+					<li><strong>On mobile:</strong> tap a match to open a pop-up at the bottom of the screen to choose winner + manner, then confirm.</li>
+					<li><strong>On web:</strong> click a match to open an inline panel below the card.</li>
 				</ul>
+
+				<div style={{ marginTop: 12 }}>
+					Each round awards different points per correct match, and each manner (Full/Extra/Penalties)
+					has its own bonus points. At the end, the top 10 on the leaderboard win prizes. Full details on
+					the <strong>Scoring</strong> and <strong>Prizes</strong> tabs.
+				</div>
+
+				<div style={{ marginTop: 14 }}>
+					<button className="btn btn-primary" onClick={() => nav("/bracket")}>Open the bracket →</button>
+				</div>
 			</GameCard>
 
 			<GameCard tag="Game 2" tagColor="var(--r32Line)" title="Correct Score for Cash">
@@ -52,18 +61,6 @@ export default function HowToPlay() {
 					you sent through. Play it, skip it, or do both.
 				</div>
 			</GameCard>
-
-			<div className="card" style={{ padding: 18, marginTop: 4 }}>
-				<div className="muted" style={{ fontSize: 14, lineHeight: 1.7 }}>
-					Looking for <strong>scoring</strong>, <strong>prizes</strong>, or <strong>how to verify</strong>?
-					Those are covered on their own pages.
-				</div>
-				<div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
-					<button className="btn" onClick={() => nav("/scoring")}>Scoring →</button>
-					<button className="btn" onClick={() => nav("/prizes")}>Prizes →</button>
-					<button className="btn" onClick={() => nav("/verify")}>Verify →</button>
-				</div>
-			</div>
 		</div>
 	);
 }
