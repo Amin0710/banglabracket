@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth, type User } from './context/Providers';
 import { LogoMark, Wordmark, ThemeToggle, SubTabs } from './components/ui';
 import { api } from './lib/api';
+import { prefetchOnIdle } from './lib/tournament';
 import LoginModal from './pages/SignIn';
 import OnboardModal from './pages/Onboard';
-import Bracket from './pages/Bracket';
+import Bracket from './pages/Bracket';          // eager: the primary tab (fast first paint)
 import MyEntry from './pages/MyEntry';
 import Leaderboard from './pages/Leaderboard';
 import Verify from './pages/Verify';
@@ -16,44 +17,57 @@ import Winners from './pages/Winners';
 import Admin from './pages/Admin';
 import NotFound from './pages/NotFound';
 
-// ── Mobile hubs: bottom-nav entry points that expose their sibling INFO/secondary
-// pages as top sub-tabs. On desktop the sub-tabs hide (sidebar handles those routes).
+// Heavier / secondary tabs are lazy so the Bracket paints first; they're prefetched
+// on idle (see prefetchOnIdle below) so switching to them is instant on slow links.
+const Fantasy = lazy(() => import('./pages/Fantasy'));
+const Results = lazy(() => import('./pages/Results'));
+
+// Small tab-switch loading indicator (Suspense fallback for lazy tabs).
+function TabFallback() {
+  return <div className="muted" style={{ padding: 40, textAlign: 'center' }}>Loading…</div>;
+}
+
+// ── Hubs: a bottom-nav destination that groups its sibling pages as top sub-tabs
+// (shown on every viewport now — the sub-tabs ARE the secondary navigation).
+
+// Leaderboard groups: Leaderboard · Results (moved out of Bracket) · Winners.
 function LeaderboardHub() {
-  const [sub, setSub] = useState<'leaderboard' | 'winners'>('leaderboard');
+  type L = 'leaderboard' | 'results' | 'winners';
+  const [sub, setSub] = useState<L>('leaderboard');
   return (
     <div>
-      <SubTabs<'leaderboard' | 'winners'> mobileOnly active={sub} onChange={setSub}
-        tabs={[{ key: 'leaderboard', label: 'Leaderboard' }, { key: 'winners', label: 'Winners' }]} />
-      {sub === 'winners' ? <Winners /> : <Leaderboard />}
+      <SubTabs<L> active={sub} onChange={setSub}
+        tabs={[{ key: 'leaderboard', label: 'Leaderboard' }, { key: 'results', label: 'Results' }, { key: 'winners', label: 'Winners' }]} />
+      <Suspense fallback={<TabFallback />}>
+        {sub === 'results' ? <Results /> : sub === 'winners' ? <Winners /> : <Leaderboard />}
+      </Suspense>
     </div>
   );
 }
 
-function VerifyHub() {
-  type V = 'verify' | 'howtoplay' | 'scoring' | 'prizes';
-  const [sub, setSub] = useState<V>('verify');
+// My Entry groups: My Entry · Verify (moved in) · the info pages (How to play / Scoring / Prizes).
+function MyEntryHub() {
+  type E = 'entry' | 'verify' | 'howtoplay' | 'scoring' | 'prizes';
+  const [sub, setSub] = useState<E>('entry');
   return (
     <div>
-      <SubTabs<V> mobileOnly active={sub} onChange={setSub}
-        tabs={[{ key: 'verify', label: 'Verify' }, { key: 'howtoplay', label: 'How to play' }, { key: 'scoring', label: 'Scoring' }, { key: 'prizes', label: 'Prizes' }]} />
-      {sub === 'howtoplay' ? <HowToPlay /> : sub === 'scoring' ? <Scoring /> : sub === 'prizes' ? <Prizes /> : <Verify />}
+      <SubTabs<E> active={sub} onChange={setSub}
+        tabs={[{ key: 'entry', label: 'My Entry' }, { key: 'verify', label: 'Verify' }, { key: 'howtoplay', label: 'How to play' }, { key: 'scoring', label: 'Scoring' }, { key: 'prizes', label: 'Prizes' }]} />
+      {sub === 'verify' ? <Verify /> : sub === 'howtoplay' ? <HowToPlay /> : sub === 'scoring' ? <Scoring /> : sub === 'prizes' ? <Prizes /> : <MyEntry />}
     </div>
   );
 }
 
-interface NavItem { to: string; label: string; icon: string; info?: boolean; admin?: boolean; }
+interface NavItem { to: string; label: string; icon: string; locked?: boolean; admin?: boolean; }
+// Bottom nav = EXACTLY 4: Bracket · Fantasy(locked) · My Entry · Leaderboard.
 const NAV: NavItem[] = [
   { to: '/bracket', label: 'Bracket', icon: 'M4 6h6M4 18h6M10 6v12M10 12h6M16 12h4' },
+  { to: '/fantasy', label: 'Fantasy', icon: 'M4 10h16M4 10v8a2 2 0 002 2h12a2 2 0 002-2v-8M8 10V7a4 4 0 018 0v3', locked: true },
   { to: '/entry', label: 'My Entry', icon: 'M3 5h18v14H3zM3 10h18' },
   { to: '/leaderboard', label: 'Leaderboard', icon: 'M6 20V10M12 20V4M18 20v-7' },
-  { to: '/verify', label: 'Verify', icon: 'M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z' },
-  { to: '/howtoplay', label: 'How to play', icon: 'M9 9a3 3 0 0 1 5.12-2.12A3 3 0 0 1 12 12v1M12 17h.01', info: true },
-  { to: '/scoring', label: 'Scoring', icon: 'M4 6h16M4 10h16M4 14h10', info: true },
-  { to: '/prizes', label: 'Prizes', icon: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z', info: true },
-  { to: '/winners', label: 'Winners', icon: 'M8 21h8M12 17v4M17 8a5 5 0 0 0-10 0c0 2 1 3 2 4l1 1h6l1-1c1-1 2-2 2-4z', info: true },
   { to: '/admin', label: 'Match console', icon: 'M4 7h16M4 12h16M4 17h10', admin: true },
 ];
-const PLAY_NAV = NAV.filter((n) => !n.info && !n.admin);
+const PLAY_NAV = NAV.filter((n) => !n.admin);
 
 function NavIcon({ d }: { d: string }) {
   return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>;
@@ -78,13 +92,12 @@ function Sidebar({ onSignIn }: { onSignIn: () => void }) {
   const { user, logout } = useAuth();
   const loc = useLocation();
   const nav = useNavigate();
-  const mainItems = NAV.filter((n) => !n.info && (!n.admin || user?.role === 'admin'));
-  const infoItems = NAV.filter((n) => n.info);
+  const mainItems = NAV.filter((n) => !n.admin || user?.role === 'admin');
   const Item = (i: NavItem) => {
     const active = loc.pathname === i.to;
     return (
-      <button key={i.to} onClick={() => nav(i.to)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 11, border: 'none', cursor: 'pointer', textAlign: 'left', fontWeight: 600, fontSize: 15, background: active ? 'var(--greenSoft)' : 'transparent', color: active ? 'var(--green)' : 'var(--ink)' }}>
-        <NavIcon d={i.icon} />{i.label}
+      <button key={i.to} onClick={() => nav(i.to)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 11, border: 'none', cursor: 'pointer', textAlign: 'left', fontWeight: 600, fontSize: 15, background: active ? 'var(--greenSoft)' : 'transparent', color: active ? 'var(--green)' : i.locked ? 'var(--faint)' : 'var(--ink)' }}>
+        <NavIcon d={i.icon} /><span style={{ flex: 1 }}>{i.label}</span>{i.locked && <span style={{ fontSize: 12 }}>🔒</span>}
       </button>
     );
   };
@@ -96,10 +109,6 @@ function Sidebar({ onSignIn }: { onSignIn: () => void }) {
       <div style={{ padding: '6px 18px', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', color: 'var(--faint)' }}>PLAY</div>
       <nav style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '0 12px' }}>
         {mainItems.filter((i) => !i.admin).map(Item)}
-      </nav>
-      <div style={{ padding: '14px 18px 6px', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', color: 'var(--faint)' }}>INFO</div>
-      <nav style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '0 12px' }}>
-        {infoItems.map(Item)}
       </nav>
       {mainItems.some((i) => i.admin) && (<>
         <div style={{ padding: '14px 18px 6px', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', color: 'var(--faint)' }}>STAFF</div>
@@ -123,7 +132,7 @@ function Sidebar({ onSignIn }: { onSignIn: () => void }) {
 function BottomNav() {
   const loc = useLocation();
   const nav = useNavigate();
-  // Mobile bottom nav is EXACTLY 4: Bracket · My Entry · Leaderboard · Verify.
+  // Mobile bottom nav is EXACTLY 4: Bracket · Fantasy(locked) · My Entry · Leaderboard.
   // Admin ("Match console") stays on the desktop sidebar + its route, never here.
   const items = PLAY_NAV;
   return (
@@ -131,8 +140,12 @@ function BottomNav() {
       {items.map((i) => {
         const active = loc.pathname === i.to;
         return (
-          <button key={i.to} onClick={() => nav(i.to)} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', padding: '6px 2px', color: active ? 'var(--green)' : 'var(--muted)', fontSize: 10, fontWeight: 600 }}>
-            <NavIcon d={i.icon} />{i.label.split(' ')[0]}
+          <button key={i.to} onClick={() => nav(i.to)} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', padding: '6px 2px', color: active ? 'var(--green)' : i.locked ? 'var(--faint)' : 'var(--muted)', fontSize: 10, fontWeight: 600 }}>
+            <span style={{ position: 'relative', display: 'inline-flex' }}>
+              <NavIcon d={i.icon} />
+              {i.locked && <span style={{ position: 'absolute', top: -5, right: -8, fontSize: 9 }}>🔒</span>}
+            </span>
+            {i.label.split(' ')[0]}
           </button>
         );
       })}
@@ -167,6 +180,16 @@ export default function App() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [onboardOpen, setOnboardOpen] = useState(false);
   const prevUserRef = useRef<User | null | undefined>(undefined);
+
+  // After first paint / idle, quietly warm the lazy tab chunks so the first switch
+  // to Fantasy / Results / Cash the Guess is instant on slow (BD-mobile) connections.
+  useEffect(() => {
+    prefetchOnIdle([
+      () => import('./pages/Fantasy'),
+      () => import('./pages/Results'),
+      () => import('./pages/CashGuess'),
+    ]);
+  }, []);
 
   async function redirectAfterLogin() {
     try {
@@ -211,19 +234,24 @@ export default function App() {
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
           <MobileHeader onSignIn={() => setLoginOpen(true)} />
           <main style={{ flex: 1, padding: 'clamp(16px,3vw,32px)', paddingBottom: 90, maxWidth: 1080, width: '100%', margin: '0 auto' }}>
-            <Routes>
-              <Route path="/" element={null} />
-              <Route path="/bracket" element={<Bracket />} />
-              <Route path="/entry" element={<MyEntry />} />
-              <Route path="/leaderboard" element={<LeaderboardHub />} />
-              <Route path="/verify" element={<VerifyHub />} />
-              <Route path="/howtoplay" element={<HowToPlay />} />
-              <Route path="/scoring" element={<Scoring />} />
-              <Route path="/prizes" element={<Prizes />} />
-              <Route path="/winners" element={<Winners />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <Suspense fallback={<TabFallback />}>
+              <Routes>
+                <Route path="/" element={null} />
+                <Route path="/bracket" element={<Bracket />} />
+                <Route path="/fantasy" element={<Fantasy />} />
+                <Route path="/entry" element={<MyEntryHub />} />
+                <Route path="/leaderboard" element={<LeaderboardHub />} />
+                {/* direct routes preserved for deep links / post-login redirects */}
+                <Route path="/verify" element={<Verify />} />
+                <Route path="/howtoplay" element={<HowToPlay />} />
+                <Route path="/scoring" element={<Scoring />} />
+                <Route path="/prizes" element={<Prizes />} />
+                <Route path="/winners" element={<Winners />} />
+                <Route path="/results" element={<Results />} />
+                <Route path="/admin" element={<Admin />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
           </main>
           <BottomNav />
         </div>

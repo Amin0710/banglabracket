@@ -15,19 +15,31 @@ export const bracketRouter = Router();
 
 // Public tournament view: base tables, remaining fixtures, confirmed R32, lock
 // time, plus the two live countdown targets (nextMatch / nextRound).
-bracketRouter.get('/tournament', async (_req, res) => {
+bracketRouter.get('/tournament', async (req, res) => {
   const t = await getTournament();
   const schedule = deriveSchedule((t.fixtures as any) || []);
+  // `?lite=1` omits the player-stat tables (top scorers/assists) — the Bracket paint
+  // never needs them, so BD-mobile first paint isn't taxed with data only the Results
+  // tab uses. Full payload stays the default (back-compat for mobile / other clients).
+  const lite = req.query.lite === '1';
   res.json({
     key: t.key, name: t.name, tagline: t.tagline, lockAt: t.lockAt, locked: isLocked(t),
     base: t.base, remaining: t.remaining, r32: t.r32, results: t.results,
-    // fixtures + player tables power the read-only Results tab and per-match live status
-    fixtures: t.fixtures || [], topScorers: (t as any).topScorers || [], topAssists: (t as any).topAssists || [],
+    // fixtures power per-match live status + the Results completed list
+    fixtures: t.fixtures || [],
+    topScorers: lite ? [] : (t as any).topScorers || [], topAssists: lite ? [] : (t as any).topAssists || [],
     nextMatch: schedule.nextMatch, nextRound: schedule.nextRound,
     // soft-freeze (Model Y): R16 kickoff is the grand-prize freeze trigger
     bracketFrozenForPrize: bracketFrozenForPrize(t), r16KickoffAt: r16KickoffAt(t),
     syncedAt: (t.sync as any)?.lastSyncAt || null,
   });
+});
+
+// Player-stat tables (top scorers / assists) for the Results tab. Split out so the
+// Bracket never downloads them; the Results tab fetches this lazily on open.
+bracketRouter.get('/stats', async (_req, res) => {
+  const t = await getTournament();
+  res.json({ topScorers: (t as any).topScorers || [], topAssists: (t as any).topAssists || [] });
 });
 
 // Lightweight schedule-only endpoint for the marketing landing page / widgets.

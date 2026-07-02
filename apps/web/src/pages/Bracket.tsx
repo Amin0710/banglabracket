@@ -1,15 +1,19 @@
 import type React from 'react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   GROUP_KEYS, R32_MATCHES, KO_MATCHES, ALL_MATCHES, ROUND_OF, MATCH_DEF, THIRD_SLOTS,
-  resolveR32, resolveBracketParticipants, resolveActualParticipants, rankGroup, formatCompletedMatch,
+  resolveR32, resolveBracketParticipants, formatCompletedMatch,
 } from '@banglabracket/shared';
 import { api } from '../lib/api';
+import { loadTournament } from '../lib/tournament';
 import { useAuth, useTheme } from '../context/Providers';
 import { confirmFreezeEdit, confirmDialog, toast } from '../lib/feedback';
 import { ShareCard } from '../components/ShareCard';
-import { PageHeader, Flag, NextMatchBanner, NextRoundStrip, StatusChip, SubTabs, useIsMobile } from '../components/ui';
+import { PageHeader, Flag, NextMatchBanner, NextRoundStrip, StatusChip, useIsMobile } from '../components/ui';
+
+// "Cash the Guess" is a lazily-loaded chunk so it never weighs down the Bracket paint.
+const CashGuess = lazy(() => import('./CashGuess'));
 
 type Scores = Record<string, { sa: number | ''; sb: number | '' }[]>;
 type Manner = 'FT' | 'ET' | 'PEN';
@@ -90,6 +94,17 @@ function computeGeom(CARD_W: number, stride: number, PITCH: number, leftInset: n
     }
   }
   return { x, y, W, links };
+}
+
+// Memoize the bracket geometry across renders/tab-switches. Inputs are a handful of
+// numbers (card width, stride, pitch, inset, focused column) and the layout is static,
+// so a tiny keyed cache avoids re-running the per-round loops on every render.
+const geomCache = new Map<string, ReturnType<typeof computeGeom>>();
+function computeGeomMemo(CARD_W: number, stride: number, PITCH: number, leftInset: number, focusCol: number) {
+  const key = `${CARD_W}|${stride}|${PITCH}|${leftInset}|${focusCol}`;
+  let g = geomCache.get(key);
+  if (!g) { g = computeGeom(CARD_W, stride, PITCH, leftInset, focusCol); geomCache.set(key, g); }
+  return g;
 }
 
 // Canonical bracket snapshot — MUST match the server's bracketCanon (groups + winners
@@ -181,103 +196,7 @@ function PickSheet({ m, A, B, round, initialWinner, initialManner, onConfirm, on
   );
 }
 
-// ============================================================
-//  Results tab helpers
-// ============================================================
-function PlayerStatRow({ p }: { p: any }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 0', borderTop: '1px solid var(--line)' }}>
-      <span className="tabular faint" style={{ width: 20, textAlign: 'right', flex: '0 0 auto' }}>{p.rank}</span>
-      {p.photo
-        ? <img src={p.photo} alt="" width={30} height={30} style={{ borderRadius: '50%', objectFit: 'cover', flex: '0 0 auto', background: 'var(--surface2)' }} referrerPolicy="no-referrer" />
-        : <Flag name={p.flag || p.country} size={26} />}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 700, fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
-        <div className="faint" style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 5 }}><Flag name={p.flag || p.country} size={14} />{p.team || p.country}</div>
-      </div>
-      <span className="tabular" style={{ fontWeight: 800, fontSize: 18 }}>{p.value ?? 0}</span>
-    </div>
-  );
-}
-
-// Clean sportsbook line: "France 3–0 Sweden" · FT / AET / AET (P) + (pens x–y). Same baseline.
-function CompletedMatchRow({ fx }: { fx: any }) {
-  const f = formatCompletedMatch({ manner: fx.manner, scoreA: fx.scoreA, scoreB: fx.scoreB, penA: fx.penA, penB: fx.penB });
-  const roundLabel = RL[fx.round] || (fx.round === 'GROUP' ? 'Group stage' : '');
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: '64px 1fr auto 1fr 78px', alignItems: 'center', gap: 8, padding: '11px 0', borderTop: '1px solid var(--line)', fontSize: 13.5 }}>
-      <span className="bb-decided" style={{ fontSize: 11, letterSpacing: '.03em', lineHeight: 1.15 }}>
-        {f.statusLabel}{roundLabel && <span className="faint" style={{ display: 'block', fontSize: 9, fontWeight: 600 }}>{roundLabel}</span>}
-      </span>
-      <span style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end', fontWeight: fx.winner === fx.teamA ? 800 : 600, minWidth: 0 }}>
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fx.teamA}</span><Flag name={fx.teamA} size={20} />
-      </span>
-      <span className="tabular bb-decided" style={{ minWidth: 52, textAlign: 'center', fontSize: 16 }}>{f.scoreA}–{f.scoreB}</span>
-      <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: fx.winner === fx.teamB ? 800 : 600, minWidth: 0 }}>
-        <Flag name={fx.teamB} size={20} /><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fx.teamB}</span>
-      </span>
-      <span className="bb-decided" style={{ fontSize: 11, textAlign: 'right' }}>{f.pens ? `pens ${f.pens}` : ''}</span>
-    </div>
-  );
-}
-
-type ResultsSub = 'matches' | 'groups' | 'scorers' | 'assists';
-function ResultsTab({ t }: { t: any }) {
-  const [sub, setSub] = useState<ResultsSub>('matches');
-  const completed = useMemo(() => (t?.fixtures || [])
-    .filter((f: any) => f?.status === 'finished')
-    .sort((a: any, b: any) => +new Date(b.kickoff) - +new Date(a.kickoff)), [t]);
-  const scorers: any[] = t?.topScorers || [];
-  const assists: any[] = t?.topAssists || [];
-
-  return (
-    <div>
-      <SubTabs<ResultsSub> active={sub} onChange={setSub}
-        tabs={[{ key: 'matches', label: 'Matches' }, { key: 'groups', label: 'Groups' }, { key: 'scorers', label: 'Top scorers' }, { key: 'assists', label: 'Top assists' }]} />
-
-      {sub === 'matches' && (
-        <div className="card" style={{ padding: 16 }}>
-          <strong style={{ fontSize: 15 }}>Completed matches</strong>
-          {completed.length
-            ? completed.map((fx: any, i: number) => <CompletedMatchRow key={fx.providerId ?? i} fx={fx} />)
-            : <div className="faint" style={{ marginTop: 8 }}>No completed matches yet.</div>}
-        </div>
-      )}
-
-      {sub === 'groups' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(290px,1fr))', gap: 14 }}>
-          {GROUP_KEYS.map((g) => {
-            const table = rankGroup(g, t.base || {}, {}, {});
-            return (
-              <div key={g} className="card" style={{ padding: 14 }}>
-                <strong>Group {g}</strong>
-                <table style={{ width: '100%', fontSize: 13, marginTop: 8 }}><tbody>
-                  {table.map((row, i) => (
-                    <tr key={row.abbr} style={{ color: i < 2 ? 'var(--ink)' : i === 2 ? 'var(--bronze)' : 'var(--faint)' }}>
-                      <td style={{ width: 16 }}>{i + 1}</td>
-                      <td style={{ padding: '3px 0' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Flag name={row.name} size={20} />{row.name}</span></td>
-                      <td className="tabular faint" style={{ textAlign: 'right' }}>{row.P}</td>
-                      <td className="tabular" style={{ textAlign: 'right', fontWeight: 700, paddingLeft: 10 }}>{row.W * 3 + row.D}</td>
-                    </tr>
-                  ))}
-                </tbody></table>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {(sub === 'scorers' || sub === 'assists') && (
-        <div className="card" style={{ padding: 16 }}>
-          <strong style={{ fontSize: 15 }}>{sub === 'scorers' ? '⚽ Top scorers' : '🅰️ Top assists'}</strong>
-          {(sub === 'scorers' ? scorers : assists).length
-            ? (sub === 'scorers' ? scorers : assists).slice(0, 20).map((p, i) => <PlayerStatRow key={i} p={p} />)
-            : <div className="faint" style={{ marginTop: 8 }}>No data yet.</div>}
-        </div>
-      )}
-    </div>
-  );
-}
+// (Results tab moved to pages/Results.tsx under the Leaderboard hub.)
 
 // ============================================================
 //  Bracket
@@ -287,7 +206,7 @@ export default function Bracket() {
   const nav = useNavigate();
   const isMobile = useIsMobile();
   const [t, setT] = useState<any>(null);
-  const [tab, setTab] = useState<'picks' | 'results' | 'cash'>('picks');
+  const [tab, setTab] = useState<'picks' | 'cash'>('picks');
   const [view, setView] = useState<'rounds' | 'whole'>('rounds');
   const [stageIdx, setStageIdx] = useState(0);
   const [sheet, setSheet] = useState<number | null>(null);
@@ -314,25 +233,28 @@ export default function Bracket() {
 
   useEffect(() => {
     (async () => {
-      const tour = await api.get('/api/tournament'); setT(tour);
+      // Cached (lite) tournament + entry fetched in PARALLEL — no serial round-trips,
+      // and the tournament comes straight from the module cache on later visits.
+      const [tour, r] = await Promise.all([
+        loadTournament(),
+        user ? api.get('/api/entry').catch(() => null) : Promise.resolve(null),
+      ]);
+      setT(tour);
       const init: Scores = {};
       for (const g of GROUP_KEYS) init[g] = (tour.remaining?.[g] || []).map(() => ({ sa: '' as const, sb: '' as const }));
-      if (user) {
-        try {
-          const r = await api.get('/api/entry');
-          if (r.entry?.prediction) {
-            const p = r.entry.prediction;
-            for (const g of Object.keys(p.groups || {})) {
-              const arr = p.groups[g]?.scores || [];
-              init[g] = (tour.remaining?.[g] || []).map((_: any, i: number) => arr[i] ? { sa: arr[i].sa, sb: arr[i].sb } : { sa: '', sb: '' });
-            }
-            setWinners(p.winners || {}); setManner(p.manner || {});
-            if (p.scorePredictions) setScorePred(p.scorePredictions);
+      if (user && r) {
+        if (r.entry?.prediction) {
+          const p = r.entry.prediction;
+          for (const g of Object.keys(p.groups || {})) {
+            const arr = p.groups[g]?.scores || [];
+            init[g] = (tour.remaining?.[g] || []).map((_: any, i: number) => arr[i] ? { sa: arr[i].sa, sb: arr[i].sb } : { sa: '', sb: '' });
           }
-          // submission state survives refresh: restore timestamp + snapshot
-          if (r.entry?.submittedAt) { setSubmittedAt(new Date(r.entry.submittedAt)); setSubmittedBracket(r.entry.submittedBracket ?? null); }
-          if (r.grandPrizeEligible === false) setEligible(false);
-        } catch {}
+          setWinners(p.winners || {}); setManner(p.manner || {});
+          if (p.scorePredictions) setScorePred(p.scorePredictions);
+        }
+        // submission state survives refresh: restore timestamp + snapshot
+        if (r.entry?.submittedAt) { setSubmittedAt(new Date(r.entry.submittedAt)); setSubmittedBracket(r.entry.submittedBracket ?? null); }
+        if (r.grandPrizeEligible === false) setEligible(false);
       }
       setScores(init); setLoaded(true);
     })();
@@ -402,12 +324,6 @@ export default function Bracket() {
     return w;
   }, [winners, t]);
   const participants = useMemo(() => resolveBracketParticipants(r32ForResolve as any, effectiveWinners), [r32ForResolve, effectiveWinners]);
-
-  const actualParticipants = useMemo(() => {
-    const realR32: any = {};
-    for (const m of R32_MATCHES) realR32[m] = { A: t?.r32?.[m]?.A?.team ?? null, B: t?.r32?.[m]?.B?.team ?? null };
-    return resolveActualParticipants(realR32, t?.results || {});
-  }, [t]);
 
   const matchStatus = useMemo(() => (m: number): { state: MatchState; res: any; fx: any } => {
     const res = t?.results?.[m];
@@ -699,7 +615,7 @@ export default function Bracket() {
   // next round sits RIGHT beside it (no large empty band). The band is the clip window.
   const stride = CARD_W + GAP;
   const bandW = Math.min(vw, inset + CARD_W + GAP + peekW);
-  const geom = computeGeom(CARD_W, stride, PITCH, inset, stageIdx);
+  const geom = computeGeomMemo(CARD_W, stride, PITCH, inset, stageIdx);
   // canvas height covers the focused round + its (centered) next round's extent.
   const visNodes = [...ROUND_LISTS[stageIdx], ...(ROUND_LISTS[stageIdx + 1] || [])];
   const canvasH = Math.max(...visNodes.map((m) => geom.y[m] ?? 0)) + NODE_H / 2 + 12;
@@ -769,15 +685,6 @@ export default function Bracket() {
 
   const WholeView = <WholeBracket renderNode={(m: number) => renderCard(m, 'tree')} champion={winners[104] || null} isMobile={isMobile} />;
 
-  // ── CASH: current-round matches with real teams that HAVEN'T kicked off yet ──
-  const now = Date.now();
-  const cashMatches = ALL_MATCHES.filter((m) => {
-    const ap = actualParticipants[m]; if (!ap?.A || !ap?.B) return false;
-    if (matchStatus(m).state !== 'upcoming') return false;      // exclude decided + live
-    const k = fixturesByMatch[m]?.kickoff;                       // #7: kickoff must be in the future
-    return !!k && new Date(k).getTime() > now;
-  });
-
   const sheetMatch = sheet != null ? { m: sheet, p: partOf(sheet), round: ROUND_OF(sheet) } : null;
 
   return (
@@ -801,9 +708,8 @@ export default function Bracket() {
       )}
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-        <button className="btn" onClick={() => setTab('picks')} style={tab === 'picks' ? { background: 'var(--greenSoft)', color: 'var(--green)', borderColor: 'transparent' } : {}}>My Picks</button>
-        <button className="btn" onClick={() => setTab('results')} style={tab === 'results' ? { background: 'var(--greenSoft)', color: 'var(--green)', borderColor: 'transparent' } : {}}>Results</button>
-        <button className="btn" onClick={() => setTab('cash')} style={tab === 'cash' ? { background: 'var(--greenSoft)', color: 'var(--green)', borderColor: 'transparent' } : {}}>Score for cash</button>
+        <button className="btn" onClick={() => setTab('picks')} style={tab === 'picks' ? { background: 'var(--greenSoft)', color: 'var(--green)', borderColor: 'transparent' } : {}}>My Bracket</button>
+        <button className="btn" onClick={() => setTab('cash')} style={tab === 'cash' ? { background: 'var(--greenSoft)', color: 'var(--green)', borderColor: 'transparent' } : {}}>Cash the Guess</button>
         {tab === 'picks' && (
           <div className="bb-viewtoggle" style={{ marginLeft: 'auto' }}>
             <button data-active={view === 'rounds'} onClick={() => setView('rounds')}>Rounds</button>
@@ -816,35 +722,18 @@ export default function Bracket() {
           "next round" strip floating high — it sits at a consistent bottom position */}
       <div style={{ flex: 1, minHeight: 0 }}>
       {tab === 'picks' && (view === 'rounds' ? RoundsView : WholeView)}
-      {tab === 'results' && <ResultsTab t={t} />}
       {tab === 'cash' && (
-        <div className="card" style={{ padding: 16 }}>
-          <strong style={{ fontSize: 15 }}>Correct score for cash 💵</strong>
-          <p className="muted" style={{ fontSize: 13, margin: '4px 0 12px' }}>
-            Predict the EXACT scoreline of the current round's upcoming matches — 100৳ each. Only matches whose teams are set and haven't kicked off appear here.
-          </p>
-          {cashMatches.length ? cashMatches.map((m) => {
-            const ap = actualParticipants[m];
-            return (
-              <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 0', borderTop: '1px solid var(--line)' }}>
-                <span className="faint" style={{ fontSize: 10, fontWeight: 700, width: 66 }}>{RL[ROUND_OF(m)]}</span>
-                <span style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end', fontWeight: 700, minWidth: 0 }}><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ap.A}</span><Flag name={ap.A} size={20} /></span>
-                <input className="input tabular" style={{ width: 40, padding: 6, textAlign: 'center' }} inputMode="numeric" value={scorePred[m]?.a ?? ''} onChange={(e) => setCashCell(m, 'a', e.target.value)} />
-                <span className="faint">–</span>
-                <input className="input tabular" style={{ width: 40, padding: 6, textAlign: 'center' }} inputMode="numeric" value={scorePred[m]?.b ?? ''} onChange={(e) => setCashCell(m, 'b', e.target.value)} />
-                <span style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, minWidth: 0 }}><Flag name={ap.B} size={20} /><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ap.B}</span></span>
-                <span className="pill pill-gold" style={{ fontSize: 9, flex: '0 0 auto' }}>100৳</span>
-              </div>
-            );
-          }) : <div className="faint">No current-round matches open right now — check back when the next round's teams are set.</div>}
-        </div>
+        <Suspense fallback={<div className="muted" style={{ padding: 24, textAlign: 'center' }}>Loading…</div>}>
+          <CashGuess t={t} scorePred={scorePred} onCell={setCashCell} />
+        </Suspense>
       )}
       </div>
 
-      {/* Submit bracket — persistent bottom strip. Once submitted, a combined
-          "✓ Submitted · Share my bracket" (Share is the only action). A real pre-R16
-          pick change brings "Submit bracket" back; post-R16 / no-change stays Submitted. */}
-      {submitted ? (
+      {/* Submit bracket — ONLY on the "My Bracket" sub-tab (never on Cash the Guess).
+          Once submitted, a combined "✓ Submitted · Share my bracket" (Share is the only
+          action). A real pre-R16 pick change brings "Submit bracket" back; post-R16 /
+          no-change stays Submitted. */}
+      {tab === 'picks' && (submitted ? (
         <div style={{ display: 'flex', gap: 8, marginTop: 12, alignItems: 'stretch' }}>
           <div className="btn" style={{ flex: '0 0 auto', minHeight: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '0 16px', fontSize: 15, fontWeight: 700, color: 'var(--green)', background: 'var(--greenSoft)', borderColor: 'transparent', cursor: 'default' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="3"><path d="M5 13l4 4L19 7" /></svg>Submitted
@@ -859,7 +748,7 @@ export default function Bracket() {
           style={{ width: '100%', minHeight: 48, fontSize: 15, marginTop: 12 }}>
           ✅ Submit bracket
         </button>
-      )}
+      ))}
 
       <NextRoundStrip nextRound={t.nextRound} />
 
