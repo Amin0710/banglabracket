@@ -43,20 +43,20 @@ export default function Verify() {
 
 			{/* What's required to be prize-eligible */}
 			<div className="card" style={{ padding: 20, marginBottom: 16, borderColor: "var(--gold)" }}>
-				<strong style={{ fontSize: 17 }}>To be eligible for a prize, verify BOTH ways</strong>
+				<strong style={{ fontSize: 17 }}>To be eligible for a prize, do BOTH — in either order</strong>
 				<div style={{ display: "grid", gap: 10, marginTop: 12 }}>
 					<div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-						<span className="bb-verify-num">1</span>
-						<div><strong>Send an ID image</strong> — email a photo of your NID / passport (+ a selfie) with your code below.</div>
+						<span className="bb-verify-num">A</span>
+						<div><strong>Send ID image</strong> — email a photo of your NID / passport (+ a selfie) with your code below.</div>
 					</div>
 					<div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-						<span className="bb-verify-num">2</span>
-						<div><strong>Reserve your ID details</strong> — submit your name + ID number in the app (no image). This reserves your ID to your account so nobody else can claim it.</div>
+						<span className="bb-verify-num">B</span>
+						<div><strong>Reserve ID details</strong> — submit your name + ID number in the app (no image). This reserves your ID to your account so nobody else can claim it.</div>
 					</div>
 				</div>
 				<p className="muted" style={{ fontSize: 14, marginTop: 14, marginBottom: 0, lineHeight: 1.6 }}>
-					<strong style={{ color: "var(--ink)" }}>Deadline:</strong> at least <strong>one</strong> of the two must be submitted before the{" "}
-					<strong>3rd Round-of-16 match finishes</strong>. The other can follow after. Eligibility is by{" "}
+					You need <strong>both</strong> (either order). At least <strong>one</strong> must be submitted before the{" "}
+					<strong>3rd Round-of-16 match</strong> — the other can follow after. Eligibility is by{" "}
 					<strong>nationality</strong> — Bangladeshi nationals can win from anywhere.
 				</p>
 			</div>
@@ -72,7 +72,7 @@ export default function Verify() {
 					</span>
 					<div>
 						<strong style={{ fontSize: 18 }}>Send this code with your ID image</strong>
-						<div className="muted" style={{ fontSize: 14 }}>Method 1 of 2</div>
+						<div className="muted" style={{ fontSize: 14 }}>Option A — Send ID image</div>
 					</div>
 				</div>
 				<div className="card" style={{ background: "var(--surface2)", padding: 16, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
@@ -100,7 +100,7 @@ export default function Verify() {
 
 				<div className="card" style={{ padding: 18 }}>
 					<strong>Reserve your ID details</strong>
-					<div className="muted" style={{ fontSize: 13 }}>Method 2 of 2 · no image needed</div>
+					<div className="muted" style={{ fontSize: 13 }}>Option B — Reserve ID details · no image needed</div>
 					<p className="faint" style={{ fontSize: 13, marginTop: 6 }}>Stored encrypted. Reserves your name + ID so nobody else can claim it.</p>
 					<div style={{ display: "grid", gap: 8 }}>
 						<select className="input" value={idType} onChange={(e) => setIdType(e.target.value as any)}>

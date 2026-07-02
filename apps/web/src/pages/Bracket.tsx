@@ -2,7 +2,7 @@ import type React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  GROUP_KEYS, R32_MATCHES, KO_MATCHES, ALL_MATCHES, ROUND_OF, MATCH_DEF,
+  GROUP_KEYS, R32_MATCHES, KO_MATCHES, ALL_MATCHES, ROUND_OF, MATCH_DEF, THIRD_SLOTS,
   resolveR32, resolveBracketParticipants, resolveActualParticipants, rankGroup, formatCompletedMatch,
 } from '@banglabracket/shared';
 import { api } from '../lib/api';
@@ -28,6 +28,8 @@ const STAGES: { key: string; label: string; short: string; matches: number[]; su
   { key: 'FINAL', label: 'Final', short: 'Final', matches: [104, 103], sub: 'Crown your champion' },
 ];
 const ROUND_COL: Record<string, number> = { R32: 0, R16: 1, QF: 2, SF: 3, THIRD: 4, FINAL: 4 };
+// R32 matches whose B slot is a "best 3rd place" placeholder — never show the predicted guess for these.
+const THIRD_PLACE_MATCHES = new Set(THIRD_SLOTS.map((s) => s.match));
 
 // True winner-feeders of a knockout match, from the shared MATCH_DEF wiring.
 function koChildren(m: number): number[] {
@@ -351,22 +353,23 @@ export default function Bracket() {
     return map;
   }, [t]);
 
-  // R32 slots used to resolve the tree. For a DECIDED R32 match we use the ACTUAL
-  // two teams that played (from the fixture), NOT the player's predicted slots —
-  // otherwise the real winner (esp. a real 3rd-placed team that differs from the
-  // predicted one) fails resolveBracketParticipants' participant check and never
-  // flows into R16. (Root cause of the "empty R16 slot" bug — see #3.)
+  // R32 slots used to resolve the tree. Groups are complete, so every R32 slot uses
+  // the REAL teams — the actual fixture pairing, else the synced truth slots (which
+  // sync reconciles from the real R32 fixtures). The predicted `resolveR32` output
+  // (which relies on allocateThirds GUESSING each best-3rd-place occupant) is only a
+  // pre-group-stage fallback, and is NEVER used for a 3rd-place placeholder slot —
+  // so no slot ever displays a guessed 3rd-place team.
   const r32ForResolve = useMemo(() => {
     const out: Record<number, { A: string | null; B: string | null }> = {};
     for (const m of R32_MATCHES) {
-      const res = t?.results?.[m];
-      if (res?.winner) {
-        const fx = fixturesByMatch[m];
-        out[m] = {
-          A: fx?.teamA ?? t?.r32?.[m]?.A?.team ?? (r32 as any)[m]?.A ?? null,
-          B: fx?.teamB ?? t?.r32?.[m]?.B?.team ?? (r32 as any)[m]?.B ?? null,
-        };
-      } else out[m] = (r32 as any)[m] || { A: null, B: null };
+      const fx = fixturesByMatch[m];
+      const truth = t?.r32?.[m];
+      const pred = (r32 as any)[m] || {};
+      out[m] = {
+        A: fx?.teamA ?? truth?.A?.team ?? pred.A ?? null,
+        // B is the 3rd-place slot on THIRD_SLOTS matches → real team only, never the guess.
+        B: fx?.teamB ?? truth?.B?.team ?? (THIRD_PLACE_MATCHES.has(m) ? null : pred.B ?? null),
+      };
     }
     return out;
   }, [t, r32, fixturesByMatch]);
@@ -433,10 +436,16 @@ export default function Bracket() {
     const v = raw === '' ? '' : Math.max(0, +raw);
     setScorePred((s) => ({ ...s, [m]: { a: side === 'a' ? v : (s[m]?.a ?? ''), b: side === 'b' ? v : (s[m]?.b ?? '') } }));
   }
-  // Submit = completeness gate then a shareable image. Required = a winner pick for
-  // every knockout match R32→Final (same set as isBracketComplete).
+  // Submit = completeness gate then a shareable image. A pick is only REQUIRED for
+  // matches the user can actually still pick: a knockout match R32→Final that is
+  // NOT already decided AND has no winner pick. Decided matches are excluded — the
+  // user can't pick a finished match (they simply score nothing there), so they
+  // never count as "missing". This is data-driven (matchStatus + winners), so the
+  // count is identical on web and mobile. (Counting decided-without-a-pick matches
+  // was the bug: whether such a match had a stray pick varied per session/device,
+  // producing different totals — 6 vs 7.)
   async function submitBracket() {
-    const missing = ALL_MATCHES.filter((m) => !winners[m]);
+    const missing = ALL_MATCHES.filter((m) => matchStatus(m).state !== 'decided' && !winners[m]);
     if (missing.length) {
       const msg = missing.length <= 5
         ? `You haven't finished ${missing.map((m) => 'M' + m).join(', ')}. Finish those matches to submit.`
@@ -566,12 +575,14 @@ export default function Bracket() {
             {st.state === 'live' && <StatusChip kind="live" />}
             {decided && f && <span className="bb-decided" style={{ fontSize: 8.5 }}>{f.pen ? 'PEN' : f.statusLabel}</span>}
           </div>
-          {/* teams STACKED vertically (one over the other), each flag + small name under it */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>{treeSlot(p.A, 'A')}{treeSlot(p.B, 'B')}</div>
-          <div style={{ display: 'flex', gap: 1 }}>
-            {MANNER_OPTS.map(([label, code]) => { const s = mannerStyle(code); return (
-              <span key={code} style={{ flex: 1, textAlign: 'center', fontSize: 8.5, fontWeight: 800, padding: '2px 0', borderRadius: 4, ...s }}>{label}</span>
-            ); })}
+          {/* teams STACKED on the LEFT; manner as a thin VERTICAL column on the RIGHT */}
+          <div style={{ display: 'flex', gap: 5, alignItems: 'stretch' }}>
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>{treeSlot(p.A, 'A')}{treeSlot(p.B, 'B')}</div>
+            <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', gap: 2, justifyContent: 'center' }}>
+              {MANNER_OPTS.map(([label, code]) => { const s = mannerStyle(code); return (
+                <span key={code} style={{ textAlign: 'center', fontSize: 8, fontWeight: 800, padding: '2px 4px', borderRadius: 4, ...s }}>{label}</span>
+              ); })}
+            </div>
           </div>
         </div>
       );
@@ -803,7 +814,7 @@ export default function Bracket() {
 // ============================================================
 //  Whole bracket — computed geometry + SVG elbow connectors (R16→Final) — UNCHANGED
 // ============================================================
-const T_CARD_W = 134, T_CARD_H = 124, T_ROW = 146, T_COL = 176;
+const T_CARD_W = 142, T_CARD_H = 104, T_ROW = 128, T_COL = 176;
 const T_LEFT_R16 = [89, 90, 93, 94], T_RIGHT_R16 = [91, 92, 95, 96];
 
 function WholeBracket({ renderNode, champion, isMobile }: { renderNode: (m: number) => React.ReactNode; champion: string | null; isMobile: boolean }) {
