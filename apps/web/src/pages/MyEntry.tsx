@@ -161,7 +161,7 @@ export default function MyEntry() {
       {data.bracketComplete && t && (
         <div style={{ marginTop: 18 }}>
           <div className="faint" style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.08em', marginBottom: 8 }}>SHARE YOUR BRACKET</div>
-          <ShareCard prediction={data.entry.prediction} base={t.base} remaining={t.remaining} userName={user.name} />
+          <ShareCard prediction={data.entry.prediction} base={t.base} remaining={t.remaining} userName={user.name} submittedAt={data.entry.submittedAt ? new Date(data.entry.submittedAt) : null} />
         </div>
       )}
 

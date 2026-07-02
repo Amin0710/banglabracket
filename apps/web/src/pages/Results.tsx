@@ -49,7 +49,7 @@ type ResultsSub = 'matches' | 'groups' | 'scorers' | 'assists';
 // shared (cached) tournament, and fetches the player-stat tables lazily on open.
 export default function Results() {
   const t = useTournament();
-  const [sub, setSub] = useState<ResultsSub>('matches');
+  const [sub, setSub] = useState<ResultsSub>('scorers');
   const [stats, setStats] = useState<{ topScorers: any[]; topAssists: any[] } | null>(null);
   useEffect(() => { api.get('/api/stats').then(setStats).catch(() => setStats({ topScorers: [], topAssists: [] })); }, []);
 
@@ -65,7 +65,7 @@ export default function Results() {
     <div>
       <PageHeader title="Results" subtitle="Completed matches, groups & top players" />
       <SubTabs<ResultsSub> active={sub} onChange={setSub}
-        tabs={[{ key: 'matches', label: 'Matches' }, { key: 'groups', label: 'Groups' }, { key: 'scorers', label: 'Top scorers' }, { key: 'assists', label: 'Top assists' }]} />
+        tabs={[{ key: 'scorers', label: 'Top scorers' }, { key: 'assists', label: 'Top assists' }, { key: 'matches', label: 'Matches' }, { key: 'groups', label: 'Groups' }]} />
 
       {sub === 'matches' && (
         <div className="card" style={{ padding: 16 }}>

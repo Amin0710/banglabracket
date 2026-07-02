@@ -756,7 +756,7 @@ export default function Bracket() {
         <div style={{ position: 'fixed', inset: 0, zIndex: 1300, background: 'rgba(8,16,11,.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: 16, overflow: 'auto' }}
           onClick={() => setSubmitAt(null)}>
           <div style={{ width: '100%', maxWidth: 440, margin: 'auto' }} onClick={(e) => e.stopPropagation()}>
-            <ShareCard prediction={{ winners }} base={t.base} remaining={t.remaining} userName={user.name} submittedAt={submitAt} onClose={() => setSubmitAt(null)} />
+            <ShareCard prediction={{ winners, manner }} base={t.base} remaining={t.remaining} userName={user.name} submittedAt={submitAt} onClose={() => setSubmitAt(null)} />
           </div>
         </div>
       )}
