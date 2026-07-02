@@ -19,12 +19,12 @@ const MANNER_SHORT: Record<Manner, string> = { FT: 'FT', ET: 'AET', PEN: 'PENS' 
 type MatchState = 'upcoming' | 'live' | 'decided';
 
 // ── stages (Rounds mode). 3rd-place folds into the Final stage. ──
-const STAGES: { key: string; label: string; matches: number[]; sub: string }[] = [
-  { key: 'R32', label: 'Round of 32', matches: R32_MATCHES, sub: 'Tap a team to send it through — sets up your Round of 16' },
-  { key: 'R16', label: 'Round of 16', matches: KO_MATCHES.filter((m) => ROUND_OF(m) === 'R16'), sub: 'Tap a match to pick the winner & manner' },
-  { key: 'QF', label: 'Quarter-finals', matches: KO_MATCHES.filter((m) => ROUND_OF(m) === 'QF'), sub: 'Tap a match to pick the winner & manner' },
-  { key: 'SF', label: 'Semi-finals', matches: KO_MATCHES.filter((m) => ROUND_OF(m) === 'SF'), sub: 'Tap a match to pick the winner & manner' },
-  { key: 'FINAL', label: 'Final', matches: [104, 103], sub: 'Crown your champion' },
+const STAGES: { key: string; label: string; short: string; matches: number[]; sub: string }[] = [
+  { key: 'R32', label: 'Round of 32', short: 'R32', matches: R32_MATCHES, sub: 'Tap a team to send it through — sets up your Round of 16' },
+  { key: 'R16', label: 'Round of 16', short: 'R16', matches: KO_MATCHES.filter((m) => ROUND_OF(m) === 'R16'), sub: 'Tap a match to pick the winner & manner' },
+  { key: 'QF', label: 'Quarter-finals', short: 'QF', matches: KO_MATCHES.filter((m) => ROUND_OF(m) === 'QF'), sub: 'Tap a match to pick the winner & manner' },
+  { key: 'SF', label: 'Semi-finals', short: 'SF', matches: KO_MATCHES.filter((m) => ROUND_OF(m) === 'SF'), sub: 'Tap a match to pick the winner & manner' },
+  { key: 'FINAL', label: 'Final', short: 'Final', matches: [104, 103], sub: 'Crown your champion' },
 ];
 const ROUND_COL: Record<string, number> = { R32: 0, R16: 1, QF: 2, SF: 3, THIRD: 4, FINAL: 4 };
 
@@ -591,11 +591,11 @@ export default function Bracket() {
   };
   const RoundsView = (
     <div>
-      <div style={{ position: 'sticky', top: 0, zIndex: 20, background: 'var(--bg)', display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 4 }}>
+      <div style={{ position: isMobile ? 'static' : 'sticky', top: 0, zIndex: 20, background: 'var(--bg)', display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 4 }}>
         {!isMobile && arrowBtn(-1)}
         <div className="bb-stagetabs" style={{ position: 'static', flex: 1, margin: 0, padding: '4px 0' }}>
           {STAGES.map((s, i) => (
-            <button key={s.key} data-active={i === stageIdx} onClick={() => setStageIdx(i)}>{s.label}</button>
+            <button key={s.key} data-active={i === stageIdx} onClick={() => setStageIdx(i)}>{isMobile ? s.short : s.label}</button>
           ))}
         </div>
         {!isMobile && arrowBtn(1)}
@@ -618,7 +618,7 @@ export default function Bracket() {
             <svg width={geom.W} height={canvasH} style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'visible' }}>
               {geom.links.map((d, i) => <path key={i} d={d} fill="none" stroke="var(--faint)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />)}
             </svg>
-            {ALL_MATCHES.map((m) => (
+            {visNodes.map((m) => (
               <div key={m} className="bb-node" style={{ left: geom.x[m], top: (geom.y[m] ?? 0) - NODE_H / 2, width: CARD_W, zIndex: expandedMatch === m ? 10 : 2 }}>
                 {renderCard(m, 'rounds', ROUND_LISTS[stageIdx].includes(m))}
               </div>
