@@ -525,10 +525,11 @@ export default function Bracket() {
         if (isPicked) bg = !decided ? 'var(--goldSoft)' : (validPick === actualWinner ? 'var(--greenSoft)' : 'var(--line)');
         const score = scoreFor(team); const pen = penFor(team);
         return (
-          <div key={slotKey} style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '5px 3px', borderRadius: 8, background: bg }}>
-            <Flag name={team} size={30} />
-            <span style={{ fontSize: 10, fontWeight: 700, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: team ? undefined : 'var(--faint)' }}>{team || 'TBD'}</span>
-            {score != null && <span className="tabular" style={{ fontSize: 10, fontWeight: 800 }}>{score}{pen != null ? ` (${pen})` : ''}</span>}
+          <div key={slotKey} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, padding: '3px 3px', borderRadius: 7, background: bg }}>
+            <Flag name={team} size={20} />
+            <span style={{ fontSize: 9.5, fontWeight: 700, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: team ? undefined : 'var(--faint)' }}>
+              {team || 'TBD'}{score != null ? ` ${score}${pen != null ? ` (${pen})` : ''}` : ''}
+            </span>
           </div>
         );
       };
@@ -543,17 +544,18 @@ export default function Bracket() {
       };
       return (
         <div key={m} className="card" onClick={cardOnClick}
-          style={{ padding: 7, cursor: cardOnClick ? 'pointer' : 'default', display: 'flex', flexDirection: 'column', gap: 5,
+          style={{ padding: 6, cursor: cardOnClick ? 'pointer' : 'default', display: 'flex', flexDirection: 'column', gap: 4,
             background: wrongBox ? 'var(--redSoft)' : 'var(--surface)', borderColor: wrongBox ? 'var(--bad)' : undefined }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span className="faint" style={{ fontSize: 9, fontWeight: 700 }}>M{m}</span>
             {st.state === 'live' && <StatusChip kind="live" />}
             {decided && f && <span className="bb-decided" style={{ fontSize: 8.5 }}>{f.pen ? 'PEN' : f.statusLabel}</span>}
           </div>
-          <div style={{ display: 'flex', gap: 5 }}>{treeSlot(p.A, 'A')}{treeSlot(p.B, 'B')}</div>
-          <div style={{ display: 'flex', gap: 3 }}>
+          {/* teams STACKED vertically (one over the other), each flag + small name under it */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>{treeSlot(p.A, 'A')}{treeSlot(p.B, 'B')}</div>
+          <div style={{ display: 'flex', gap: 1 }}>
             {MANNER_OPTS.map(([label, code]) => { const s = mannerStyle(code); return (
-              <span key={code} style={{ flex: 1, textAlign: 'center', fontSize: 8.5, fontWeight: 800, padding: '2px 0', borderRadius: 5, ...s }}>{label}</span>
+              <span key={code} style={{ flex: 1, textAlign: 'center', fontSize: 8.5, fontWeight: 800, padding: '2px 0', borderRadius: 4, ...s }}>{label}</span>
             ); })}
           </div>
         </div>
@@ -764,7 +766,7 @@ export default function Bracket() {
 // ============================================================
 //  Whole bracket — computed geometry + SVG elbow connectors (R16→Final) — UNCHANGED
 // ============================================================
-const T_CARD_W = 150, T_CARD_H = 96, T_ROW = 120, T_COL = 190;
+const T_CARD_W = 134, T_CARD_H = 124, T_ROW = 146, T_COL = 176;
 const T_LEFT_R16 = [89, 90, 93, 94], T_RIGHT_R16 = [91, 92, 95, 96];
 
 function WholeBracket({ renderNode, champion, isMobile }: { renderNode: (m: number) => React.ReactNode; champion: string | null; isMobile: boolean }) {
