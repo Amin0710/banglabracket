@@ -7,7 +7,8 @@ import {
 } from '@banglabracket/shared';
 import { api } from '../lib/api';
 import { useAuth, useTheme } from '../context/Providers';
-import { confirmFreezeEdit } from '../lib/feedback';
+import { confirmFreezeEdit, confirmDialog } from '../lib/feedback';
+import { ShareCard } from '../components/ShareCard';
 import { PageHeader, Flag, NextMatchBanner, NextRoundStrip, StatusChip, SubTabs, useIsMobile } from '../components/ui';
 
 type Scores = Record<string, { sa: number | ''; sb: number | '' }[]>;
@@ -282,6 +283,7 @@ export default function Bracket() {
   const [eligible, setEligible] = useState(true);
   const [freezeAck, setFreezeAck] = useState(false);
   const [showR32Hint, setShowR32Hint] = useState(true);
+  const [submitAt, setSubmitAt] = useState<Date | null>(null);   // opens the submit/share modal
   const [wrapW, setWrapW] = useState(0);
   const timer = useRef<any>(null);
   const skipFirstSave = useRef(true);
@@ -430,6 +432,19 @@ export default function Bracket() {
   function setCashCell(m: number, side: 'a' | 'b', raw: string) {
     const v = raw === '' ? '' : Math.max(0, +raw);
     setScorePred((s) => ({ ...s, [m]: { a: side === 'a' ? v : (s[m]?.a ?? ''), b: side === 'b' ? v : (s[m]?.b ?? '') } }));
+  }
+  // Submit = completeness gate then a shareable image. Required = a winner pick for
+  // every knockout match R32→Final (same set as isBracketComplete).
+  async function submitBracket() {
+    const missing = ALL_MATCHES.filter((m) => !winners[m]);
+    if (missing.length) {
+      const msg = missing.length <= 5
+        ? `You haven't finished ${missing.map((m) => 'M' + m).join(', ')}. Finish those matches to submit.`
+        : `You have ${missing.length} matches left to finish before you can submit.`;
+      await confirmDialog({ title: 'Bracket not finished', message: msg, confirmText: 'Keep picking' });
+      return;
+    }
+    setSubmitAt(new Date());   // complete → open the submit/share card (timestamped)
   }
 
   // A knockout match has EXACTLY two participants. Once it's live/decided we show
@@ -751,7 +766,29 @@ export default function Bracket() {
       )}
       </div>
 
+      {/* Submit bracket — persistent at the bottom strip, reachable from every round */}
+      <button className="btn btn-primary" onClick={submitBracket}
+        style={{ width: '100%', minHeight: 48, fontSize: 15, marginTop: 12 }}>
+        ✅ Submit bracket
+      </button>
+
       <NextRoundStrip nextRound={t.nextRound} />
+
+      {submitAt && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1300, background: 'rgba(8,16,11,.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: 16, overflow: 'auto' }}
+          onClick={() => setSubmitAt(null)}>
+          <div style={{ width: '100%', maxWidth: 440, margin: 'auto' }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <strong style={{ color: '#fff', fontSize: 16 }}>Bracket submitted ✓</strong>
+              <button onClick={() => setSubmitAt(null)} aria-label="Close" style={{ width: 32, height: 32, borderRadius: 9, border: '1px solid var(--line)', background: 'var(--surface2)', color: 'var(--ink)', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
+            </div>
+            <ShareCard prediction={{ winners }} base={t.base} remaining={t.remaining} userName={user.name} submittedAt={submitAt} />
+            <div style={{ textAlign: 'center', marginTop: 10 }}>
+              <button className="btn" onClick={() => setSubmitAt(null)} style={{ color: '#fff', borderColor: 'rgba(255,255,255,.35)', background: 'transparent' }}>Share later — close</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {sheetMatch && (
         <PickSheet m={sheetMatch.m} A={sheetMatch.p.A} B={sheetMatch.p.B} round={sheetMatch.round}

@@ -18,15 +18,17 @@ interface Props {
 	base: any;
 	remaining: any;
 	userName?: string | null;
+	submittedAt?: Date | null;   // when set, shows/bakes a "Submitted …" timestamp
 }
 
 const goldText = "#231a05";
 const brandGreen = "#0b7a4b";
 const brandGold = "#ffcb45";
 
-export function ShareCard({ prediction, base, remaining, userName }: Props) {
+export function ShareCard({ prediction, base, remaining, userName, submittedAt }: Props) {
 	const [busy, setBusy] = useState(false);
 	const winners: Record<number, string> = prediction?.winners || {};
+	const stamp = submittedAt ? submittedAt.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : undefined;
 
 	const participants = useMemo(() => {
 		const r32 = resolveR32(base || {}, remaining || {}, {});
@@ -56,6 +58,7 @@ export function ShareCard({ prediction, base, remaining, userName }: Props) {
 				runnerUp,
 				semis,
 				userName,
+				timestamp: stamp,
 			});
 			const file = new File([blob], "banglabracket-bracket.png", {
 				type: "image/png",
@@ -177,6 +180,11 @@ export function ShareCard({ prediction, base, remaining, userName }: Props) {
 						— {userName}
 					</div>
 				)}
+				{stamp && (
+					<div className="faint" style={{ fontSize: 11, marginTop: 4 }}>
+						Submitted {stamp}
+					</div>
+				)}
 			</div>
 
 			<div style={{ padding: 14, borderTop: "1px solid var(--line)" }}>
@@ -216,11 +224,13 @@ async function drawShareImage({
 	runnerUp,
 	semis,
 	userName,
+	timestamp,
 }: {
 	champion: string | null;
 	runnerUp: string | null;
 	semis: string[];
 	userName?: string | null;
+	timestamp?: string;
 }): Promise<Blob> {
 	const W = 1080,
 		H = 1350;
@@ -330,9 +340,16 @@ async function drawShareImage({
 	if (userName)
 		center(
 			`— ${userName}`,
-			H - 130,
+			H - 168,
 			"600 30px system-ui, sans-serif",
 			"#a3b6a6",
+		);
+	if (timestamp)
+		center(
+			`Submitted ${timestamp}`,
+			H - 122,
+			"600 24px system-ui, sans-serif",
+			"#6f8475",
 		);
 	center(
 		"banglabracket.com · Free to play · 13+",
