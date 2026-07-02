@@ -58,6 +58,13 @@ const entrySchema = new Schema({
   grandPrizeEligible: { type: Boolean, default: true },
   grandPrizeForfeitedAt: { type: Date },       // when a post-freeze edit cleared eligibility
 
+  // Submission state: the user explicitly "submits" a complete bracket. submittedAt
+  // is the timestamp (survives refresh); submittedBracket is the canonical bracket
+  // snapshot at submit time. The client compares the current bracket to that snapshot
+  // so only a REAL pre-R16 change re-shows "Submit" (a no-op save keeps "Submitted").
+  submittedAt: { type: Date },
+  submittedBracket: { type: String },
+
   lockedSnapshot: { type: Schema.Types.Mixed },// frozen at lock time (audit)
 }, { timestamps: true });
 

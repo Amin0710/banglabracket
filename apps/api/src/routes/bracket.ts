@@ -45,6 +45,8 @@ const predictionSchema = z.object({
   manner: z.record(z.enum(['FT', 'ET', 'PEN'])).optional(),
   // exact-score picks per knockout match (drive the cash side-game)
   scorePredictions: z.record(z.object({ a: z.number().int().min(0).max(99), b: z.number().int().min(0).max(99) })).optional(),
+  // when true, this PUT marks the bracket as SUBMITTED (stamps submittedAt + snapshot)
+  submit: z.boolean().optional(),
 });
 
 // Load the signed-in user's entry (+ live score and cash side-game view).
@@ -59,6 +61,9 @@ bracketRouter.get('/entry', requireAuth, async (req: AuthedRequest, res) => {
     entry: entry ? {
       prediction: entry.prediction, rePicked: entry.rePicked, updatedAt: entry.updatedAt,
       grandPrizeEligible: entry.grandPrizeEligible !== false, // default true
+      // submission state (survives refresh): timestamp + canonical snapshot at submit
+      submittedAt: entry.submittedAt || null,
+      submittedBracket: (entry as any).submittedBracket || null,
     } : null,
     locked: isLocked(t), score, cash,
     // soft-freeze + completeness state the client needs (warning UI is a later pass)
@@ -78,7 +83,7 @@ bracketRouter.get('/entry', requireAuth, async (req: AuthedRequest, res) => {
 // at THAT match's own kickoff (server-authoritative); future matches stay open.
 bracketRouter.put('/entry', requireAuth, validate(predictionSchema), async (req: AuthedRequest, res) => {
   const t = await getTournament();
-  const prediction = req.body;
+  const { submit, ...prediction } = req.body;
 
   const existing = await Entry.findOne({ userId: req.userId, tournamentKey: env.tournamentKey }).lean();
   const prevPred = (existing?.prediction as any) || {};
@@ -125,6 +130,15 @@ bracketRouter.put('/entry', requireAuth, validate(predictionSchema), async (req:
     if (!existing || existing.grandPrizeEligible !== false) set.grandPrizeForfeitedAt = new Date();
   }
 
+  // ---- explicit submission: stamp submittedAt + the canonical bracket snapshot ----
+  // The snapshot is the MERGED bracket, so the client can compare its current bracket
+  // to it and re-show "Submit" only on a real change. A normal (non-submit) save never
+  // touches these, so a no-op autosave never flips the state back to "Submit".
+  if (submit) {
+    set.submittedAt = new Date();
+    set.submittedBracket = bracketCanon(prediction);
+  }
+
   const entry = await Entry.findOneAndUpdate(
     { userId: req.userId, tournamentKey: env.tournamentKey },
     { $set: set, $setOnInsert: { tournamentKey: env.tournamentKey, userId: req.userId } },
@@ -136,6 +150,8 @@ bracketRouter.put('/entry', requireAuth, validate(predictionSchema), async (req:
     grandPrizeEligible: entry.grandPrizeEligible !== false,
     bracketFrozenForPrize: frozen,
     bracketComplete: isBracketComplete(prediction.winners),
+    submittedAt: entry.submittedAt || null,
+    submittedBracket: (entry as any).submittedBracket || null,
   });
 });
 

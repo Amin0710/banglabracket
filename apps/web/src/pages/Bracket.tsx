@@ -7,7 +7,7 @@ import {
 } from '@banglabracket/shared';
 import { api } from '../lib/api';
 import { useAuth, useTheme } from '../context/Providers';
-import { confirmFreezeEdit, confirmDialog } from '../lib/feedback';
+import { confirmFreezeEdit, confirmDialog, toast } from '../lib/feedback';
 import { ShareCard } from '../components/ShareCard';
 import { PageHeader, Flag, NextMatchBanner, NextRoundStrip, StatusChip, SubTabs, useIsMobile } from '../components/ui';
 
@@ -90,6 +90,22 @@ function computeGeom(CARD_W: number, stride: number, PITCH: number, leftInset: n
     }
   }
   return { x, y, W, links };
+}
+
+// Canonical bracket snapshot — MUST match the server's bracketCanon (groups + winners
+// + manner, keys sorted). Lets the client compare its current bracket to the submitted
+// snapshot so only a REAL change re-shows "Submit" (a no-op edit does not).
+function bracketCanon(p: { groups: any; winners: any; manner: any }): string {
+  const stable = (v: any): any => {
+    if (Array.isArray(v)) return v.map(stable);
+    if (v && typeof v === 'object') {
+      const o: any = {};
+      for (const k of Object.keys(v).sort()) o[k] = stable(v[k]);
+      return o;
+    }
+    return v;
+  };
+  return JSON.stringify(stable({ groups: p.groups || {}, winners: p.winners || {}, manner: p.manner || {} }));
 }
 
 function currentStageIdx(t: any): number {
@@ -286,8 +302,8 @@ export default function Bracket() {
   const [freezeAck, setFreezeAck] = useState(false);
   const [showR32Hint, setShowR32Hint] = useState(true);
   const [submitAt, setSubmitAt] = useState<Date | null>(null);   // opens the submit/share modal
-  const [submitted, setSubmitted] = useState(false);             // combined "✓ Submitted" + Share state
-  const [submittedAt, setSubmittedAt] = useState<Date | null>(null);
+  const [submittedAt, setSubmittedAt] = useState<Date | null>(null);      // persisted submission time
+  const [submittedBracket, setSubmittedBracket] = useState<string | null>(null); // canonical snapshot at submit
   const [wrapW, setWrapW] = useState(0);
   const timer = useRef<any>(null);
   const skipFirstSave = useRef(true);
@@ -313,6 +329,8 @@ export default function Bracket() {
             setWinners(p.winners || {}); setManner(p.manner || {});
             if (p.scorePredictions) setScorePred(p.scorePredictions);
           }
+          // submission state survives refresh: restore timestamp + snapshot
+          if (r.entry?.submittedAt) { setSubmittedAt(new Date(r.entry.submittedAt)); setSubmittedBracket(r.entry.submittedBracket ?? null); }
           if (r.grandPrizeEligible === false) setEligible(false);
         } catch {}
       }
@@ -399,27 +417,41 @@ export default function Bracket() {
     return { state: 'upcoming', res: null, fx };
   }, [t, fixturesByMatch]);
 
+  // Persisted `groups` shape (same as the saved payload) — single source for both
+  // the autosave/submit payload and the canonical snapshot comparison.
+  const groupsPayload = useMemo(() => {
+    const groups: any = {};
+    for (const g of GROUP_KEYS) {
+      const rem = t?.remaining?.[g] || [];
+      const arr = (scores[g] || []).map((s, i) => rem[i] && s.sa !== '' && s.sb !== '' ? { a: rem[i][0], b: rem[i][1], sa: +s.sa, sb: +s.sb } : null).filter(Boolean);
+      if (arr.length) groups[g] = { scores: arr };
+    }
+    return groups;
+  }, [scores, t]);
+  const currentCanon = useMemo(() => bracketCanon({ groups: groupsPayload, winners, manner }), [groupsPayload, winners, manner]);
+  // Submitted state (derived): the user submitted AND either the Round of 16 has closed
+  // (bracket locked) OR the current bracket still matches the submitted snapshot. A real
+  // pre-R16 change makes currentCanon differ → "Submit" returns; post-R16 or no-change stays "Submitted".
+  const submitted = submittedAt != null && (frozen || currentCanon === submittedBracket);
+
+  function buildPayload(submit?: boolean) {
+    const sp: any = {};
+    for (const m of Object.keys(scorePred)) { const v = scorePred[+m]; if (v && v.a !== '' && v.b !== '') sp[m] = { a: +v.a, b: +v.b }; }
+    const payload: any = { groups: groupsPayload, winners, manner };
+    if (Object.keys(sp).length) payload.scorePredictions = sp;
+    if (submit) payload.submit = true;
+    return payload;
+  }
+
   useEffect(() => {
     if (!loaded || !user) return;
     if (skipFirstSave.current) { skipFirstSave.current = false; return; }
     setSaved(false); clearTimeout(timer.current);
     timer.current = setTimeout(async () => {
-      const groups: any = {};
-      for (const g of GROUP_KEYS) {
-        const rem = t.remaining?.[g] || [];
-        const arr = (scores[g] || []).map((s, i) => rem[i] && s.sa !== '' && s.sb !== '' ? { a: rem[i][0], b: rem[i][1], sa: +s.sa, sb: +s.sb } : null).filter(Boolean);
-        if (arr.length) groups[g] = { scores: arr };
-      }
-      const sp: any = {};
-      for (const m of Object.keys(scorePred)) { const v = scorePred[+m]; if (v && v.a !== '' && v.b !== '') sp[m] = { a: +v.a, b: +v.b }; }
-      const payload: any = { groups, winners, manner }; if (Object.keys(sp).length) payload.scorePredictions = sp;
-      try { const r = await api.put('/api/entry', payload); setSaved(true); if (r?.grandPrizeEligible === false) setEligible(false); } catch {}
+      try { const r = await api.put('/api/entry', buildPayload()); setSaved(true); if (r?.grandPrizeEligible === false) setEligible(false); } catch {}
     }, 800);
     return () => clearTimeout(timer.current);
   }, [scores, winners, manner, scorePred, loaded, user]);
-
-  // Submit UX: editing any pick after submitting brings the "Submit bracket" button back.
-  useEffect(() => { setSubmitted(false); }, [winners, manner, scores]);
 
   if (!t) return <div className="muted">Loading bracket…</div>;
   if (!user) { nav('/'); return null; }
@@ -458,8 +490,19 @@ export default function Bracket() {
       await confirmDialog({ title: 'Bracket not finished', message: msg, confirmText: 'Keep picking' });
       return;
     }
-    const now = new Date();
-    setSubmitted(true); setSubmittedAt(now); setSubmitAt(now);   // complete → mark submitted + open the share card
+    // Persist the submission server-side (survives refresh) + open the share card.
+    clearTimeout(timer.current); setSaved(false);
+    try {
+      const r = await api.put('/api/entry', buildPayload(true));
+      setSaved(true);
+      if (r?.grandPrizeEligible === false) setEligible(false);
+      const at = r?.submittedAt ? new Date(r.submittedAt) : new Date();
+      setSubmittedAt(at);
+      setSubmittedBracket(r?.submittedBracket ?? currentCanon);
+      setSubmitAt(at);
+    } catch {
+      toast('Could not submit your bracket — please try again', 'error');
+    }
   }
 
   // A knockout match has EXACTLY two participants. Once it's live/decided we show
@@ -741,7 +784,7 @@ export default function Bracket() {
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
       <PageHeader title="Bracket" subtitle="Pick every winner — results update live"
         right={<div className="card" style={{ padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="3"><path d="M5 13l4 4L19 7" /></svg><span style={{ fontWeight: 600, fontSize: 14 }}>{saved ? 'Saved' : 'Saving…'}</span>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="3"><path d="M5 13l4 4L19 7" /></svg><span style={{ fontWeight: 600, fontSize: 14 }}>{!saved ? 'Saving…' : submitted ? 'Submitted' : 'Saved'}</span>
         </div>} />
 
       <NextMatchBanner nextMatch={t.nextMatch} />
@@ -798,16 +841,17 @@ export default function Bracket() {
       )}
       </div>
 
-      {/* Submit bracket — persistent bottom strip. After submitting, a combined
-          "✓ Submitted" indicator + "Share image" action; editing a pick brings Submit back. */}
+      {/* Submit bracket — persistent bottom strip. Once submitted, a combined
+          "✓ Submitted · Share my bracket" (Share is the only action). A real pre-R16
+          pick change brings "Submit bracket" back; post-R16 / no-change stays Submitted. */}
       {submitted ? (
         <div style={{ display: 'flex', gap: 8, marginTop: 12, alignItems: 'stretch' }}>
-          <div className="btn" style={{ flex: 1, minHeight: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 15, fontWeight: 700, color: 'var(--green)', background: 'var(--greenSoft)', borderColor: 'transparent', cursor: 'default' }}>
+          <div className="btn" style={{ flex: '0 0 auto', minHeight: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '0 16px', fontSize: 15, fontWeight: 700, color: 'var(--green)', background: 'var(--greenSoft)', borderColor: 'transparent', cursor: 'default' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="3"><path d="M5 13l4 4L19 7" /></svg>Submitted
           </div>
           <button className="btn btn-primary" onClick={() => setSubmitAt(submittedAt || new Date())}
             style={{ flex: 1, minHeight: 48, fontSize: 15 }}>
-            Share image
+            📤 Share my bracket
           </button>
         </div>
       ) : (
