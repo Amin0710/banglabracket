@@ -22,6 +22,12 @@ if (existsSync('landing/index.html')) {
   console.log('copied landing -> dist/index.html');
 }
 
+// Branded 404 at the dist root — Vercel serves dist/404.html for any unmatched path.
+if (existsSync('landing/404.html')) {
+  copyFileSync('landing/404.html', 'dist/404.html');
+  console.log('copied 404 -> dist/404.html');
+}
+
 // Make favicon reachable at the root too (the landing references /favicon.png).
 if (existsSync('dist/wc2026/app/favicon.png')) {
   copyFileSync('dist/wc2026/app/favicon.png', 'dist/favicon.png');

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth, type User } from './context/Providers';
 import { LogoMark, Wordmark, ThemeToggle, SubTabs } from './components/ui';
 import { api } from './lib/api';
@@ -14,6 +14,7 @@ import Scoring from './pages/Scoring';
 import Prizes from './pages/Prizes';
 import Winners from './pages/Winners';
 import Admin from './pages/Admin';
+import NotFound from './pages/NotFound';
 
 // ── Mobile hubs: bottom-nav entry points that expose their sibling INFO/secondary
 // pages as top sub-tabs. On desktop the sub-tabs hide (sidebar handles those routes).
@@ -221,7 +222,7 @@ export default function App() {
               <Route path="/prizes" element={<Prizes />} />
               <Route path="/winners" element={<Winners />} />
               <Route path="/admin" element={<Admin />} />
-              <Route path="*" element={<Navigate to="/bracket" />} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
           <BottomNav />
