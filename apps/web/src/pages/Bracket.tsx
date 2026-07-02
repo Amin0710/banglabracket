@@ -286,6 +286,8 @@ export default function Bracket() {
   const [freezeAck, setFreezeAck] = useState(false);
   const [showR32Hint, setShowR32Hint] = useState(true);
   const [submitAt, setSubmitAt] = useState<Date | null>(null);   // opens the submit/share modal
+  const [submitted, setSubmitted] = useState(false);             // combined "✓ Submitted" + Share state
+  const [submittedAt, setSubmittedAt] = useState<Date | null>(null);
   const [wrapW, setWrapW] = useState(0);
   const timer = useRef<any>(null);
   const skipFirstSave = useRef(true);
@@ -416,6 +418,9 @@ export default function Bracket() {
     return () => clearTimeout(timer.current);
   }, [scores, winners, manner, scorePred, loaded, user]);
 
+  // Submit UX: editing any pick after submitting brings the "Submit bracket" button back.
+  useEffect(() => { setSubmitted(false); }, [winners, manner, scores]);
+
   if (!t) return <div className="muted">Loading bracket…</div>;
   if (!user) { nav('/'); return null; }
 
@@ -453,7 +458,8 @@ export default function Bracket() {
       await confirmDialog({ title: 'Bracket not finished', message: msg, confirmText: 'Keep picking' });
       return;
     }
-    setSubmitAt(new Date());   // complete → open the submit/share card (timestamped)
+    const now = new Date();
+    setSubmitted(true); setSubmittedAt(now); setSubmitAt(now);   // complete → mark submitted + open the share card
   }
 
   // A knockout match has EXACTLY two participants. Once it's live/decided we show
@@ -482,10 +488,16 @@ export default function Bracket() {
     const validPick = rawPick && (rawPick === p.A || rawPick === p.B) ? rawPick : null;
     const actualWinner = decided ? st.res?.winner : null;
     const correct = decided && rawPick ? rawPick === actualWinner : null;
+    const actualManner = decided ? st.res?.manner : null;
+    // manner only matters for R16→Final (R32 is winner-only, no manner pick).
+    const mannerOk = decided && !isR32 ? manner[m] === actualManner : true;
+    const bothCorrect = correct === true && mannerOk;
     // #6: a LIVE match is still pickable — only a DECIDED match locks the bracket pick.
     // A preview (peek) card is never directly pickable — you advance to that round first.
     const canPick = !decided && !!p.A && !!p.B && !preview;
-    const tint = correct === true ? ' bb-correct' : correct === false ? ' bb-wrong' : '';
+    // UNIFIED box rule (rounds + tree): GREEN only when winner AND manner BOTH correct;
+    // RED when winner wrong; WHITE otherwise (incl. winner-right + manner-wrong).
+    const tint = decided ? (correct === false ? ' bb-wrong' : bothCorrect ? ' bb-correct' : '') : '';
     const r32cls = isR32 && !decided ? ' bb-r32tile' : '';
     const res = st.res; const fx = st.fx;
     const pick32 = mode === 'rounds' && isR32 && canPick;
@@ -513,11 +525,12 @@ export default function Bracket() {
         <Flag name={team} size={20} />
         <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: team ? undefined : 'var(--faint)' }}>{team || 'TBD'}</span>
         {score != null && <span className="tabular" style={{ fontWeight: 800 }}>{score}{pen != null ? ` (${pen})` : ''}</span>}
-        {isPick && !decided && <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="3"><path d="M5 13l4 4L19 7" /></svg>}
       </>);
+      // picked-team row marker: amber (pending) → green (winner correct) → grey (winner wrong).
+      const rowBg = isPick ? (!decided ? 'var(--goldSoft)' : (team === actualWinner ? 'var(--greenSoft)' : 'var(--line)')) : 'transparent';
       const baseStyle: React.CSSProperties = {
         display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px', borderRadius: 8, fontSize: 13,
-        background: isPick && !decided ? 'var(--greenSoft)' : 'transparent', opacity: dim ? .5 : 1, fontWeight: (isActual || isPick) ? 800 : 600,
+        background: rowBg, opacity: dim ? .5 : 1, fontWeight: (isActual || isPick) ? 800 : 600,
       };
       if (pick32 && team) return (
         <button key={slotKey} onClick={(e) => { e.stopPropagation(); applyPick(m, team, 'FT'); }}
@@ -542,23 +555,25 @@ export default function Bracket() {
     //    colour systems: box goes RED only on a decided+wrong MAIN pick; the picked
     //    team row and the manner strip colour themselves and never tint the box. ──
     if (mode === 'tree') {
-      const wrongBox = correct === false;   // decided && picked && picked !== actual winner
+      // UNIFIED box rule: GREEN only when winner+manner both correct; RED when winner wrong; WHITE otherwise.
+      const boxBg = decided ? (correct === false ? 'var(--redSoft)' : bothCorrect ? 'var(--greenSoft)' : 'var(--surface)') : 'var(--surface)';
+      const boxBorder = decided ? (correct === false ? 'var(--bad)' : bothCorrect ? 'var(--green)' : undefined) : undefined;
       const treeSlot = (team: string | null, slotKey: 'A' | 'B') => {
         const isPicked = !!validPick && team === validPick;
+        // picked-team row marker: amber (pending) → green (winner correct) → grey (winner wrong).
         let bg = 'transparent';
         if (isPicked) bg = !decided ? 'var(--goldSoft)' : (validPick === actualWinner ? 'var(--greenSoft)' : 'var(--line)');
         const score = scoreFor(team); const pen = penFor(team);
         return (
-          <div key={slotKey} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, padding: '3px 3px', borderRadius: 7, background: bg }}>
-            <Flag name={team} size={20} />
-            <span style={{ fontSize: 9.5, fontWeight: 700, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: team ? undefined : 'var(--faint)' }}>
+          <div key={slotKey} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, padding: '1px 1px', borderRadius: 7, background: bg }}>
+            <Flag name={team} size={30} />
+            <span style={{ fontSize: 10.5, fontWeight: 700, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: team ? undefined : 'var(--faint)' }}>
               {team || 'TBD'}{score != null ? ` ${score}${pen != null ? ` (${pen})` : ''}` : ''}
             </span>
           </div>
         );
       };
       const sel = manner[m];                        // user's manner pick ('FT'|'ET'|'PEN')
-      const actualManner = decided ? res?.manner : null;
       const MANNER_OPTS: [string, Manner][] = [['FT', 'FT'], ['AET', 'ET'], ['PEN', 'PEN']];
       const mannerStyle = (code: Manner) => {
         if (decided && code === actualManner) return { background: 'var(--greenSoft)', color: 'var(--green)' };            // correct option → green
@@ -568,19 +583,19 @@ export default function Bracket() {
       };
       return (
         <div key={m} className="card" onClick={cardOnClick}
-          style={{ padding: 6, cursor: cardOnClick ? 'pointer' : 'default', display: 'flex', flexDirection: 'column', gap: 4,
-            background: wrongBox ? 'var(--redSoft)' : 'var(--surface)', borderColor: wrongBox ? 'var(--bad)' : undefined }}>
+          style={{ padding: 3, cursor: cardOnClick ? 'pointer' : 'default', display: 'flex', flexDirection: 'column', gap: 2,
+            background: boxBg, borderColor: boxBorder }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span className="faint" style={{ fontSize: 9, fontWeight: 700 }}>M{m}</span>
             {st.state === 'live' && <StatusChip kind="live" />}
             {decided && f && <span className="bb-decided" style={{ fontSize: 8.5 }}>{f.pen ? 'PEN' : f.statusLabel}</span>}
           </div>
-          {/* teams STACKED on the LEFT; manner as a thin VERTICAL column on the RIGHT */}
-          <div style={{ display: 'flex', gap: 5, alignItems: 'stretch' }}>
+          {/* teams STACKED on the LEFT; manner as a thin VERTICAL column tight on the RIGHT */}
+          <div style={{ display: 'flex', gap: 2, alignItems: 'stretch' }}>
             <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>{treeSlot(p.A, 'A')}{treeSlot(p.B, 'B')}</div>
             <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', gap: 2, justifyContent: 'center' }}>
               {MANNER_OPTS.map(([label, code]) => { const s = mannerStyle(code); return (
-                <span key={code} style={{ textAlign: 'center', fontSize: 8, fontWeight: 800, padding: '2px 4px', borderRadius: 4, ...s }}>{label}</span>
+                <span key={code} style={{ textAlign: 'center', fontSize: 8.5, fontWeight: 800, padding: '2px 3px', borderRadius: 4, ...s }}>{label}</span>
               ); })}
             </div>
           </div>
@@ -588,12 +603,18 @@ export default function Bracket() {
       );
     }
 
-    // ONE consistent 2-line footer template for EVERY card.
+    // ONE consistent 2-line footer template for EVERY card. No "✓ Team" / tick styling.
+    const mnTxt = (manner[m] || 'FT') === 'ET' ? 'AET' : (manner[m] || 'FT') === 'PEN' ? 'PEN' : 'FT';
     let l1: string, l2: string;
-    if (decided) { l1 = rawPick ? `Your pick: ${rawPick}` : 'No pick made'; l2 = rawPick ? (correct ? 'Correct ✓' : 'Missed ✗') : 'Result final'; }
-    else if (validPick) { l1 = `✓ ${validPick}`; l2 = isR32 ? 'Tap a team to change' : `${MANNER_LABEL[manner[m] || 'FT']} · tap to change`; }
-    else if (canPick) { l1 = isR32 ? 'Pick a team' : 'Pick a winner'; l2 = isR32 ? 'Sets up your Round of 16' : 'Winner + manner'; }
-    else { l1 = 'Teams not set'; l2 = 'Waiting on the previous round'; }
+    if (decided) {
+      l1 = rawPick ? `Your pick: ${rawPick}${isR32 ? '' : ` · ${mnTxt}`}` : 'No pick made';
+      l2 = rawPick ? (correct === false ? 'Winner missed' : bothCorrect ? 'Correct' : 'Winner right · manner off') : 'Result final';
+    } else if (validPick) {
+      l1 = `Your pick: ${validPick}${isR32 ? '' : ` · ${mnTxt}`}`;
+      l2 = 'tap to change';
+    } else if (canPick) {
+      l1 = isR32 ? 'Pick a team' : 'Pick a winner'; l2 = isR32 ? 'Sets up your Round of 16' : 'Winner + manner';
+    } else { l1 = 'Teams not set'; l2 = 'Waiting on the previous round'; }
 
     return (
       <div key={m} className={`card${r32cls}${tint}`} onClick={cardOnClick}
@@ -609,7 +630,7 @@ export default function Bracket() {
         {slot(p.B, 'B')}
         {mode === 'rounds' && !preview && (
           <div style={{ marginTop: 4 }}>
-            <div style={{ fontSize: 10.5, fontWeight: 700, color: !decided && validPick ? 'var(--green)' : 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l1}</div>
+            <div style={{ fontSize: 10.5, fontWeight: 700, color: !decided && validPick ? 'var(--goldText)' : 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l1}</div>
             <div className="faint" style={{ fontSize: 9.5, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l2}</div>
           </div>
         )}
@@ -777,11 +798,24 @@ export default function Bracket() {
       )}
       </div>
 
-      {/* Submit bracket — persistent at the bottom strip, reachable from every round */}
-      <button className="btn btn-primary" onClick={submitBracket}
-        style={{ width: '100%', minHeight: 48, fontSize: 15, marginTop: 12 }}>
-        ✅ Submit bracket
-      </button>
+      {/* Submit bracket — persistent bottom strip. After submitting, a combined
+          "✓ Submitted" indicator + "Share image" action; editing a pick brings Submit back. */}
+      {submitted ? (
+        <div style={{ display: 'flex', gap: 8, marginTop: 12, alignItems: 'stretch' }}>
+          <div className="btn" style={{ flex: 1, minHeight: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 15, fontWeight: 700, color: 'var(--green)', background: 'var(--greenSoft)', borderColor: 'transparent', cursor: 'default' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="3"><path d="M5 13l4 4L19 7" /></svg>Submitted
+          </div>
+          <button className="btn btn-primary" onClick={() => setSubmitAt(submittedAt || new Date())}
+            style={{ flex: 1, minHeight: 48, fontSize: 15 }}>
+            Share image
+          </button>
+        </div>
+      ) : (
+        <button className="btn btn-primary" onClick={submitBracket}
+          style={{ width: '100%', minHeight: 48, fontSize: 15, marginTop: 12 }}>
+          ✅ Submit bracket
+        </button>
+      )}
 
       <NextRoundStrip nextRound={t.nextRound} />
 
@@ -818,7 +852,7 @@ export default function Bracket() {
 // transform so its width never exceeds the measured container — zero horizontal
 // scroll by construction, at any width. Row pitch is the minimum the centered-feeder
 // geometry allows (≈ card height) to avoid dead vertical space.
-const T_CARD_W = 142, T_CARD_H = 104, T_ROW = 110, T_COL = 158;
+const T_CARD_W = 142, T_CARD_H = 116, T_ROW = 122, T_COL = 158;
 const T_LEFT_R16 = [89, 90, 93, 94], T_RIGHT_R16 = [91, 92, 95, 96];
 
 function WholeBracket({ renderNode, champion, isMobile }: { renderNode: (m: number) => React.ReactNode; champion: string | null; isMobile: boolean }) {
