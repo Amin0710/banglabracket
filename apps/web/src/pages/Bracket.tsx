@@ -637,7 +637,7 @@ export default function Bracket() {
   };
   const RoundsView = (
     <div>
-      <div style={{ position: 'sticky', top: 0, zIndex: 20, background: 'var(--bg)', display: 'flex', alignItems: 'center', gap: 8, paddingTop: 4, paddingBottom: 4 }}>
+      <div style={{ position: 'sticky', top: isMobile ? 56 : 0, zIndex: 20, background: 'var(--bg)', display: 'flex', alignItems: 'center', gap: 8, paddingTop: 4, paddingBottom: 4 }}>
         {!isMobile && arrowBtn(-1)}
         <div className="bb-stagetabs" style={{ position: 'static', flex: 1, margin: 0, padding: '4px 0' }}>
           {STAGES.map((s, i) => (
