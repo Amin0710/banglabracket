@@ -514,6 +514,52 @@ export default function Bracket() {
             : isMobile ? () => setSheet(m) : () => setExpandedMatch((e) => (e === m ? null : m)))
         : undefined;
 
+    // ── WHOLE-BRACKET (tree) card — flag primary, name underneath; two independent
+    //    colour systems: box goes RED only on a decided+wrong MAIN pick; the picked
+    //    team row and the manner strip colour themselves and never tint the box. ──
+    if (mode === 'tree') {
+      const wrongBox = correct === false;   // decided && picked && picked !== actual winner
+      const treeSlot = (team: string | null, slotKey: 'A' | 'B') => {
+        const isPicked = !!validPick && team === validPick;
+        let bg = 'transparent';
+        if (isPicked) bg = !decided ? 'var(--goldSoft)' : (validPick === actualWinner ? 'var(--greenSoft)' : 'var(--line)');
+        const score = scoreFor(team); const pen = penFor(team);
+        return (
+          <div key={slotKey} style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '5px 3px', borderRadius: 8, background: bg }}>
+            <Flag name={team} size={30} />
+            <span style={{ fontSize: 10, fontWeight: 700, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: team ? undefined : 'var(--faint)' }}>{team || 'TBD'}</span>
+            {score != null && <span className="tabular" style={{ fontSize: 10, fontWeight: 800 }}>{score}{pen != null ? ` (${pen})` : ''}</span>}
+          </div>
+        );
+      };
+      const sel = manner[m];                        // user's manner pick ('FT'|'ET'|'PEN')
+      const actualManner = decided ? res?.manner : null;
+      const MANNER_OPTS: [string, Manner][] = [['FT', 'FT'], ['AET', 'ET'], ['PEN', 'PEN']];
+      const mannerStyle = (code: Manner) => {
+        if (decided && code === actualManner) return { background: 'var(--greenSoft)', color: 'var(--green)' };            // correct option → green
+        if (decided && code === sel && sel !== actualManner) return { background: 'var(--redSoft)', color: 'var(--bad)' };  // wrong selected → red
+        if (!decided && code === sel) return { background: 'var(--goldSoft)', color: 'var(--goldText)' };                   // pending selected → amber
+        return { background: 'transparent', color: 'var(--faint)' };
+      };
+      return (
+        <div key={m} className="card" onClick={cardOnClick}
+          style={{ padding: 7, cursor: cardOnClick ? 'pointer' : 'default', display: 'flex', flexDirection: 'column', gap: 5,
+            background: wrongBox ? 'var(--redSoft)' : 'var(--surface)', borderColor: wrongBox ? 'var(--bad)' : undefined }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span className="faint" style={{ fontSize: 9, fontWeight: 700 }}>M{m}</span>
+            {st.state === 'live' && <StatusChip kind="live" />}
+            {decided && f && <span className="bb-decided" style={{ fontSize: 8.5 }}>{f.pen ? 'PEN' : f.statusLabel}</span>}
+          </div>
+          <div style={{ display: 'flex', gap: 5 }}>{treeSlot(p.A, 'A')}{treeSlot(p.B, 'B')}</div>
+          <div style={{ display: 'flex', gap: 3 }}>
+            {MANNER_OPTS.map(([label, code]) => { const s = mannerStyle(code); return (
+              <span key={code} style={{ flex: 1, textAlign: 'center', fontSize: 8.5, fontWeight: 800, padding: '2px 0', borderRadius: 5, ...s }}>{label}</span>
+            ); })}
+          </div>
+        </div>
+      );
+    }
+
     // ONE consistent 2-line footer template for EVERY card.
     let l1: string, l2: string;
     if (decided) { l1 = rawPick ? `Your pick: ${rawPick}` : 'No pick made'; l2 = rawPick ? (correct ? 'Correct ✓' : 'Missed ✗') : 'Result final'; }
@@ -525,7 +571,7 @@ export default function Bracket() {
       <div key={m} className={`card${r32cls}${tint}`} onClick={cardOnClick}
         style={{ padding: 9, cursor: cardOnClick ? 'pointer' : 'default' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3, gap: 6 }}>
-          <span className="faint" style={{ fontSize: 10, fontWeight: 700 }}>{mode === 'tree' ? `M${m}` : `${RL[round]} · M${m}`}</span>
+          <span className="faint" style={{ fontSize: 10, fontWeight: 700 }}>{`${RL[round]} · M${m}`}</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             {st.state === 'live' && <StatusChip kind="live" />}
             {cardTag && <span className="bb-decided" style={{ fontSize: 9.5, letterSpacing: '.04em' }}>{cardTag}</span>}
@@ -591,7 +637,7 @@ export default function Bracket() {
   };
   const RoundsView = (
     <div>
-      <div style={{ position: isMobile ? 'static' : 'sticky', top: 0, zIndex: 20, background: 'var(--bg)', display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 4 }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 20, background: 'var(--bg)', display: 'flex', alignItems: 'center', gap: 8, paddingTop: 4, paddingBottom: 4 }}>
         {!isMobile && arrowBtn(-1)}
         <div className="bb-stagetabs" style={{ position: 'static', flex: 1, margin: 0, padding: '4px 0' }}>
           {STAGES.map((s, i) => (
@@ -718,7 +764,7 @@ export default function Bracket() {
 // ============================================================
 //  Whole bracket — computed geometry + SVG elbow connectors (R16→Final) — UNCHANGED
 // ============================================================
-const T_CARD_W = 158, T_CARD_H = 66, T_ROW = 96, T_COL = 198;
+const T_CARD_W = 150, T_CARD_H = 96, T_ROW = 120, T_COL = 190;
 const T_LEFT_R16 = [89, 90, 93, 94], T_RIGHT_R16 = [91, 92, 95, 96];
 
 function WholeBracket({ renderNode, champion, isMobile }: { renderNode: (m: number) => React.ReactNode; champion: string | null; isMobile: boolean }) {
